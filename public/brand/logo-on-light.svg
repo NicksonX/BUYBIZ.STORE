@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 236 48" role="img" aria-label="BUYBIZ">
+  <rect x="4" y="4" width="40" height="40" rx="10.5" fill="#0A0B0D"/>
+  <path transform="translate(4 4)" fill="#FFFFFF" fill-rule="evenodd" d="M12 7h12.6L34 16l-6.2 4 6.2 4-9.4 9H12V7Zm5 5v5h8l4-3.6L25 12h-8Zm0 12v6h9l4-3.6L25 24h-8Z"/>
+  <text x="58" y="33" fill="#0A0B0D" font-family="Geist, Inter, Arial, sans-serif" font-size="26" font-weight="650" letter-spacing="-1.2">BUYBIZ</text>
+</svg>

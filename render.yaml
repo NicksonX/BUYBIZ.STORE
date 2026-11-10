@@ -1,0 +1,74 @@
+# BUYBIZ Render blueprint.
+# Apply after creating the Supabase project and running the migrations.
+# Set every sync:false value in the Render dashboard before the first deploy.
+services:
+  - type: web
+    name: buybiz
+    runtime: node
+    plan: starter
+    region: frankfurt
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: 24.22.2
+      - key: DEMO_MODE
+        value: "false"
+      - key: NEXT_PUBLIC_APP_URL
+        sync: false
+      - key: NEXT_SERVER_ACTIONS_ENCRYPTION_KEY
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: DATABASE_SSL
+        value: "true"
+      - key: DATABASE_POOL_MAX
+        value: "5"
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        sync: false
+      - key: NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+        sync: false
+      - key: PROXY_CREDENTIAL_ENCRYPTION_KEY
+        sync: false
+      - key: PAYSTACK_SECRET_KEY
+        sync: false
+      - key: PAYSTACK_MODE
+        value: test
+      - key: CRON_SECRET
+        sync: false
+      - key: OFFICIAL_SUPPORT_EMAIL
+        sync: false
+      - key: RATE_LIMIT_SALT
+        sync: false
+      - key: NEXT_PUBLIC_AUTH_GOOGLE_ENABLED
+        value: "false"
+      - key: NEXT_PUBLIC_AUTH_APPLE_ENABLED
+        value: "false"
+      - key: ENABLE_WALLET_TRANSFERS
+        value: "false"
+
+  # Runs the lifecycle directly against Postgres every 15 minutes.
+  # If you prefer an HTTP job, call /api/cron/lifecycle with CRON_SECRET.
+  - type: cron
+    name: buybiz-lifecycle
+    runtime: node
+    plan: starter
+    region: frankfurt
+    schedule: "*/15 * * * *"
+    buildCommand: npm ci --include=dev
+    startCommand: npm run lifecycle
+    envVars:
+      - key: NODE_VERSION
+        value: 24.22.2
+      - key: DEMO_MODE
+        value: "false"
+      - key: DATABASE_URL
+        sync: false
+      - key: DATABASE_SSL
+        value: "true"
+      - key: PAYSTACK_SECRET_KEY
+        sync: false
+      - key: PAYSTACK_MODE
+        value: test
