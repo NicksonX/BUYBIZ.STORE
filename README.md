@@ -30,7 +30,7 @@ VS Code and this agent do not have a direct remote-control link. VS Code opens t
 | --- | --- |
 | Customer site | http://localhost:3000 |
 | Admin console | http://localhost:3000/admin |
-| Network access | http://192.168.0.4:3000/admin |
+| Network access | http://172.20.10.5:3000/admin (current Wi-Fi IP; run `hostname -I` if it changes) |
 | Health check | http://localhost:3000/api/health |
 
 Demo accounts:
