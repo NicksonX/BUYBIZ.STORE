@@ -107,6 +107,7 @@
 
 html {
   scroll-behavior: smooth;
+  scroll-padding-top: 5.25rem;
   -webkit-text-size-adjust: 100%;
 }
 
@@ -119,6 +120,138 @@ body {
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: clip;
+}
+
+img,
+svg {
+  max-width: 100%;
+}
+
+/* Touch devices need 44px+ targets. Server-rendered links keep their own
+   class-based sizing; buttons are safe to normalise here. */
+@media (pointer: coarse), (max-width: 767px) {
+  button,
+  [role="button"],
+  [role="menuitem"] {
+    min-height: 44px;
+    touch-action: manipulation;
+  }
+
+  a {
+    touch-action: manipulation;
+  }
+
+  input[type="checkbox"],
+  input[type="radio"] {
+    width: 20px;
+    height: 20px;
+    flex: 0 0 20px;
+  }
+
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea {
+    /* Prevents Safari on iOS from zooming the page on focus. */
+    font-size: 16px !important;
+    line-height: 1.4 !important;
+    min-height: 44px;
+  }
+
+  /* Small pill links become comfortable touch targets on phones. */
+  a.h-7.rounded-full,
+  a.h-8.rounded-full,
+  a.h-9.rounded-full,
+  a.h-10.rounded-full {
+    min-height: 44px;
+  }
+
+  .noise {
+    display: none;
+  }
+
+  .animate-ping {
+    animation: none;
+  }
+}
+
+@media (max-width: 767px) {
+  /* The mobile UI intentionally uses a slightly larger type floor than the
+     dense desktop console. Keep labels readable on 360px Android screens. */
+  .text-\[8px\],
+  .text-\[8\.5px\],
+  .text-\[9px\],
+  .text-\[9\.5px\],
+  .text-\[10px\],
+  .text-\[10\.5px\] {
+    font-size: 11px;
+    line-height: 1.45;
+  }
+
+  .text-\[11px\],
+  .text-\[11\.5px\] {
+    font-size: 12.5px;
+    line-height: 1.5;
+  }
+
+  .text-\[12px\],
+  .text-\[12\.5px\] {
+    font-size: 13.5px;
+  }
+
+  .surface-card {
+    box-shadow: none;
+  }
+
+  .backdrop-blur-xl,
+  .backdrop-blur-2xl {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+@supports (padding: max(0px)) {
+  .safe-bottom {
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  }
+
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .mobile-site-menu {
+    top: calc(64px + env(safe-area-inset-top));
+    height: calc(100dvh - 64px - env(safe-area-inset-top));
+    padding-bottom: calc(2.5rem + env(safe-area-inset-bottom));
+  }
+}
+
+@media (max-width: 767px) {
+  .site-header-cta {
+    min-height: 44px;
+  }
+
+  .tap-target {
+    min-height: 44px;
+  }
+
+  footer a,
+  summary {
+    min-height: 44px;
+  }
+
+  summary {
+    display: flex;
+    align-items: center;
+  }
+
+  .dashboard-more-menu {
+    bottom: calc(76px + env(safe-area-inset-bottom));
+  }
+
+  .mobile-table-scroll {
+    -webkit-overflow-scrolling: touch;
+  }
 }
 
 ::selection {

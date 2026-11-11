@@ -45,7 +45,7 @@ export default async function WalletPage() {
         actions={
           <Link
             href="/dashboard/transactions"
-            className="inline-flex h-9 items-center gap-1.5 rounded-full border border-border bg-surface px-3.5 text-[11px] font-medium hover:bg-accent"
+            className="inline-flex h-11 items-center gap-1.5 rounded-full border border-border bg-surface px-4 text-[12px] font-medium hover:bg-accent sm:h-9 sm:px-3.5 sm:text-[11px]"
           >
             Full ledger <ArrowUpRight className="h-3.5 w-3.5" />
           </Link>

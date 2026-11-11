@@ -35,7 +35,7 @@ export function DashboardShell({
                 <FlaskConical className="h-3.5 w-3.5 shrink-0" />
                 <span className="font-semibold">Demo mode</span>
                 <span className="text-warning/80">
-                  Local data and simulated deposits. No real money is involved.
+                  Demo data. Simulated deposits. No real money.
                 </span>
               </div>
             ) : null}

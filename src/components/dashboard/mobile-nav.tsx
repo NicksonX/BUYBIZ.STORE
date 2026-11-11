@@ -74,7 +74,7 @@ export function DashboardMobileNav({ unread }: { unread: number }) {
             onClick={(event) => {
               if ((event.target as HTMLElement).closest("a")) setOpen(false);
             }}
-            className="absolute inset-x-3 bottom-[76px] overflow-hidden rounded-[18px] border border-border bg-surface p-2.5 shadow-float"
+            className="dashboard-more-menu absolute inset-x-3 overflow-hidden rounded-[18px] border border-border bg-surface p-2.5 shadow-float"
           >
             <div className="mb-1 flex items-center justify-between px-2 py-1.5">
               <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">

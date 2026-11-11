@@ -3,20 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import {
-  ArrowUpRight,
-  ChevronDown,
-  LayoutDashboard,
-  Menu,
-  X,
-} from "lucide-react";
+import { ArrowUpRight, LayoutDashboard, Menu, X } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
-import {
-  Dropdown,
-  DropdownContent,
-  DropdownItem,
-  DropdownTrigger,
-} from "@/components/ui/dropdown";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -62,64 +50,6 @@ const resourceLinks = [
   { href: "/contact", label: "Contact", description: "Talk to support" },
 ];
 
-function NavDropdown({
-  label,
-  links,
-  bottomLink,
-}: {
-  label: string;
-  links: { href: string; label: string; description?: string }[];
-  bottomLink?: { href: string; label: string };
-}) {
-  return (
-    <Dropdown>
-      <DropdownTrigger className="group inline-flex h-9 items-center gap-1 rounded-full px-3 text-[12.5px] font-medium text-white/70 outline-none transition-colors hover:text-white data-[state=open]:text-white focus-visible:ring-2 focus-visible:ring-white/40">
-        {label}
-        <ChevronDown className="h-3 w-3 opacity-60 transition-transform group-data-[state=open]:rotate-180" />
-      </DropdownTrigger>
-      <DropdownContent
-        align="start"
-        className="w-[290px] border-white/10 bg-[#0E1013] p-2 text-white shadow-[0_30px_80px_-40px_rgba(0,0,0,1)]"
-      >
-        {links.map((link) => (
-          <DropdownItem
-            key={link.href}
-            asChild
-            className="items-start gap-0 px-3 py-2.5 focus:bg-white/[0.07]"
-          >
-            <Link href={link.href}>
-              <span className="flex flex-col gap-0.5">
-                <span className="text-[12.5px] font-medium text-white">
-                  {link.label}
-                </span>
-                {link.description ? (
-                  <span className="text-[11px] leading-4 text-white/45">
-                    {link.description}
-                  </span>
-                ) : null}
-              </span>
-            </Link>
-          </DropdownItem>
-        ))}
-        {bottomLink ? (
-          <>
-            <div className="my-1.5 h-px bg-white/[0.07]" />
-            <DropdownItem asChild className="px-3 py-2.5 focus:bg-white/[0.07]">
-              <Link
-                href={bottomLink.href}
-                className="flex items-center justify-between text-white/70"
-              >
-                {bottomLink.label}
-                <ArrowUpRight className="h-3.5 w-3.5" />
-              </Link>
-            </DropdownItem>
-          </>
-        ) : null}
-      </DropdownContent>
-    </Dropdown>
-  );
-}
-
 export function SiteHeader({
   isAuthenticated = false,
 }: {
@@ -145,7 +75,7 @@ export function SiteHeader({
   }, [mobileOpen]);
 
   return (
-    <header className="sticky top-0 z-50 border-b border-white/[0.07] bg-[#08090B]/88 text-white backdrop-blur-xl">
+    <header className="safe-top sticky top-0 z-50 border-b border-white/[0.07] bg-[#08090B] text-white lg:bg-[#08090B]/88 lg:backdrop-blur-xl">
       <div className="mx-auto flex h-[64px] w-full max-w-[1200px] items-center justify-between gap-6 px-5 sm:px-8">
         <Link
           href="/"
@@ -159,22 +89,24 @@ export function SiteHeader({
           aria-label="Main navigation"
           className="hidden items-center gap-1 lg:flex"
         >
-          <NavDropdown
-            label="Products"
-            links={productLinks}
-            bottomLink={{ href: "/coming-soon", label: "See what's coming" }}
-          />
-          <NavDropdown label="Solutions" links={solutionLinks} />
-          <NavDropdown label="Resources" links={resourceLinks} />
-          <Link
-            href="/pricing"
-            className={cn(
-              "inline-flex h-9 items-center rounded-full px-3 text-[12.5px] font-medium text-white/70 transition-colors hover:text-white",
-              pathname === "/pricing" && "text-white",
-            )}
-          >
-            Pricing
-          </Link>
+          {[
+            { href: "/marketplace", label: "Marketplace" },
+            { href: "/how-it-works", label: "How it works" },
+            { href: "/coming-soon", label: "Coming soon" },
+            { href: "/pricing", label: "Pricing" },
+            { href: "/about", label: "About" },
+          ].map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className={cn(
+                "inline-flex h-9 items-center rounded-full px-3 text-[12.5px] font-medium text-white/70 transition-colors hover:text-white",
+                pathname === link.href && "text-white",
+              )}
+            >
+              {link.label}
+            </Link>
+          ))}
         </nav>
 
         <div className="hidden items-center gap-2 sm:flex">
@@ -204,7 +136,7 @@ export function SiteHeader({
                   "h-9 rounded-full px-4 text-[12px] font-semibold",
                 )}
               >
-                Get started
+                Create account
               </Link>
             </>
           )}
@@ -215,10 +147,10 @@ export function SiteHeader({
             href={isAuthenticated ? "/dashboard" : "/register"}
             className={cn(
               buttonVariants({ variant: "inverse", size: "sm" }),
-              "h-8 rounded-full px-3.5 text-[11.5px] font-semibold sm:hidden",
+              "h-11 rounded-full px-4 text-[12px] font-semibold sm:hidden",
             )}
           >
-            {isAuthenticated ? "Dashboard" : "Get started"}
+            {isAuthenticated ? "Dashboard" : "Create account"}
           </Link>
           <button
             type="button"
@@ -226,7 +158,7 @@ export function SiteHeader({
             aria-expanded={mobileOpen}
             aria-controls="mobile-navigation"
             aria-label={mobileOpen ? "Close navigation" : "Open navigation"}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-white transition-colors hover:bg-white/10"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-white transition-colors hover:bg-white/10"
           >
             {mobileOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
           </button>
@@ -242,10 +174,10 @@ export function SiteHeader({
           onClick={(event) => {
             if ((event.target as HTMLElement).closest("a")) setMobileOpen(false);
           }}
-          className="fixed inset-x-0 top-[64px] z-50 h-[calc(100dvh-64px)] overflow-y-auto border-t border-white/[0.06] bg-[#08090B] px-5 pb-10 pt-5 lg:hidden"
+          className="mobile-site-menu fixed inset-x-0 z-50 overflow-y-auto border-t border-white/[0.06] bg-[#08090B] px-5 pb-10 pt-5 lg:hidden"
         >
           <div className="mx-auto max-w-[560px] space-y-6">
-            <MobileGroup title="Products">
+            <MobileGroup title="Buy a proxy">
               {productLinks.map((link) => (
                 <MobileLink key={link.href} {...link} />
               ))}
@@ -260,12 +192,12 @@ export function SiteHeader({
                 description="Coming soon"
               />
             </MobileGroup>
-            <MobileGroup title="Solutions">
+            <MobileGroup title="Good to know">
               {solutionLinks.map((link) => (
                 <MobileLink key={link.href} {...link} />
               ))}
             </MobileGroup>
-            <MobileGroup title="Resources">
+            <MobileGroup title="Company">
               {resourceLinks.map((link) => (
                 <MobileLink key={link.href} {...link} />
               ))}
@@ -281,7 +213,7 @@ export function SiteHeader({
                 href={isAuthenticated ? "/dashboard/marketplace" : "/register"}
                 className="flex h-11 flex-1 items-center justify-center rounded-full bg-white text-[13px] font-semibold text-[#0A0B0D]"
               >
-                {isAuthenticated ? "Buy a proxy" : "Get started"}
+                {isAuthenticated ? "Buy a proxy" : "Create account"}
               </Link>
             </div>
             <p className="pb-4 text-center text-[11px] text-white/35">
@@ -333,7 +265,7 @@ function MobileLink({
   return (
     <Link
       href={href}
-      className="flex items-center justify-between border-b border-white/[0.06] px-4 py-3.5 last:border-b-0 hover:bg-white/[0.04]"
+      className="flex min-h-11 items-center justify-between border-b border-white/[0.06] px-4 py-3.5 last:border-b-0 hover:bg-white/[0.04]"
     >
       <span className="text-[13px] font-medium text-white">{label}</span>
       <span className="flex items-center gap-2">

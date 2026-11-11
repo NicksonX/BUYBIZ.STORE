@@ -38,7 +38,7 @@ export function DashboardTopbar({
   }, []);
 
   return (
-    <header className="sticky top-0 z-30 flex h-[64px] items-center gap-3 border-b border-border bg-background/85 px-4 backdrop-blur-xl sm:px-6 lg:px-8">
+    <header className="safe-top sticky top-0 z-30 flex min-h-[64px] items-center gap-3 border-b border-border bg-background px-4 sm:bg-background/85 sm:px-6 sm:backdrop-blur-xl lg:px-8">
       <div className="flex items-center gap-2.5 lg:hidden">
         <Link href="/dashboard" aria-label="BUYBIZ dashboard">
           <Logo size="sm" />
@@ -69,7 +69,7 @@ export function DashboardTopbar({
         <Link
           href="/dashboard/search"
           aria-label="Search your account"
-          className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground md:hidden"
+          className="flex h-11 w-11 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground md:hidden"
         >
           <Search className="h-4 w-4" />
         </Link>
@@ -82,7 +82,7 @@ export function DashboardTopbar({
         <Link
           href="/dashboard/notifications"
           aria-label={`Notifications${unread ? `, ${unread} unread` : ""}`}
-          className="relative flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          className="relative flex h-11 w-11 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground sm:h-8 sm:w-8"
         >
           <Bell className="h-4 w-4" />
           {unread > 0 ? (

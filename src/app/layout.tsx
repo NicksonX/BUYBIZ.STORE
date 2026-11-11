@@ -9,12 +9,19 @@ const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 export const metadata: Metadata = {
   metadataBase: new URL(appUrl),
   title: {
-    default: "BUYBIZ: Your one-stop digital marketplace",
+    default: "BUYBIZ | Buy proxy access in naira",
     template: "%s · BUYBIZ",
   },
   description:
-    "BUYBIZ is a Nigeria-focused digital marketplace. Fund your wallet and buy shared proxy access for 24 hours, 7 days or 30 days. Virtual numbers and PayPal services are coming soon.",
+    "Fund your BUYBIZ wallet, pick 24-hour, 7-day or 30-day shared proxy access, and get your connection details immediately. Prices are in naira.",
   applicationName: "BUYBIZ",
+  icons: {
+    icon: [
+      { url: "/brand/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/brand/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: "/brand/apple-touch-icon.png",
+  },
   authors: [{ name: "BUYBIZ" }],
   keywords: [
     "BUYBIZ",
@@ -26,14 +33,14 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     siteName: "BUYBIZ",
-    title: "BUYBIZ: Your one-stop digital marketplace",
+    title: "BUYBIZ | Buy proxy access in naira",
     description:
-      "Wallet-first proxy access with clear pricing and honest terms. Virtual numbers and PayPal services are coming soon.",
+      "Shared proxy access priced in naira, with fixed expiry and automatic refunds when stock is unavailable.",
     url: "/",
   },
   twitter: {
     card: "summary_large_image",
-    title: "BUYBIZ: Your one-stop digital marketplace",
+    title: "BUYBIZ | Buy proxy access in naira",
     description:
       "Wallet-first proxy access with clear pricing and honest terms.",
   },
@@ -42,6 +49,12 @@ export const metadata: Metadata = {
     follow: true,
   },
   manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    title: "BUYBIZ",
+    statusBarStyle: "black-translucent",
+  },
+  formatDetection: { telephone: false, email: false, address: false },
 };
 
 export const viewport: Viewport = {
@@ -51,6 +64,8 @@ export const viewport: Viewport = {
   ],
   width: "device-width",
   initialScale: 1,
+  viewportFit: "cover",
+  interactiveWidget: "resizes-content",
 };
 
 export default function RootLayout({

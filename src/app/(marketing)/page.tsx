@@ -162,11 +162,11 @@ export default async function HomePage() {
       {/* ---------------------------------------------------------------- */}
       <section className="relative overflow-hidden bg-[#08090B] text-white">
         <div className="pointer-events-none absolute inset-0 grid-lines opacity-30" />
-        <div className="pointer-events-none absolute -left-40 top-0 h-[540px] w-[540px] rounded-full bg-white/[0.045] blur-[120px]" />
-        <div className="pointer-events-none absolute -right-20 bottom-0 h-[420px] w-[420px] rounded-full bg-white/[0.05] blur-[100px]" />
+        <div className="pointer-events-none absolute -left-40 top-0 hidden h-[540px] w-[540px] rounded-full bg-white/[0.045] blur-[120px] sm:block" />
+        <div className="pointer-events-none absolute -right-20 bottom-0 hidden h-[420px] w-[420px] rounded-full bg-white/[0.05] blur-[100px] sm:block" />
         <div className="noise" />
 
-        <div className="relative mx-auto w-full max-w-[1200px] px-5 pb-24 pt-10 sm:px-8 sm:pb-36 sm:pt-16 lg:pb-40">
+        <div className="relative mx-auto w-full max-w-[1200px] px-5 pb-20 pt-8 sm:px-8 sm:pb-36 sm:pt-16 lg:pb-40">
           <div className="grid items-center gap-8 lg:grid-cols-[1.08fr_0.92fr] lg:gap-2">
             <div className="relative z-10 max-w-[650px] animate-rise">
               <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.035] px-3 py-1.5 text-[10px] font-medium tracking-[0.02em] text-white/55">
@@ -174,19 +174,18 @@ export default async function HomePage() {
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#7BE3AC] opacity-60" />
                   <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#7BE3AC]" />
                 </span>
-                Proxies are live. Pay from your NGN wallet.
+                Live now: 24-hour, 7-day and 30-day plans.
               </div>
 
-              <h1 className="mt-6 text-[40px] font-semibold leading-[0.98] tracking-[-0.055em] sm:whitespace-nowrap sm:text-[55px] lg:text-[60px] xl:text-[66px]">
-                <span className="block">Your one-stop</span>
-                <span className="block text-silver">digital marketplace.</span>
+              <h1 className="mt-5 text-[38px] font-semibold leading-[0.98] tracking-[-0.055em] sm:text-[55px] lg:text-[60px] xl:text-[66px]">
+                <span className="block">Buy proxy access.</span>
+                <span className="block text-silver">Pay in naira.</span>
               </h1>
 
-              <p className="mt-6 max-w-[470px] text-[13.5px] leading-6 text-white/50 sm:text-[15px] sm:leading-7">
-                Fund your wallet, choose a plan and get shared proxy details
-                right away. Prices are fixed. If we cannot allocate a proxy, the
-                money goes back to your wallet. Phone numbers and PayPal services
-                are planned, not live.
+              <p className="mt-5 max-w-[470px] text-[14px] leading-6 text-white/55 sm:mt-6 sm:text-[15px] sm:leading-7">
+                Top up your wallet, pick a plan and get your connection details
+                straight away. No dollar card. No sales chat. If no proxy is
+                free, the money goes back to your wallet.
               </p>
 
               <div className="mt-8 flex flex-col gap-2.5 sm:flex-row sm:items-center">
@@ -197,21 +196,21 @@ export default async function HomePage() {
                     "h-11 w-full rounded-full px-5 text-[12.5px] font-semibold shadow-[0_16px_40px_-20px_rgba(255,255,255,0.5)] sm:w-auto",
                   )}
                 >
-                  See proxy plans
+                  Choose a plan
                   <ArrowRight className="h-4 w-4" />
                 </Link>
                 <Link
                   href="/how-it-works"
                   className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-full border border-white/15 bg-white/[0.03] px-5 text-[12.5px] font-medium text-white/75 transition-colors hover:border-white/25 hover:bg-white/[0.07] hover:text-white sm:w-auto"
                 >
-                  How it works
+                  See how it works
                 </Link>
               </div>
 
-              <div className="mt-9 flex flex-wrap items-center gap-x-5 gap-y-2 text-[10.5px] text-white/35">
+              <div className="mt-9 flex flex-wrap items-center gap-x-5 gap-y-2 text-[10.5px] text-white/55">
                 <span className="inline-flex items-center gap-1.5">
                   <ShieldCheck className="h-3.5 w-3.5" />
-                  Secure wallet checkout
+                  Pay from your wallet
                 </span>
                 <span className="hidden h-3 w-px bg-white/10 sm:block" />
                 <span className="inline-flex items-center gap-1.5">
@@ -221,11 +220,11 @@ export default async function HomePage() {
                 <span className="hidden h-3 w-px bg-white/10 sm:block" />
                 <span className="inline-flex items-center gap-1.5">
                   <BadgeCheck className="h-3.5 w-3.5" />
-                  Expiry shown upfront
+                  Expiry shown before you pay
                 </span>
               </div>
 
-              <div className="mt-10 grid max-w-[560px] grid-cols-3 gap-4 border-t border-white/[0.09] pt-6 sm:gap-6">
+              <div className="mt-8 grid max-w-[560px] grid-cols-3 gap-3 border-t border-white/[0.09] pt-5 sm:mt-10 sm:gap-6 sm:pt-6">
                 {[
                   {
                     icon: Wallet,
@@ -245,10 +244,10 @@ export default async function HomePage() {
                 ].map((item) => (
                   <div key={item.value} className="min-w-0">
                     <item.icon className="h-4 w-4 text-white/45" strokeWidth={1.6} />
-                    <p className="mt-2.5 text-[12px] font-semibold tracking-[-0.02em] text-white sm:text-[13px]">
+                    <p className="mt-2 text-[12.5px] font-semibold tracking-[-0.02em] text-white sm:mt-2.5 sm:text-[13px]">
                       {item.value}
                     </p>
-                    <p className="mt-1 text-[9.5px] leading-4 text-white/32 sm:text-[10px]">
+                    <p className="mt-1 text-[11px] leading-4 text-white/50 sm:text-[10px]">
                       {item.label}
                     </p>
                   </div>
@@ -256,7 +255,7 @@ export default async function HomePage() {
               </div>
             </div>
 
-            <div className="relative -mx-3 sm:mx-0 lg:-mr-10 xl:-mr-16">
+            <div className="relative -mx-3 hidden lg:-mr-10 lg:block xl:-mr-16">
               <HeroArt />
             </div>
           </div>
@@ -267,15 +266,15 @@ export default async function HomePage() {
       {/* Services panel                                                   */}
       {/* ---------------------------------------------------------------- */}
       <section className="relative bg-[#F4F4F5]">
-        <div className="mx-auto -mt-20 w-full max-w-[1200px] px-4 sm:-mt-24 sm:px-8">
+        <div className="mx-auto -mt-14 w-full max-w-[1200px] px-4 sm:-mt-24 sm:px-8">
           <div className="relative overflow-hidden rounded-[22px] border border-black/[0.055] bg-white p-4 shadow-[0_50px_100px_-60px_rgba(0,0,0,0.55)] sm:rounded-[26px] sm:p-8">
             <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
               <div>
                 <p className="text-[11px] font-medium text-[#8C9097]">
-                  Our digital services
+                  What we sell
                 </p>
                 <h2 className="mt-2 text-[24px] font-semibold tracking-[-0.04em] text-[#0A0B0D] sm:text-[28px]">
-                  What you can buy today, and what is next.
+                  What is live, and what is coming.
                 </h2>
               </div>
               <Link
@@ -292,9 +291,9 @@ export default async function HomePage() {
                   key={service.name}
                   href={service.href}
                   className={cn(
-                    "group relative flex min-h-[126px] flex-col justify-between overflow-hidden rounded-[13px] border p-3.5 transition-all duration-300 sm:min-h-[196px] sm:rounded-[15px] sm:p-5",
+                    "group relative flex min-h-[132px] flex-col justify-between overflow-hidden rounded-[13px] border p-4 transition-all duration-300 sm:min-h-[196px] sm:rounded-[15px] sm:p-5",
                     service.live
-                      ? "border-[#0A0B0D]/15 bg-[#FBFBFC] shadow-[0_16px_30px_-24px_rgba(0,0,0,0.3)] hover:-translate-y-0.5 hover:border-[#0A0B0D]/30"
+                      ? "col-span-2 border-[#0A0B0D]/15 bg-[#FBFBFC] shadow-[0_16px_30px_-24px_rgba(0,0,0,0.3)] hover:-translate-y-0.5 hover:border-[#0A0B0D]/30 sm:col-span-1"
                       : "border-black/[0.05] bg-[#F6F6F7] hover:-translate-y-0.5 hover:border-black/10 hover:bg-[#F1F1F3]",
                   )}
                 >
@@ -325,7 +324,7 @@ export default async function HomePage() {
                     <h3 className="mt-4 text-[12px] font-semibold tracking-[-0.02em] text-[#0A0B0D] sm:mt-5 sm:text-[14px]">
                       {service.name}
                     </h3>
-                    <p className="mt-1.5 hidden text-[11px] leading-[1.6] text-[#6E7178] sm:block">
+                    <p className={cn("mt-1.5 text-[12px] leading-[1.6] text-[#6E7178]", service.live ? "block" : "hidden sm:block")}>
                       {service.description}
                     </p>
                   </div>
@@ -348,26 +347,25 @@ export default async function HomePage() {
           <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:gap-16">
             <div>
               <p className="text-[11px] font-medium text-[#8C9097]">
-                Why BUYBIZ
+                Why this exists
               </p>
               <h2 className="mt-3 max-w-[460px] text-[30px] font-semibold leading-[1.04] tracking-[-0.045em] text-[#0A0B0D] sm:text-[40px]">
-                What you can expect from us.
+                Clear rules, from the start.
               </h2>
               <p className="mt-4 max-w-[420px] text-[13px] leading-6 text-[#6E7178]">
-                We started with one product so we could get the details right.
-                That means real stock checks, real expiry times and a refund when
-                we can't deliver.
+                One product, done properly: live stock checks, a real expiry
+                time and an automatic refund when we cannot deliver.
               </p>
               <div className="mt-7 flex flex-wrap gap-2">
                 <Link
                   href="/about"
-                  className="inline-flex h-9 items-center gap-1.5 rounded-full bg-[#0A0B0D] px-4 text-[11.5px] font-medium text-white transition-colors hover:bg-[#1a1c1f]"
+                  className="inline-flex h-11 items-center gap-1.5 rounded-full bg-[#0A0B0D] px-4 text-[12px] font-medium text-white transition-colors hover:bg-[#1a1c1f] sm:h-9 sm:text-[11.5px]"
                 >
                   About BUYBIZ <ArrowUpRight className="h-3 w-3" />
                 </Link>
                 <Link
                   href="/faq"
-                  className="inline-flex h-9 items-center rounded-full border border-black/10 px-4 text-[11.5px] font-medium text-[#0A0B0D]/70 transition-colors hover:bg-white"
+                  className="inline-flex h-11 items-center rounded-full border border-black/10 px-4 text-[12px] font-medium text-[#0A0B0D]/70 transition-colors hover:bg-white sm:h-9 sm:text-[11.5px]"
                 >
                   Read the FAQ
                 </Link>
@@ -386,7 +384,7 @@ export default async function HomePage() {
                   <h3 className="mt-3 text-[11.5px] font-semibold leading-4 tracking-[-0.015em] text-[#0A0B0D] sm:mt-4 sm:text-[13px] sm:leading-5">
                     {benefit.title}
                   </h3>
-                  <p className="mt-1.5 text-[10px] leading-[1.6] text-[#6E7178] sm:text-[11.5px]">
+                  <p className="mt-1.5 text-[12px] leading-[1.6] text-[#6E7178] sm:text-[11.5px]">
                     {benefit.copy}
                   </p>
                 </div>
@@ -402,8 +400,8 @@ export default async function HomePage() {
       <section className="bg-[#EEEEF0] py-12 sm:py-24">
         <div className="mx-auto w-full max-w-[1200px] px-5 sm:px-8">
           <SectionHeading
-            eyebrow="How BUYBIZ works"
-            title="Four steps from sign-up to proxy details."
+            eyebrow="How it works"
+            title="From wallet to proxy in four steps."
             description="You'll know what is available, what it costs and when it expires before you pay."
             action={
               <Link
@@ -430,7 +428,7 @@ export default async function HomePage() {
                 <h3 className="mt-5 text-[12px] font-semibold leading-4 text-[#0A0B0D] sm:mt-8 sm:text-[13.5px] sm:leading-5">
                   {step.title}
                 </h3>
-                <p className="mt-1.5 text-[10px] leading-[1.6] text-[#6E7178] sm:mt-2 sm:text-[11.5px] sm:leading-[1.65]">
+                <p className="mt-1.5 text-[11.5px] leading-[1.6] text-[#6E7178] sm:mt-2 sm:text-[11.5px] sm:leading-[1.65]">
                   {step.copy}
                 </p>
                 {index < steps.length - 1 ? (
@@ -448,7 +446,7 @@ export default async function HomePage() {
       <section className="bg-white py-12 sm:py-24" id="plans">
         <div className="mx-auto w-full max-w-[1200px] px-5 sm:px-8">
           <SectionHeading
-            eyebrow="Proxy plans"
+            eyebrow="Pricing"
             title="Pick how long you need."
             description="Prices are in naira and paid from your wallet. BUYBIZ doesn't add taxes or platform fees at checkout."
             action={
@@ -471,12 +469,9 @@ export default async function HomePage() {
               An administrator has not published any proxy plans. Check back soon.
             </Alert>
           ) : (
-            <div className="mt-7 flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 lg:mt-9 lg:grid lg:grid-cols-3 lg:overflow-visible">
+            <div className="mt-6 grid gap-3 sm:mt-8 sm:grid-cols-2 lg:mt-9 lg:grid-cols-3">
               {plans.map((plan) => (
-                <div
-                  key={plan.product.id}
-                  className="min-w-[84%] snap-center sm:min-w-[52%] lg:min-w-0"
-                >
+                <div key={plan.product.id}>
                   <PlanCard
                     product={plan.product}
                     availability={plan}
@@ -488,7 +483,7 @@ export default async function HomePage() {
             </div>
           )}
 
-          <div className="mt-4 flex items-start gap-2 rounded-[10px] border border-black/[0.055] bg-[#F7F7F8] px-4 py-3 text-[10.5px] leading-5 text-[#6E7178]">
+          <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-black/[0.055] bg-[#F7F7F8] px-3.5 py-3 text-[12px] leading-5 text-[#6E7178] sm:mt-4 sm:px-4 sm:text-[10.5px]">
             <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#0A0B0D]/45" />
             <p>
               Plans are shared: up to 10 active customers may use the same

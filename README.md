@@ -6,7 +6,25 @@ The service is deliberately plain about two things: proxy credentials are shared
 
 ## Live local access
 
-The app is running locally from this checkout:
+The app is running locally from this checkout.
+
+Project folder on your PC:
+
+```text
+/home/nickson_x/Documents/deepseek-harness/default-workspace/buybiz
+```
+
+Desktop shortcut: `~/Desktop/BUYBIZ`
+
+VS Code workspace: `~/Desktop/BUYBIZ/BUYBIZ.code-workspace`
+
+Open it from a terminal with:
+
+```bash
+code /home/nickson_x/Documents/deepseek-harness/default-workspace/buybiz/BUYBIZ.code-workspace
+```
+
+VS Code and this agent do not have a direct remote-control link. VS Code opens the same local folder, so saved changes appear immediately in the editor and Git diff. There is no cloud copy and no hidden live session.
 
 | Surface | URL |
 | --- | --- |
@@ -23,13 +41,39 @@ Demo accounts:
 | Admin | `admin@buybiz.test` | `Admin1234!` |
 | Support | `support@buybiz.test` | `Support1234!` |
 
-The local demo uses an in-memory PGlite database. It resets when the server restarts. The current server is a persistent systemd user service:
+The local demo uses an in-memory PGlite database. It resets when the server restarts. The always-on app is served from the production build by systemd:
 
 ```bash
-systemctl --user status buybiz-dev.service
-systemctl --user restart buybiz-dev.service
-journalctl --user -u buybiz-dev.service -f
+systemctl --user status buybiz.service
+systemctl --user restart buybiz.service
+journalctl --user -u buybiz.service -f
 ```
+
+The last verified production build is already running. To edit with hot reload, stop the stable service first, then start the dev server:
+
+```bash
+systemctl --user stop buybiz.service
+npm run dev
+```
+
+When the changes are ready, rebuild and switch back:
+
+```bash
+npm run build
+systemctl --user start buybiz.service
+```
+
+The production server uses substantially less memory than the hot-reload server.
+
+### Laptop resource note
+
+The largest memory consumer on this laptop is usually Chrome with many tabs, not the app. The development server can also grow after many hot reloads. The test suite is capped to one worker, and browser checks use one page and viewport screenshots instead of 10,000px full-page captures. If the machine feels heavy:
+
+```bash
+systemctl --user restart buybiz.service
+```
+
+Close unused Chrome tabs if memory is tight. Do not run `npm test`, `npm run build` and a full browser suite at the same time.
 
 ## Backend
 
@@ -90,6 +134,10 @@ npm run dev
 ```
 
 Never set `DEMO_MODE=true` on a public deployment. Demo payments are simulated and clearly labelled; they are not proof of a real Paystack payment.
+
+## Mobile
+
+The customer experience is designed around 360px-wide Android screens, the largest Nigerian mobile resolution group in Statcounter data. It adds safe-area padding, 44px touch targets, 16px form fields to stop iOS zoom, a 100dvh menu and a lighter mobile render path. The research and test matrix are in [docs/mobile-ui.md](docs/mobile-ui.md).
 
 ## Tests
 
@@ -229,6 +277,19 @@ It refuses to run unless `ENABLE_WALLET_TRANSFERS=true` **and** the database set
 - Database triggers enforce ledger immutability, one active allocation per order, seat caps, expiry after activation and allocation expiry within upstream lifetime.
 - The CSP limits scripts, frames and connections to the app, Supabase and Paystack.
 - Rate limiting is database-backed for login, registration, password reset, contact and purchases.
+
+## Go-live checklist
+
+1. Create the production Supabase project and apply every migration.
+2. Set the production environment variables in Render. Never enable `DEMO_MODE`.
+3. Configure Supabase Auth email, Google and Apple redirect URLs.
+4. Create the owner account and promote it with the SQL in the database section.
+5. Create the Paystack account, set the webhook, and test deposits in test mode.
+6. Run one complete purchase, no-stock refund and support flow against the deployed URL.
+7. Confirm the health check, lifecycle cron and audit log are working.
+8. Have the Terms, Privacy, shared-proxy and no-withdrawal policies reviewed by a lawyer.
+9. Switch Paystack to live only after the business account is approved and a small live payment is reconciled.
+10. Keep customer support and refund handling staffed before public launch.
 
 ## Known limitations and open decisions
 

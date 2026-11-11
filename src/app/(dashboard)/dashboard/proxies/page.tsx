@@ -113,7 +113,7 @@ export default async function ProxiesPage({
             }
             aria-current={activeFilter === filter.key ? "page" : undefined}
             className={cn(
-              "inline-flex h-7 items-center gap-1.5 rounded-full border px-3 text-[10.5px] font-medium transition-colors",
+              "tap-target inline-flex min-h-11 items-center gap-1.5 rounded-full border px-3.5 text-[11.5px] font-medium transition-colors sm:min-h-7 sm:text-[10.5px]",
               activeFilter === filter.key
                 ? "border-foreground bg-foreground text-background"
                 : "border-border bg-surface text-muted-foreground hover:text-foreground",

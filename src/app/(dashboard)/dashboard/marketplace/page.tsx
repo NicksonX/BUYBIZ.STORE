@@ -157,7 +157,7 @@ export default async function MarketplacePage({
             </div>
             <Link
               href="/dashboard/wallet"
-              className="inline-flex h-8 items-center gap-1 rounded-full bg-white px-3 text-[10px] font-semibold text-[#0A0B0D]"
+              className="tap-target inline-flex h-11 items-center gap-1 rounded-full bg-white px-3.5 text-[11.5px] font-semibold text-[#0A0B0D] sm:h-8 sm:text-[10px]"
             >
               <Plus className="h-3 w-3" /> Add funds
             </Link>
@@ -172,7 +172,7 @@ export default async function MarketplacePage({
                     : `/dashboard/marketplace?category=${filter.key}`
                 }
                 className={cn(
-                  "inline-flex h-7 shrink-0 items-center rounded-full border px-3 text-[10px] font-medium",
+                  "tap-target inline-flex min-h-11 shrink-0 items-center rounded-full border px-3.5 text-[11.5px] font-medium sm:min-h-7 sm:text-[10px]",
                   activeFilter === filter.key
                     ? "border-foreground bg-foreground text-background"
                     : "border-border bg-surface text-muted-foreground",

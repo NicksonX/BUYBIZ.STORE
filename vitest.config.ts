@@ -16,6 +16,8 @@ export default defineConfig({
     testTimeout: 45_000,
     hookTimeout: 120_000,
     fileParallelism: false,
+    maxWorkers: 1,
+    isolate: false,
     sequence: { concurrent: false },
     include: ["tests/**/*.test.ts"],
   },

@@ -35,7 +35,7 @@ export function PlanCard({
   return (
     <article
       className={cn(
-        "group relative flex flex-col overflow-hidden rounded-[18px] border p-4 transition-all duration-300 sm:p-5",
+        "group relative flex flex-col overflow-hidden rounded-[16px] border p-4 transition-all duration-300 sm:rounded-[18px] sm:p-5",
         featured
           ? "border-[#26282c] bg-[#0A0B0D] text-white shadow-[0_30px_70px_-38px_rgba(0,0,0,0.75)]"
           : "border-border bg-surface text-foreground shadow-xs hover:-translate-y-0.5 hover:border-border-strong hover:shadow-md",
@@ -92,7 +92,7 @@ export function PlanCard({
         </h3>
         <p
           className={cn(
-            "mt-1.5 line-clamp-2 text-[11.5px] leading-5 sm:line-clamp-none sm:min-h-[40px] sm:text-[12px]",
+            "mt-1.5 line-clamp-3 text-[12.5px] leading-5 sm:line-clamp-none sm:min-h-[40px] sm:text-[12px]",
             featured ? "text-white/45" : "text-muted-foreground",
           )}
         >
@@ -101,7 +101,7 @@ export function PlanCard({
       </div>
 
       <div className="relative mt-4 flex items-end gap-2 sm:mt-5">
-        <span className="tabular text-[32px] font-semibold leading-none tracking-[-0.05em]">
+        <span className="tabular text-[30px] font-semibold leading-none tracking-[-0.05em] sm:text-[32px]">
           {formatNaira(product.priceMinor)}
         </span>
         <span
@@ -120,7 +120,7 @@ export function PlanCard({
             <li
               key={feature}
               className={cn(
-                "flex items-start gap-2 text-[11px] leading-5 sm:text-[11.5px]",
+                "flex items-start gap-2 text-[12.5px] leading-5 sm:text-[11.5px]",
                 featured ? "text-white/55" : "text-muted-foreground",
               )}
             >
@@ -142,7 +142,7 @@ export function PlanCard({
           <Link
             href={target}
             className={cn(
-              "flex h-10 w-full items-center justify-center gap-2 rounded-full text-[12.5px] font-semibold transition-colors",
+              "flex h-11 w-full items-center justify-center gap-2 rounded-full text-[13px] font-semibold transition-colors sm:h-10 sm:text-[12.5px]",
               featured
                 ? "bg-white text-[#0A0B0D] hover:bg-white/90"
                 : "bg-[#0A0B0D] text-white hover:bg-[#1a1c1f]",
@@ -154,7 +154,7 @@ export function PlanCard({
         ) : (
           <div
             className={cn(
-              "flex h-10 w-full cursor-not-allowed items-center justify-center rounded-full text-[12.5px] font-semibold opacity-55",
+              "flex h-11 w-full cursor-not-allowed items-center justify-center rounded-full text-[13px] font-semibold opacity-55 sm:h-10 sm:text-[12.5px]",
               featured ? "bg-white/10 text-white" : "bg-surface-subtle text-foreground",
             )}
             aria-disabled="true"
@@ -164,7 +164,7 @@ export function PlanCard({
         )}
         <div
           className={cn(
-            "mt-3 hidden items-center justify-center gap-3 text-[9.5px] sm:flex",
+            "mt-3 flex items-center justify-center gap-3 text-[10.5px] sm:text-[9.5px]",
             featured ? "text-white/30" : "text-muted-foreground/80",
           )}
         >
