@@ -99,11 +99,18 @@ const sections: LegalSection[] = [
       <>
         <p>
           BUYBIZ sells fixed-duration access to manually supplied upstream
-          proxies. Each allocation references one inventory item. Up to 10 active
-          customers may use the same upstream proxy credentials and outgoing IP.
+          proxies. Each allocation references one inventory item. Shared access
+          means other active customers may use the same upstream proxy
+          credentials and outgoing IP.
         </p>
         <p>
-          This is a shared proxy product. BUYBIZ does not promise a dedicated IP,
+          The Personal 30-Day Proxy is allocated to one active customer per
+          proxy, and a customer may hold only one active Personal 30-Day Proxy
+          at a time. It does not promise a dedicated IP unless the assigned
+          inventory actually provides one.
+        </p>
+        <p>
+          Shared plans are a shared proxy product. BUYBIZ does not promise a dedicated IP,
           a unique upstream username or password for each customer, or a
           particular geographic location unless the assigned inventory actually
           provides it.
@@ -129,7 +136,7 @@ const sections: LegalSection[] = [
         <p>
           Seat limits are enforced transactionally and by a database trigger.
           BUYBIZ does not rely on a client-side counter. Simultaneous purchases
-          cannot create an 11th active seat on one upstream proxy.
+          cannot create more than the configured active limit on one upstream proxy.
         </p>
         <p>
           BUYBIZ may use a deterministic allocation strategy, currently oldest
@@ -188,6 +195,31 @@ const sections: LegalSection[] = [
         <p>
           BUYBIZ does not count a wallet deposit as revenue and does not count a
           wallet refund as new revenue.
+        </p>
+      </>
+    ),
+  },
+  {
+    id: "referrals",
+    title: "Referral rewards",
+    content: (
+      <>
+        <p>
+          Customers may share a referral code. A referral reward is internal
+          BUYBIZ wallet credit, not cash. The standard reward is ₦1,000 and is
+          credited after the referred customer makes one verified external
+          deposit of at least ₦3,000.
+        </p>
+        <p>
+          Internal transfers between users, refunds, admin credits, adjustments
+          and demo credits do not qualify. Only one reward is available for each
+          referred customer. Self-referrals, duplicate accounts, fake accounts
+          and coordinated abuse are not eligible. BUYBIZ may review, reject or
+          reverse a reward connected to abuse.
+        </p>
+        <p>
+          Referral credit is subject to the same no-withdrawal rule as other
+          wallet credit. It can be used for BUYBIZ purchases only.
         </p>
       </>
     ),

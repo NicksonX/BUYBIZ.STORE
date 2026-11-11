@@ -11,6 +11,7 @@ import {
   LifeBuoy,
   MoreHorizontal,
   Network,
+  Gift,
   ReceiptText,
   Settings,
   Store,
@@ -32,6 +33,7 @@ const primary = [
 const moreItems: DashboardNavItem[] = [
   { href: "/dashboard/orders", label: "My orders", icon: ReceiptText },
   { href: "/dashboard/transactions", label: "Transactions", icon: ArrowLeftRight },
+  { href: "/dashboard/referrals", label: "Refer & earn", icon: Gift },
   { href: "/dashboard/support", label: "Support", icon: LifeBuoy },
   { href: "/dashboard/notifications", label: "Notifications", icon: Bell },
   { href: "/dashboard/settings", label: "Settings", icon: Settings },

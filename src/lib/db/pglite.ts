@@ -74,6 +74,18 @@ export async function createDemoDatabase(options?: {
   );
   await pglite.exec(transferTablesSql);
 
+  for (const migration of [
+    "20261110000700_referral_enum.sql",
+    "20261110000710_referrals.sql",
+    "20261110000720_personal_proxy.sql",
+  ]) {
+    const referralSql = await readFile(
+      path.join(process.cwd(), "supabase/migrations", migration),
+      "utf8",
+    );
+    await pglite.exec(referralSql);
+  }
+
   const demoSql = await readFile(
     path.join(process.cwd(), "supabase/demo/demo_schema.sql"),
     "utf8",

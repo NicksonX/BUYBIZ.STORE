@@ -224,10 +224,10 @@ export default function HowItWorksPage() {
                 02 · Allocation
               </p>
               <h2 className="mt-3 text-[28px] font-semibold leading-[1.08] tracking-[-0.04em] text-[#0A0B0D] sm:text-[34px]">
-                Why a proxy can't take an 11th customer.
+                Why shared proxies have a limit.
               </h2>
               <p className="mt-3 text-[12.5px] leading-6 text-[#6E7178]">
-                Each upstream proxy can hold at most 10 active BUYBIZ
+                Each shared upstream proxy can serve a limited number of active BUYBIZ
                 allocations. Seat counts come from live allocation records, not a
                 counter that can drift.
               </p>
@@ -242,7 +242,7 @@ export default function HowItWorksPage() {
                 {
                   icon: Users,
                   title: "Seat counting is live",
-                  copy: "Only allocations with status active and an expiry in the future count toward the 10 seats. An 11th active seat is blocked by a database trigger too.",
+                  copy: "Only allocations with status active and an expiry in the future count toward the proxy's active limit. A database trigger also blocks over-allocation.",
                 },
                 {
                   icon: Clock3,
@@ -288,7 +288,7 @@ export default function HowItWorksPage() {
                 What shared access means in practice.
               </h2>
               <p className="mt-3 text-[12.5px] leading-6 text-[#6E7178]">
-                Up to 10 active customers may receive the same upstream host,
+                Other active customers may receive the same upstream host,
                 port, username, password and outgoing IP. BUYBIZ does not create
                 fake per-customer credentials.
               </p>
@@ -308,8 +308,8 @@ export default function HowItWorksPage() {
               {[
                 {
                   icon: Users,
-                  title: "Up to 10 customers",
-                  copy: "The maximum active customer allocations per upstream proxy is configurable and defaults to 10.",
+                  title: "Shared with other customers",
+                  copy: "The active customer limit per upstream proxy is configurable and enforced by live seat records.",
                 },
                 {
                   icon: Network,

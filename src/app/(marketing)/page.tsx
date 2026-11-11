@@ -33,7 +33,7 @@ const services = [
   {
     name: "Proxies",
     description:
-      "Shared proxy access for 24 hours, 7 days or 30 days. Pay from your wallet.",
+      "Shared proxy access for 24 hours, 7 days or 30 days, plus a Personal 30-day proxy. Pay from your wallet.",
     icon: Network,
     live: true,
     href: "/marketplace",
@@ -77,7 +77,7 @@ const benefits = [
   {
     icon: Users,
     title: "Shared access, explained",
-    copy: "Up to 10 customers may share the same upstream credentials and IP. We don't call it a dedicated IP.",
+    copy: "Shared with other active customers on the same upstream. We don't call it a dedicated IP.",
   },
   {
     icon: ShieldCheck,
@@ -107,7 +107,7 @@ const steps = [
   {
     number: "03",
     title: "Choose a proxy plan",
-    copy: "Pick 24 hours, 7 days or 30 days. We check stock and the proxy's remaining life before charging.",
+    copy: "Pick 24 hours, 7 days, 30 days or a Personal 30-day proxy. We check stock and the proxy's remaining life before charging.",
     icon: Network,
   },
   {
@@ -125,7 +125,7 @@ const faqs = [
   },
   {
     q: "What exactly is a BUYBIZ proxy plan?",
-    a: "You receive a period of authorized access to a shared upstream proxy that BUYBIZ has added to its inventory. Up to 10 active customers may use the same upstream credentials and outgoing IP. This is not a dedicated IP product.",
+    a: "You receive a period of authorized access to a shared upstream proxy that BUYBIZ has added to its inventory. Other active customers may use the same upstream credentials and outgoing IP. The Personal 30-Day Proxy is limited to one customer per proxy.",
   },
   {
     q: "What happens if there is no proxy stock?",
@@ -174,7 +174,7 @@ export default async function HomePage() {
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#7BE3AC] opacity-60" />
                   <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#7BE3AC]" />
                 </span>
-                Live now: 24-hour, 7-day and 30-day plans.
+                Live now: four proxy access plans.
               </div>
 
               <h1 className="mt-5 text-[32px] font-semibold leading-[0.98] tracking-[-0.055em] min-[360px]:text-[38px] sm:text-[55px] lg:text-[60px] xl:text-[66px]">
@@ -474,7 +474,7 @@ export default async function HomePage() {
               An administrator has not published any proxy plans. Check back soon.
             </Alert>
           ) : (
-            <div className="mt-6 grid gap-3 sm:mt-8 sm:grid-cols-2 md:grid-cols-3 lg:mt-9">
+            <div className="mt-6 grid gap-3 sm:mt-8 sm:grid-cols-2 lg:mt-9 lg:grid-cols-4">
               {plans.map((plan) => (
                 <div key={plan.product.id}>
                   <PlanCard
@@ -491,9 +491,10 @@ export default async function HomePage() {
           <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-black/[0.055] bg-[#F7F7F8] px-3.5 py-3 text-[12px] leading-5 text-[#6E7178] sm:mt-4 sm:px-4 sm:text-[10.5px]">
             <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#0A0B0D]/45" />
             <p>
-              Plans are shared: up to 10 active customers may use the same
-              credentials and IP. If no eligible proxy is available, checkout is
-              disabled. A race-condition purchase is refunded automatically.{" "}
+              Shared plans use the same upstream credentials as other active
+              customers. The Personal plan is limited to one customer per proxy.
+              If no eligible proxy is available, checkout is disabled and a
+              race-condition purchase is refunded automatically.{" "}
               <Link href="/faq" className="underline underline-offset-2">
                 Details in the FAQ
               </Link>

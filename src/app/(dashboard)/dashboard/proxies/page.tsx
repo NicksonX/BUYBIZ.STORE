@@ -4,6 +4,7 @@ import {
   Clock3,
   KeyRound,
   Network,
+  UserRound,
   ShieldCheck,
   Users,
 } from "lucide-react";
@@ -239,8 +240,15 @@ export default async function ProxiesPage({
 
                 <div className="mt-3 flex items-center justify-between border-t border-border pt-3">
                   <span className="inline-flex items-center gap-1 text-[9px] text-muted-foreground">
-                    <Users className="h-3 w-3" /> Shared · up to{" "}
-                    {allocation.maxSeats} customers
+                    {allocation.accessType === "single" ? (
+                      <>
+                        <UserRound className="h-3 w-3" /> One customer
+                      </>
+                    ) : (
+                      <>
+                        <Users className="h-3 w-3" /> Shared access
+                      </>
+                    )}
                   </span>
                   <Link
                     href={`/dashboard/proxies/${allocation.id}`}
@@ -266,9 +274,10 @@ export default async function ProxiesPage({
       <div className="mt-4 flex items-start gap-2 rounded-[10px] border border-border bg-surface-subtle px-3.5 py-3 text-[9.5px] leading-4 text-muted-foreground">
         <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0" />
         <p>
-          Your access period ends independently in our database. Because the
-          upstream credentials are shared, this hides your details but cannot
-          individually revoke your network access. Full details are in the{" "}
+          Your access period ends independently in our database. On a shared
+          proxy, this hides your details but cannot individually revoke your
+          network access. The Personal plan is limited to one customer. Full
+          details are in the{" "}
           <Link href="/terms#expiry" className="underline underline-offset-2">
             Terms
           </Link>

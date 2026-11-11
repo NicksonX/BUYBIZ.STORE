@@ -15,7 +15,7 @@ const groups = [
     items: [
       {
         q: "What can I buy on BUYBIZ today?",
-        a: "Only proxy access. There are three fixed plans: 24 hours for ₦500, 7 days for ₦1,000 and 30 days for ₦3,000. Virtual phone numbers and PayPal-related services are planned and marked Coming Soon; they cannot be purchased.",
+        a: "Only proxy access. There are four fixed plans: 24 hours for ₦500, 7 days for ₦1,000, 30 days for ₦3,000, and a Personal 30-day proxy for ₦5,000 with one customer per proxy. Virtual phone numbers and PayPal-related services are planned and marked Coming Soon; they cannot be purchased.",
       },
       {
         q: "Why is a plan sometimes unavailable?",
@@ -23,15 +23,15 @@ const groups = [
       },
       {
         q: "What does “shared proxy” mean?",
-        a: "Up to 10 active customers may use the same upstream host, port, username and password. They may also share the same outgoing IP. BUYBIZ does not claim a dedicated IP and does not fabricate separate credentials when the provider supplies only one.",
+        a: "Shared plans use the same upstream host, port, username and password as other active customers. They may also share the same outgoing IP. BUYBIZ does not claim a dedicated IP and does not fabricate separate credentials when the provider supplies only one. The Personal 30-Day Proxy is limited to one customer per proxy.",
       },
       {
         q: "Is there a maximum number of customers per proxy?",
-        a: "Yes. The default maximum is 10 active customer allocations per upstream proxy. Seat counts are based on live allocation records with a future expiry, not on a manually editable counter. A database trigger also blocks an 11th active seat.",
+        a: "Yes. Shared plans are capped by BUYBIZ to protect quality. Seat counts are based on live allocation records with a future expiry, not on a manually editable counter. The Personal 30-Day Proxy is limited to one customer per proxy.",
       },
       {
         q: "Can I buy multiple plans?",
-        a: "Yes, while each purchase is separately checked for balance, available seats and upstream lifetime. Each purchase creates its own order and allocation with its own expiry.",
+        a: "Yes, while each purchase is separately checked for balance, available seats and upstream lifetime. Each purchase creates its own order and allocation with its own expiry. Only one Personal 30-Day Proxy can be active per customer at a time.",
       },
     ],
   },
@@ -49,6 +49,10 @@ const groups = [
       {
         q: "Are deposit fees added by BUYBIZ?",
         a: "BUYBIZ does not add its own fee or tax to the amount you enter. The payment provider may apply its own processing fees according to its terms and your payment method. BUYBIZ displays the amount you are crediting.",
+      },
+      {
+        q: "How do referrals work?",
+        a: "Every customer has a referral code on Dashboard > Refer and earn. You earn ₦1,000 in BUYBIZ wallet credit after a new customer makes one verified external deposit of at least ₦3,000. Internal transfers, refunds, admin credits and adjustments do not count. There is one reward per referred customer, self-referrals and duplicate-account abuse are rejected, and the reward is internal wallet credit, not cash.",
       },
       {
         q: "What happens if a payment webhook is duplicated?",

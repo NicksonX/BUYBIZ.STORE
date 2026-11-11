@@ -88,7 +88,7 @@ export function HeroArt() {
                     Shared upstream
                   </p>
                   <p className="mt-1 text-[8.5px] font-medium text-white/70">
-                    Up to 10 customers
+                    Shared access
                   </p>
                 </div>
               </div>

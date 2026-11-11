@@ -48,6 +48,12 @@ services:
         value: "false"
       - key: ENABLE_WALLET_TRANSFERS
         value: "false"
+      - key: AI_SUPPORT_API_KEY
+        sync: false
+      - key: AI_SUPPORT_BASE_URL
+        value: https://api.openai.com/v1
+      - key: AI_SUPPORT_MODEL
+        value: gpt-4o-mini
 
   # Runs the lifecycle directly against Postgres every 15 minutes.
   # If you prefer an HTTP job, call /api/cron/lifecycle with CRON_SECRET.

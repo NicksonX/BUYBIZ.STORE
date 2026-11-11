@@ -44,6 +44,7 @@ export type AdminInventoryRow = {
   region: string | null;
   purchaseCostMinor: number;
   maxSeats: number;
+  accessType: "shared" | "single";
   activeSeats: number;
   freeSeats: number;
   uploadedAt: Date;
@@ -486,7 +487,7 @@ export async function getAdminInventory(input: {
   const result = await db.query<AdminInventoryRow>(
     `select i.id, i.label, i.protocol, i.host, i.port, i.region,
             i.purchase_cost_minor as "purchaseCostMinor",
-            i.max_seats as "maxSeats",
+            i.max_seats as "maxSeats", i.access_type as "accessType",
             coalesce(s.active,0)::int as "activeSeats",
             greatest(i.max_seats - coalesce(s.active,0),0)::int as "freeSeats",
             i.uploaded_at as "uploadedAt",
@@ -532,7 +533,7 @@ export async function getAdminInventoryDetail(id: string) {
     `select i.id, i.label, i.protocol, i.host, i.port, i.region,
             i.provider_note as "providerNote", i.admin_notes as "adminNotes",
             i.purchase_cost_minor as "purchaseCostMinor",
-            i.max_seats as "maxSeats",
+            i.max_seats as "maxSeats", i.access_type as "accessType",
             coalesce(s.active,0)::int as "activeSeats",
             greatest(i.max_seats - coalesce(s.active,0),0)::int as "freeSeats",
             i.uploaded_at as "uploadedAt",
@@ -1190,4 +1191,43 @@ export async function getInventoryOptions() {
       where archived_at is null order by label asc limit 200`,
   );
   return result.rows;
+}
+
+export async function getAdminReferrals() {
+  const db = await getDb();
+  const rows = await db.query<{
+    id: string;
+    status: string;
+    code: string;
+    rewardMinor: number | null;
+    createdAt: Date;
+    rewardedAt: Date | null;
+    referrerUsername: string;
+    referrerEmail: string;
+    refereeUsername: string;
+  }>(
+    `select r.id, r.status, r.referral_code as code,
+            r.reward_amount_minor::bigint as "rewardMinor",
+            r.created_at as "createdAt", r.rewarded_at as "rewardedAt",
+            referrer.username as "referrerUsername",
+            referrer.email as "referrerEmail",
+            referee.username as "refereeUsername"
+       from referrals r
+       join profiles referrer on referrer.id = r.referrer_id
+       join profiles referee on referee.id = r.referee_id
+      order by r.created_at desc limit 200`,
+  );
+  const referrals = rows.rows.map((row) => ({
+    ...row,
+    rewardMinor: row.rewardMinor === null ? null : Number(row.rewardMinor),
+  }));
+  return {
+    referrals,
+    stats: {
+      total: referrals.length,
+      pending: referrals.filter((row) => row.status === "pending").length,
+      rewarded: referrals.filter((row) => row.status === "rewarded").length,
+      paidMinor: referrals.reduce((sum, row) => sum + (row.rewardMinor ?? 0), 0),
+    },
+  };
 }

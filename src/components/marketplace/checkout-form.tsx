@@ -15,6 +15,7 @@ export function CheckoutForm({
   balanceMinor,
   available,
   insufficient,
+  accessType,
 }: {
   productSlug: string;
   idempotencyKey: string;
@@ -22,6 +23,7 @@ export function CheckoutForm({
   balanceMinor: number;
   available: boolean;
   insufficient: boolean;
+  accessType: "shared" | "single";
 }) {
   const [state, formAction, pending] = useActionState(
     purchaseAction,
@@ -72,8 +74,11 @@ export function CheckoutForm({
           <strong className="font-semibold text-foreground">
             {formatNaira(priceMinor, { exact: true })}
           </strong>
-          . I understand the proxy is shared with up to 10 customers and my
-          access expires at the timestamp shown after allocation.
+          . I understand{" "}
+          {accessType === "single"
+            ? "this proxy is limited to one active customer"
+            : "the proxy is shared with other active customers"}{" "}
+          and my access expires at the timestamp shown after allocation.
         </span>
       </label>
 

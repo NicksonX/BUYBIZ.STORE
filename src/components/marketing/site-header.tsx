@@ -35,7 +35,7 @@ const solutionLinks = [
   {
     href: "/how-it-works#shared",
     label: "Shared proxies, explained",
-    description: "Up to 10 customers per upstream",
+    description: "Shared upstream access",
   },
   {
     href: "/how-it-works#refunds",

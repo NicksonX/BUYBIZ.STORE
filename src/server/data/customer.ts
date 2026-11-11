@@ -31,6 +31,7 @@ export type CustomerAllocationRow = {
   inventoryExpiresAt: Date;
   inventoryStatus: string;
   maxSeats: number;
+  accessType: "shared" | "single";
   orderNumber: string;
   durationSeconds: number | null;
 };
@@ -170,7 +171,7 @@ export async function getActiveAllocations(
             a.ended_at as "endedAt", a.interruption_reason as "interruptionReason",
             i.label as "proxyLabel", i.protocol, i.host, i.port, i.region,
             i.upstream_expires_at as "inventoryExpiresAt",
-            i.status as "inventoryStatus", i.max_seats as "maxSeats",
+            i.status as "inventoryStatus", i.max_seats as "maxSeats", i.access_type as "accessType",
             o.order_number as "orderNumber",
             p.duration_seconds as "durationSeconds"
        from proxy_allocations a
@@ -205,7 +206,7 @@ export async function getAllocationsForUser(
             a.ended_at as "endedAt", a.interruption_reason as "interruptionReason",
             i.label as "proxyLabel", i.protocol, i.host, i.port, i.region,
             i.upstream_expires_at as "inventoryExpiresAt",
-            i.status as "inventoryStatus", i.max_seats as "maxSeats",
+            i.status as "inventoryStatus", i.max_seats as "maxSeats", i.access_type as "accessType",
             o.order_number as "orderNumber",
             p.duration_seconds as "durationSeconds"
        from proxy_allocations a
@@ -238,7 +239,7 @@ export async function getAllocationDetail(
             a.ended_at as "endedAt", a.interruption_reason as "interruptionReason",
             i.label as "proxyLabel", i.protocol, i.host, i.port, i.region,
             i.upstream_expires_at as "inventoryExpiresAt",
-            i.status as "inventoryStatus", i.max_seats as "maxSeats",
+            i.status as "inventoryStatus", i.max_seats as "maxSeats", i.access_type as "accessType",
             i.encrypted_username as "encryptedUsername",
             i.encrypted_password as "encryptedPassword",
             o.order_number as "orderNumber", o.id as "orderId",
@@ -470,5 +471,45 @@ export async function searchCustomerData(userId: string, query: string) {
     orders: orders.rows,
     allocations: allocations.rows,
     tickets: tickets.rows,
+  };
+}
+
+export async function getReferralDashboard(userId: string) {
+  const db = await getDb();
+  const profile = await db.query<{ referralCode: string | null }>(
+    `select referral_code as "referralCode" from profiles where id = $1 limit 1`,
+    [userId],
+  );
+  const rows = await db.query<{
+    id: string;
+    status: string;
+    rewardMinor: number | null;
+    createdAt: Date;
+    rewardedAt: Date | null;
+    refereeUsername: string;
+  }>(
+    `select r.id, r.status, r.reward_amount_minor::bigint as "rewardMinor",
+            r.created_at as "createdAt", r.rewarded_at as "rewardedAt",
+            p.username as "refereeUsername"
+       from referrals r
+       join profiles p on p.id = r.referee_id
+      where r.referrer_id = $1
+      order by r.created_at desc limit 100`,
+    [userId],
+  );
+  const referrals = rows.rows.map((row) => ({
+    ...row,
+    rewardMinor: row.rewardMinor === null ? null : Number(row.rewardMinor),
+  }));
+  const rewarded = referrals.filter((row) => row.status === "rewarded");
+  return {
+    code: profile.rows[0]?.referralCode ?? "",
+    referrals,
+    stats: {
+      total: referrals.length,
+      pending: referrals.filter((row) => row.status === "pending").length,
+      rewarded: rewarded.length,
+      earnedMinor: rewarded.reduce((sum, row) => sum + (row.rewardMinor ?? 0), 0),
+    },
   };
 }

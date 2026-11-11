@@ -12,11 +12,13 @@ import { SocialButtons } from "@/components/auth/social-buttons";
 
 export function RegisterForm({
   next,
+  referralCode,
   googleEnabled,
   appleEnabled,
   demoMode,
 }: {
   next?: string;
+  referralCode?: string;
   googleEnabled: boolean;
   appleEnabled: boolean;
   demoMode: boolean;
@@ -49,6 +51,14 @@ export function RegisterForm({
 
       <form action={formAction} className="space-y-4">
         {next ? <input type="hidden" name="next" value={next} /> : null}
+        {referralCode ? (
+          <>
+            <input type="hidden" name="referralCode" value={referralCode} />
+            <div className="rounded-[9px] border border-[#16794A]/15 bg-[#E7F6EE] px-3 py-2 text-[10.5px] leading-4 text-[#16794A]">
+              Referral code <strong className="font-semibold">{referralCode}</strong> is applied. Reward rules apply.
+            </div>
+          </>
+        ) : null}
         <Field
           label="Username"
           htmlFor="username"

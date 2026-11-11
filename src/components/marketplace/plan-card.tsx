@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowUpRight, Check, Clock3, Network, Users } from "lucide-react";
+import { ArrowUpRight, Check, Clock3, Network, UserRound, Users } from "lucide-react";
 import type { PlanAvailability, Product } from "@/lib/db/types";
 import { Badge } from "@/components/ui/badge";
 import { cn, formatDuration, formatNaira } from "@/lib/utils";
@@ -27,7 +27,7 @@ export function PlanCard({
     ? product.features
     : [
         "Instant allocation when stock is available",
-        "Shared upstream proxy, up to 10 customers",
+        "Shared upstream proxy",
         "Expiry shown clearly in your dashboard",
       ];
   const target = href ?? `/dashboard/checkout/${product.slug}`;
@@ -169,7 +169,15 @@ export function PlanCard({
           )}
         >
           <span className="inline-flex items-center gap-1">
-            <Users className="h-3 w-3" /> Shared proxy
+            {product.accessType === "single" ? (
+              <>
+                <UserRound className="h-3 w-3" /> One customer
+              </>
+            ) : (
+              <>
+                <Users className="h-3 w-3" /> Shared proxy
+              </>
+            )}
           </span>
           <span className="h-2.5 w-px bg-current opacity-30" />
           <span className="inline-flex items-center gap-1">

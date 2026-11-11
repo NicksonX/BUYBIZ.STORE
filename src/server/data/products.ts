@@ -11,7 +11,9 @@ const PRODUCT_COLUMNS = `
   is_active as "isActive",
   is_coming_soon as "isComingSoon",
   features,
-  sort_order as "sortOrder"
+  sort_order as "sortOrder",
+  access_type as "accessType",
+  max_active_per_customer as "maxActivePerCustomer"
 `;
 
 function normalizeProduct(row: Product & { features: unknown }): Product {
@@ -75,11 +77,14 @@ export async function getPlanAvailability(): Promise<PlanAvailability[]> {
             p.price_minor as "priceMinor", p.currency,
             p.is_active as "isActive", p.is_coming_soon as "isComingSoon",
             p.features, p.sort_order as "sortOrder",
+            p.access_type as "accessType",
+            p.max_active_per_customer as "maxActivePerCustomer",
             coalesce(count(i.id), 0)::int as "eligibleInventory",
             coalesce(sum(greatest(i.max_seats - coalesce(s.active_seats, 0), 0)), 0)::int as "freeSeats"
        from products p
        left join proxy_inventory i
          on i.status = 'available'
+        and i.access_type = p.access_type
         and i.archived_at is null
         and i.upstream_expires_at >= now() + (p.duration_seconds + $1::int) * interval '1 second'
        left join lateral (

@@ -23,6 +23,7 @@ import {
 import { rateLimit } from "@/lib/security/rate-limit";
 import { getAppSettings } from "@/server/data/settings";
 import { writeAuditLog } from "@/server/services/audit";
+import { qualifyReferralForDeposit } from "@/server/services/referrals";
 import { notifyUser } from "@/server/services/notifications";
 
 export type DepositVerificationResult = {
@@ -175,6 +176,14 @@ async function creditVerifiedDeposit(
         : "Wallet deposit via Paystack",
     ],
   );
+
+  await qualifyReferralForDeposit(tx, {
+    id: deposit.id,
+    userId: deposit.userId,
+    amountMinor: Number(deposit.amountMinor),
+    provider: deposit.provider,
+    status: "credited",
+  });
 
   await notifyUser(tx, {
     userId: deposit.userId,

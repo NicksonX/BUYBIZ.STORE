@@ -184,9 +184,9 @@ export default async function ProxyDetailPage({
                     <ShieldAlert className="h-3.5 w-3.5" /> Shared proxy disclosure
                   </p>
                   <p className="mt-1.5 text-[9.5px] leading-4 text-warning/80">
-                    Up to {allocation.maxSeats} active customers use the same
-                    credentials and IP. Do not share these details. Shared
-                    credentials cannot be individually revoked at network level.{" "}
+                    {allocation.accessType === "single"
+                      ? "This proxy is limited to one active customer. Do not share these details."
+                      : "This proxy is shared with other active customers, who use the same credentials and IP. Shared credentials cannot be individually revoked at network level."}{" "}
                     <Link href="/terms#expiry" className="underline underline-offset-2">
                       Full details
                     </Link>

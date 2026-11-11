@@ -2,7 +2,7 @@
 
 BUYBIZ is a Nigerian digital marketplace for short-lived shared proxy access. Customers fund an internal wallet with Paystack, buy a 24-hour, 7-day or 30-day proxy package, and see their connection details and exact expiry in a customer dashboard. Admins manage inventory, allocations, deposits, refunds, expenses, support and reporting in a separate dark console.
 
-The service is deliberately plain about two things: proxy credentials are shared by up to 10 active customers, and wallet credit is not a bank balance or a cash-withdrawal account.
+The service is deliberately plain about two things: shared proxy plans use the same upstream credentials as other active customers, and wallet credit is not a bank balance or a cash-withdrawal account. The Personal 30-Day Proxy is limited to one active customer per proxy.
 
 ## Live local access
 
@@ -87,17 +87,19 @@ There is no separate Express server. The backend is inside Next.js 16:
 - **Paystack** handles hosted checkout and server-side payment verification.
 - **Server-only code** is marked with `server-only`. Service-role secrets never reach the browser.
 
-Money is stored as integer kobo. Wallet balances are derived from an append-only ledger. Purchases lock the wallet and inventory rows, re-count live seats, debit once, allocate once, and automatically refund the wallet if stock is unavailable. A database trigger blocks an 11th active seat even if the application layer is bypassed.
+Money is stored as integer kobo. Wallet balances are derived from an append-only ledger. Purchases lock the wallet and inventory rows, re-count live seats, debit once, allocate once, and automatically refund the wallet if stock is unavailable. Database triggers also block over-allocation if the application layer is bypassed.
 
 ## Main flows
 
 - Email/password registration, login, logout, password reset and email verification in demo mode.
 - Supabase Auth email/password plus Google and Apple wiring for production.
 - Paystack deposit initialization, callback verification, webhook verification and idempotent crediting.
-- Atomic proxy purchase with 24-hour, 7-day and 30-day packages.
+- Atomic proxy purchase with 24-hour, 7-day, 30-day and Personal 30-day packages. The Personal plan is limited to one active customer per proxy and one active Personal plan per customer.
 - Proxy credentials encrypted with AES-256-GCM and revealed only to the owner while active.
 - Expiry lifecycle, upstream interruption, no-stock refunds and independent seat release.
-- Customer dashboard, wallet, orders, proxies, support, settings and notifications.
+- Customer dashboard, wallet, orders, proxies, referrals, support, settings and notifications.
+- Referral programme: ₦1,000 wallet credit after one verified external deposit of at least ₦3,000. Internal transfers, refunds and admin credits never qualify.
+- A guarded AI support assistant with public-only knowledge. It cannot change accounts, reveal private business data or suspend users; suspicious extraction attempts are logged for human review.
 - Admin users, inventory, allocations, products, orders, deposits, ledger, adjustments, expenses, support, analytics, audit, settings and search.
 - No fake metrics. Admin charts and totals come from orders, deposits, expenses and the wallet ledger.
 
@@ -213,6 +215,24 @@ https://YOUR_DOMAIN/api/paystack/webhook
 
 No Paystack public key is required because the integration uses hosted checkout redirects.
 
+## Referral programme
+
+Every customer gets a code on `Dashboard > Refer and earn`. The reward is ₦1,000 in internal BUYBIZ wallet credit after a referred customer makes one verified external deposit of at least ₦3,000. The trigger is inside external deposit crediting only, so internal user transfers, refunds, admin credits and adjustments cannot qualify. One reward is allowed per referred account. Self-referrals and duplicate-account abuse are rejected.
+
+## AI support assistant
+
+Set an OpenAI-compatible provider in the server environment:
+
+```dotenv
+AI_SUPPORT_API_KEY=...
+AI_SUPPORT_BASE_URL=https://api.openai.com/v1
+AI_SUPPORT_MODEL=gpt-4o-mini
+```
+
+The assistant is a curated public-knowledge assistant, not a fine-tuned model and not an admin tool. It has no database access, cannot see other customers, and cannot perform refunds, wallet changes, credential reveals or suspensions. Suspicious private-information requests are written to the audit log as `ai.support_security_flag` for human review. The assistant never suspends an account.
+
+Without an API key, the support page says the assistant is not connected and directs the customer to a human ticket. It does not fake AI replies.
+
 ## Deploy to Render
 
 `render.yaml` defines:
@@ -234,6 +254,9 @@ Create a Render Blueprint from the repository. Set every `sync: false` value in 
 | `CRON_SECRET` | Random secret for the HTTP lifecycle endpoint. |
 | `OFFICIAL_SUPPORT_EMAIL` | Only if the business supplies one. |
 | `RATE_LIMIT_SALT` | Random value for hashed rate-limit keys. |
+| `AI_SUPPORT_API_KEY` | Optional. Leave blank to show the honest not-connected state. |
+| `AI_SUPPORT_BASE_URL` | OpenAI-compatible API base, for example `https://api.openai.com/v1`. |
+| `AI_SUPPORT_MODEL` | Model id for the support assistant. |
 
 Generate the encryption key with `openssl rand -base64 32`. Do not use Render's generic generated value unless you confirm it decodes to exactly 32 bytes.
 

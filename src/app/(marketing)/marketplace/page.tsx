@@ -127,7 +127,7 @@ export default async function PublicMarketplacePage({
                   The product catalogue could not be loaded. Please refresh.
                 </Alert>
               ) : (
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                   {plans.map((plan) => (
                     <PlanCard
                       key={plan.product.id}
@@ -147,9 +147,10 @@ export default async function PublicMarketplacePage({
                 </div>
               )}
               <div className="mt-3 rounded-[10px] border border-black/[0.055] bg-white px-4 py-3 text-[9.5px] leading-4 text-[#6E7178]">
-                All proxy plans are shared upstream access. Up to 10 active
-                customers may use the same credentials and outgoing IP. BUYBIZ
-                does not claim a dedicated IP or per-customer network revocation.
+                Shared plans use the same credentials and outgoing IP as other
+                active customers. BUYBIZ does not claim a dedicated IP or
+                per-customer network revocation. The Personal plan is limited to
+                one customer per proxy.
               </div>
             </section>
           ) : null}

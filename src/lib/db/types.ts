@@ -12,6 +12,7 @@ export type LedgerEntryType =
   | "admin_debit"
   | "transfer_debit"
   | "transfer_credit"
+  | "referral_credit"
   | "reversal";
 export type DepositStatus =
   | "initiated"
@@ -60,6 +61,8 @@ export interface Product {
   isComingSoon: boolean;
   features: string[];
   sortOrder: number;
+  accessType: "shared" | "single";
+  maxActivePerCustomer: number | null;
 }
 
 export interface ProxyInventory {
@@ -75,6 +78,7 @@ export interface ProxyInventory {
   purchaseCostMinor: number;
   currency: string;
   maxSeats: number;
+  accessType: "shared" | "single";
   uploadedAt: Date;
   upstreamExpiresAt: Date;
   expiryIsEstimated: boolean;

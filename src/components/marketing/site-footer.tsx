@@ -84,7 +84,7 @@ export function SiteFooter() {
           <p className="text-[11.5px] leading-5 text-white/40">
             <span className="font-medium text-white/55">Please note:</span>{" "}
             Wallet credit is for purchases on BUYBIZ only and cannot be withdrawn
-            as cash. Proxy access is shared between up to 10 customers. Full
+            as cash. Shared proxy access may be used by other active customers. Full
             details are in the{" "}
             <Link href="/terms" className="underline underline-offset-2 hover:text-white/65">
               Terms

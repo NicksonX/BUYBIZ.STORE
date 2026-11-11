@@ -107,6 +107,7 @@ type InventorySeed = {
   expiryDaysFromNow: number;
   status: "available" | "full" | "paused" | "expired" | "disabled";
   estimated: boolean;
+  accessType?: "shared" | "single";
   notes: string;
 };
 
@@ -339,6 +340,26 @@ const inventorySeeds: InventorySeed[] = [
     estimated: true,
     notes: "",
   },
+  {
+    key: "i13",
+    id: "b0000000-0000-4000-8000-000000000013",
+    label: "Personal London 01",
+    protocol: "socks5",
+    host: "203.0.113.150",
+    port: 1080,
+    username: "bzb_personal_lon_01",
+    password: "demo-personal-2b71",
+    region: "United Kingdom",
+    providerNote: "Demo personal proxy. One customer only.",
+    costMinor: 350_000,
+    maxSeats: 1,
+    uploadDaysAgo: 2,
+    expiryDaysFromNow: 55,
+    status: "available",
+    estimated: false,
+    accessType: "single",
+    notes: "Seeded for the Personal 30-Day Proxy.",
+  },
 ];
 
 type PlanKey = "proxy-24-hours" | "proxy-7-days" | "proxy-30-days";
@@ -489,9 +510,9 @@ export async function seedDemoData(db: Database) {
         `insert into proxy_inventory
            (id, label, protocol, host, port, encrypted_username, encrypted_password,
             region, provider_note, purchase_cost_minor, currency, max_seats,
-            uploaded_at, upstream_expires_at, expiry_is_estimated, status,
-            admin_notes, created_by, created_at, updated_at)
-         values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'NGN',$11,$12,$13,$14,$15,$16,$17,$12,$12)`,
+            access_type, uploaded_at, upstream_expires_at, expiry_is_estimated,
+            status, admin_notes, created_by, created_at, updated_at)
+         values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'NGN',$11,$12,$13,$14,$15,$16,$17,$18,$13,$13)`,
         [
           item.id,
           item.label,
@@ -504,6 +525,7 @@ export async function seedDemoData(db: Database) {
           item.providerNote,
           item.costMinor,
           item.maxSeats,
+          item.accessType ?? "shared",
           uploadedAt,
           expiresAt,
           item.estimated,

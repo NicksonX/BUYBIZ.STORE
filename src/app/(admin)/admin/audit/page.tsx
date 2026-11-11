@@ -52,6 +52,8 @@ export default async function AdminAuditPage({
           <option value="settings.updated">Settings updated</option>
           <option value="order.refunded_auto">Automatic refund</option>
           <option value="deposit.credited">Deposit credited</option>
+          <option value="referral.rewarded">Referral rewarded</option>
+          <option value="ai.support_security_flag">AI security flag</option>
         </Select>
         <button type="submit" className="h-9 rounded-full bg-foreground px-4 text-[10.5px] font-semibold text-background">Filter</button>
         <Link href="/admin/audit" className="inline-flex h-9 items-center justify-center rounded-full border border-border px-3 text-[10px] text-muted-foreground">Reset</Link>

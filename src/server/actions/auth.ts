@@ -31,6 +31,10 @@ import {
   setDemoSessionCookie,
 } from "@/server/auth/demo-cookie";
 import { writeAuditLog } from "@/server/services/audit";
+import {
+  attachReferralForSignup,
+  validateReferralCode,
+} from "@/server/services/referrals";
 
 function defaultLanding(profile: Pick<Profile, "role" | "onboardingComplete">) {
   if (!profile.onboardingComplete) return "/onboarding";
@@ -159,6 +163,7 @@ export async function signupAction(
     email: formData.get("email"),
     password: formData.get("password"),
     acceptTerms: formData.get("acceptTerms"),
+    referralCode: formData.get("referralCode") ?? "",
   });
   if (!parsed.success) {
     return formError("Check the highlighted fields.", zodFieldErrors(parsed.error));
@@ -184,6 +189,18 @@ export async function signupAction(
     return formError("Please choose different details.", fieldErrors);
   }
 
+  if (parsed.data.referralCode) {
+    const referral = await validateReferralCode(
+      parsed.data.referralCode,
+      parsed.data.email,
+    );
+    if (!referral.valid) {
+      return formError("Check the referral code.", {
+        referralCode: "That referral code is not valid, active or usable for this email.",
+      });
+    }
+  }
+
   let destination: string | null = null;
   let providerError: ActionState | null = null;
 
@@ -203,6 +220,11 @@ export async function signupAction(
           `insert into demo_credentials (user_id, email, password_hash)
            values ($1,$2,$3)`,
           [newId, parsed.data.email, passwordHash],
+        );
+        await attachReferralForSignup(
+          tx,
+          newId,
+          parsed.data.referralCode,
         );
         return newId;
       });
@@ -226,9 +248,20 @@ export async function signupAction(
         },
       });
       if (error) providerError = formError(mapSupabaseAuthError(error.message));
-      else if (data.session) destination = "/dashboard";
-      else
-        destination = `/verify-email?email=${encodeURIComponent(parsed.data.email)}`;
+      else if (data.user) {
+        if (parsed.data.referralCode) {
+          try {
+            await db.transaction((tx) =>
+              attachReferralForSignup(tx, data.user!.id, parsed.data.referralCode),
+            );
+          } catch (referralError) {
+            console.error("[buybiz/auth] referral attach failed", referralError);
+          }
+        }
+        if (data.session) destination = "/dashboard";
+        else
+          destination = `/verify-email?email=${encodeURIComponent(parsed.data.email)}`;
+      }
     }
   } catch (error) {
     if ((error as { code?: string }).code === "23505") {

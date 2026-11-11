@@ -97,6 +97,7 @@ export async function createInventoryAction(
     providerNote: formData.get("providerNote") ?? "",
     purchaseCost: formData.get("purchaseCost") ?? "",
     maxSeats: formData.get("maxSeats") ?? 10,
+    accessType: formData.get("accessType") ?? "shared",
     upstreamExpiry: formData.get("upstreamExpiry"),
     expiryIsEstimated: formData.get("expiryIsEstimated") ?? "true",
     adminNotes: formData.get("adminNotes") ?? "",
@@ -105,6 +106,7 @@ export async function createInventoryAction(
     return formError("Check the highlighted fields.", zodFieldErrors(parsed.error));
   }
   const data = parsed.data;
+  const maxSeats = data.accessType === "single" ? 1 : data.maxSeats;
   if (Boolean(data.username) !== Boolean(data.password)) {
     return formError("Enter both the upstream username and password, or neither.", {
       username: "Username and password must be provided together.",
@@ -139,9 +141,9 @@ export async function createInventoryAction(
         `insert into proxy_inventory
            (id, label, protocol, host, port, encrypted_username, encrypted_password,
             region, provider_note, purchase_cost_minor, currency, max_seats,
-            uploaded_at, upstream_expires_at, expiry_is_estimated, status,
-            admin_notes, created_by)
-         values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'NGN',$11,now(),$12,$13,'available',$14,$15)`,
+            access_type, uploaded_at, upstream_expires_at, expiry_is_estimated,
+            status, admin_notes, created_by)
+         values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'NGN',$11,$12,now(),$13,$14,'available',$15,$16)`,
         [
           id,
           data.label,
@@ -153,7 +155,8 @@ export async function createInventoryAction(
           data.region?.trim() || null,
           data.providerNote?.trim() || null,
           costMinor,
-          data.maxSeats,
+          maxSeats,
+          data.accessType,
           expiry,
           data.expiryIsEstimated === "true",
           data.adminNotes?.trim() || null,
@@ -170,7 +173,8 @@ export async function createInventoryAction(
           label: data.label,
           protocol: data.protocol,
           region: data.region || null,
-          maxSeats: data.maxSeats,
+          maxSeats,
+          accessType: data.accessType,
         },
         ip: meta.ip,
         userAgent: meta.userAgent,
@@ -200,6 +204,7 @@ export async function updateInventoryAction(
     adminNotes: formData.get("adminNotes") ?? "",
     purchaseCost: formData.get("purchaseCost") ?? "",
     maxSeats: formData.get("maxSeats"),
+    accessType: formData.get("accessType") ?? "shared",
   });
   if (!parsed.success) {
     return formError("Check the highlighted fields.", zodFieldErrors(parsed.error));
@@ -229,7 +234,9 @@ export async function updateInventoryAction(
       );
       const row = current.rows[0];
       if (!row) throw new AppError("NOT_FOUND", "That inventory item was not found.");
-      if (parsed.data.maxSeats < Number(row.activeSeats)) {
+      const nextMaxSeats =
+        parsed.data.accessType === "single" ? 1 : parsed.data.maxSeats;
+      if (nextMaxSeats < Number(row.activeSeats)) {
         throw new AppError(
           "CONFLICT",
           `This proxy already has ${row.activeSeats} active customers. Maximum seats cannot be lower than that.`,
@@ -239,7 +246,7 @@ export async function updateInventoryAction(
         `update proxy_inventory
             set label = $2, region = $3, provider_note = $4,
                 admin_notes = $5, purchase_cost_minor = $6, max_seats = $7,
-                updated_at = now()
+                access_type = $8, updated_at = now()
           where id = $1`,
         [
           parsed.data.inventoryId,
@@ -248,7 +255,8 @@ export async function updateInventoryAction(
           parsed.data.providerNote?.trim() || null,
           parsed.data.adminNotes?.trim() || null,
           costMinor,
-          parsed.data.maxSeats,
+          nextMaxSeats,
+          parsed.data.accessType,
         ],
       );
       await tx.query(`select reconcile_proxy_status()`);
@@ -258,7 +266,12 @@ export async function updateInventoryAction(
         action: "inventory.updated",
         entityType: "proxy_inventory",
         entityId: parsed.data.inventoryId,
-        metadata: { label: parsed.data.label, maxSeats: parsed.data.maxSeats, costMinor },
+        metadata: {
+          label: parsed.data.label,
+          maxSeats: nextMaxSeats,
+          accessType: parsed.data.accessType,
+          costMinor,
+        },
         ip: meta.ip,
         userAgent: meta.userAgent,
       });

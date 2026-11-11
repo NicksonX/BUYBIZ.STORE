@@ -5,6 +5,7 @@ import {
   BadgePlus,
   Landmark,
   RotateCcw,
+  Gift,
   type LucideIcon,
 } from "lucide-react";
 import type { LedgerEntry } from "@/lib/db/types";
@@ -22,6 +23,7 @@ const icons: Record<string, LucideIcon> = {
   admin_debit: BadgePlus,
   transfer_debit: ArrowUpRight,
   transfer_credit: ArrowDownLeft,
+  referral_credit: Gift,
   reversal: ArrowDownLeft,
 };
 

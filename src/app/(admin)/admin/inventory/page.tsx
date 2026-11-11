@@ -143,7 +143,7 @@ export default async function AdminInventoryPage({
                     <div className="min-w-0">
                       <p className="truncate text-[12px] font-medium">{item.label}</p>
                       <p className="mt-0.5 truncate text-[9px] text-muted-foreground">
-                        {item.host}:{item.port} · {item.protocol.toUpperCase()} · {item.region ?? "No region"}
+                        {item.host}:{item.port} · {item.protocol.toUpperCase()} · {item.accessType === "single" ? "Single customer" : "Shared"} · {item.region ?? "No region"}
                       </p>
                     </div>
                   </div>

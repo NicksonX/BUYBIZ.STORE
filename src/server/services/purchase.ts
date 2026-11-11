@@ -174,9 +174,13 @@ export async function purchaseProxy(input: {
         name: string;
         durationSeconds: number;
         priceMinor: number;
+        accessType: "shared" | "single";
+        maxActivePerCustomer: number | null;
       }>(
         `select id, name, duration_seconds as "durationSeconds",
-                price_minor as "priceMinor"
+                price_minor as "priceMinor",
+                access_type as "accessType",
+                max_active_per_customer as "maxActivePerCustomer"
            from products
           where slug = $1
             and is_active = true
@@ -191,6 +195,21 @@ export async function purchaseProxy(input: {
         throw new AppError("NOT_FOUND", "That proxy plan is not available.");
       }
       const price = Number(product.priceMinor);
+
+      if (product.maxActivePerCustomer) {
+        const activeProduct = await tx.query<{ count: number }>(
+          `select count(*)::int as count from proxy_allocations
+            where user_id = $1 and product_id = $2
+              and status = 'active' and expires_at > now()`,
+          [input.userId, product.id],
+        );
+        if ((activeProduct.rows[0]?.count ?? 0) >= product.maxActivePerCustomer) {
+          throw new AppError(
+            "CONFLICT",
+            "You already have an active personal proxy. It must expire before you can buy another one.",
+          );
+        }
+      }
 
       await tx.query(
         `insert into wallet_accounts (user_id) values ($1)
@@ -232,12 +251,13 @@ export async function purchaseProxy(input: {
            from proxy_inventory i
           where i.archived_at is null
             and i.status in ('available','full')
+            and i.access_type = $3
             and i.upstream_expires_at >=
                 now() + (($1::int + $2::int) * interval '1 second')
           order by i.uploaded_at asc, i.id asc
           limit 25
           for update skip locked`,
-        [product.durationSeconds, settings.safetyBufferSeconds],
+        [product.durationSeconds, settings.safetyBufferSeconds, product.accessType],
       );
 
       let selectedInventoryId: string | null = null;
@@ -265,6 +285,7 @@ export async function purchaseProxy(input: {
                from proxy_inventory i
               where i.archived_at is null
                 and i.status in ('available','full')
+                and i.access_type = $1
                 and i.upstream_expires_at > now()
                 and (
                   select count(*) from proxy_allocations a
@@ -273,6 +294,7 @@ export async function purchaseProxy(input: {
                      and a.expires_at > now()
                 ) < i.max_seats
            ) as "insufficientLife"`,
+        [product.accessType],
         );
         const reason = reasonResult.rows[0]?.insufficientLife
           ? "INSUFFICIENT_STOCK_LIFETIME"

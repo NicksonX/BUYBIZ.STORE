@@ -8,6 +8,7 @@ import {
   ReceiptText,
   RotateCcw,
   Wallet,
+  Gift,
 } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
 import { Badge } from "@/components/ui/badge";
@@ -36,6 +37,7 @@ const entryIcons = {
   admin_debit: BadgePlus,
   transfer_debit: ArrowUpRight,
   transfer_credit: ArrowDownLeft,
+  referral_credit: Gift,
   reversal: ArrowDownLeft,
 } as const;
 

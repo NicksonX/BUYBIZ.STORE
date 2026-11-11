@@ -100,7 +100,7 @@ export default async function CheckoutPage({
                 {
                   icon: Users,
                   label: "Allocation",
-                  value: `Shared, up to 10 customers`,
+                  value: product.accessType === "single" ? "One customer" : "Shared access",
                 },
                 {
                   icon: ShieldCheck,
@@ -132,7 +132,7 @@ export default async function CheckoutPage({
             <ul className="mt-3 space-y-2.5">
               {[
                 "You pay the exact plan price from your wallet. No BUYBIZ fee or tax is added.",
-                "The proxy is shared with up to 10 active customers, who use the same credentials and IP.",
+                product.accessType === "single" ? "This proxy is limited to one active customer, so your credentials are not shared with other customers." : "This proxy is shared with other active customers, who use the same credentials and IP.",
                 "Your expiry starts at allocation, not at registration or wallet funding.",
                 "If no proxy is available, the full amount is credited back to your wallet.",
               ].map((item) => (
@@ -209,6 +209,7 @@ export default async function CheckoutPage({
                 balanceMinor={wallet.balanceMinor}
                 available={plan.available}
                 insufficient={insufficient}
+                accessType={product.accessType}
               />
               {insufficient ? (
                 <Link

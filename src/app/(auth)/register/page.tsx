@@ -24,12 +24,14 @@ export default async function RegisterPage({
 }) {
   const params = await searchParams;
   const next = first(params.next);
+  const referralCode = first(params.ref)?.trim().toUpperCase() ?? "";
   const user = await getCurrentUser();
   if (user) redirect(safeNextPath(next, homeForProfile(user)));
 
   return (
     <RegisterForm
       next={next}
+      referralCode={referralCode}
       googleEnabled={isGoogleAuthEnabled()}
       appleEnabled={isAppleAuthEnabled()}
       demoMode={isDemoMode()}

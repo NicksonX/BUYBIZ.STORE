@@ -22,15 +22,14 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 const comparison = [
-  { label: "Access window", values: ["24 hours", "7 days", "30 days"] },
-  { label: "Price (NGN)", values: ["₦500", "₦1,000", "₦3,000"] },
-  { label: "Wallet purchase", values: [true, true, true] },
-  { label: "Instant allocation", values: [true, true, true] },
-  { label: "Shared proxy", values: [true, true, true] },
-  { label: "Maximum customers per upstream", values: ["10", "10", "10"] },
-  { label: "Expiry starts at", values: ["Allocation", "Allocation", "Allocation"] },
-  { label: "Auto-renewal", values: ["No", "No", "No"] },
-  { label: "No-stock wallet refund", values: [true, true, true] },
+  { label: "Access window", values: ["24 hours", "7 days", "30 days", "30 days"] },
+  { label: "Price (NGN)", values: ["₦500", "₦1,000", "₦3,000", "₦5,000"] },
+  { label: "Wallet purchase", values: [true, true, true, true] },
+  { label: "Instant allocation", values: [true, true, true, true] },
+  { label: "Access type", values: ["Shared", "Shared", "Shared", "One customer"] },
+  { label: "Expiry starts at", values: ["Allocation", "Allocation", "Allocation", "Allocation"] },
+  { label: "Auto-renewal", values: ["No", "No", "No", "No"] },
+  { label: "No-stock wallet refund", values: [true, true, true, true] },
 ];
 
 export default async function PricingPage() {
@@ -48,12 +47,12 @@ export default async function PricingPage() {
         eyebrow="Pricing"
         title={
           <>
-            Three plans.
+            Four plans.
             <br />
             <span className="text-silver">One wallet.</span>
           </>
         }
-        description="Pick 24 hours, 7 days or 30 days. Prices are in naira and paid from your wallet, with no extra BUYBIZ fees at checkout."
+        description="Pick 24 hours, 7 days, 30 days or a Personal 30-day proxy. Prices are in naira and paid from your wallet, with no extra BUYBIZ fees at checkout."
         actions={
           <>
             <HeroLink href="/marketplace">Choose a plan</HeroLink>
@@ -72,6 +71,7 @@ export default async function PricingPage() {
                 ["24 hours", "₦500"],
                 ["7 days", "₦1,000"],
                 ["30 days", "₦3,000"],
+                ["Personal 30 days", "₦5,000"],
               ].map(([label, price]) => (
                 <div key={label} className="flex items-center justify-between">
                   <span className="text-[10px] text-white/45">{label}</span>
@@ -81,7 +81,7 @@ export default async function PricingPage() {
             </div>
             <div className="mt-4 flex items-start gap-1.5 border-t border-white/[0.08] pt-3 text-[8.5px] leading-4 text-white/30">
               <ShieldCheck className="mt-0.5 h-3 w-3 shrink-0" />
-              Up to 10 customers share one upstream proxy. Not a dedicated IP.
+              Shared plans use the same upstream proxy as other active customers. Not a dedicated IP.
             </div>
           </div>
         }
@@ -95,7 +95,7 @@ export default async function PricingPage() {
               relying on plan availability.
             </Alert>
           ) : null}
-          <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {plans.map((plan) => (
               <PlanCard
                 key={plan.product.id}
@@ -135,6 +135,9 @@ export default async function PricingPage() {
                     </th>
                     <th className="px-5 py-3 text-[10px] font-semibold text-[#0A0B0D]">
                       30-Day Proxy
+                    </th>
+                    <th className="px-5 py-3 text-[10px] font-semibold text-[#0A0B0D]">
+                      Personal 30-Day
                     </th>
                   </tr>
                 </thead>

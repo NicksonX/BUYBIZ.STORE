@@ -66,6 +66,7 @@ export async function createTestInventory(options: {
   maxSeats?: number;
   expiresInSeconds?: number;
   status?: "available" | "paused";
+  accessType?: "shared" | "single";
 } = {}) {
   const db = await getDb();
   const id = randomUUID();
@@ -76,10 +77,10 @@ export async function createTestInventory(options: {
   await db.query(
     `insert into proxy_inventory
        (id, label, protocol, host, port, encrypted_username, encrypted_password,
-        region, provider_note, purchase_cost_minor, max_seats, uploaded_at,
-        upstream_expires_at, expiry_is_estimated, status)
-     values ($1,$2,'socks5','203.0.113.210',1080,$3,$4,'Test','Vitest inventory',1000,$5,now(),$6,false,$7)`,
-    [id, `Vitest proxy ${id.slice(0, 6)}`, username, password, maxSeats, expiry, options.status ?? "available"],
+        region, provider_note, purchase_cost_minor, max_seats, access_type,
+        uploaded_at, upstream_expires_at, expiry_is_estimated, status)
+     values ($1,$2,'socks5','203.0.113.210',1080,$3,$4,'Test','Vitest inventory',1000,$5,$6,now(),$7,false,$8)`,
+    [id, `Vitest proxy ${id.slice(0, 6)}`, username, password, maxSeats, options.accessType ?? "shared", expiry, options.status ?? "available"],
   );
   return { id, maxSeats, expiry };
 }

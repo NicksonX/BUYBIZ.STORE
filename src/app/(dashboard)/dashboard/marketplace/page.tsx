@@ -141,7 +141,7 @@ export default async function MarketplacePage({
               Shared proxy disclosure
             </p>
             <p className="mt-1 text-[9px] leading-4 text-muted-foreground">
-              Up to 10 customers may share the same upstream proxy credentials
+              Shared plans use the same upstream proxy credentials as other active customers
               and outgoing IP. This is not a dedicated IP product.
             </p>
           </div>
@@ -193,7 +193,7 @@ export default async function MarketplacePage({
                   {plans.filter((plan) => plan.available).length} of {plans.length} available
                 </span>
               </div>
-              <div className="grid gap-2.5 md:grid-cols-3">
+              <div className="grid gap-2.5 md:grid-cols-2 xl:grid-cols-4">
                 {plans.map((plan) => (
                   <PlanCard
                     key={plan.product.id}

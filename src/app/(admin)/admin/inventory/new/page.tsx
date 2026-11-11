@@ -80,8 +80,14 @@ export default async function NewInventoryPage() {
               usernames.
             </AdminNote>
 
-            <div className="grid gap-4 border-t border-border pt-4 sm:grid-cols-3">
-              <AdminField label="Maximum seats" htmlFor="maxSeats" hint="1-10">
+            <div className="grid gap-4 border-t border-border pt-4 sm:grid-cols-2">
+              <AdminField label="Proxy access" htmlFor="accessType" hint="Customer facing">
+                <Select id="accessType" name="accessType" defaultValue="shared">
+                  <option value="shared">Shared access</option>
+                  <option value="single">Single customer (personal)</option>
+                </Select>
+              </AdminField>
+              <AdminField label="Maximum seats" htmlFor="maxSeats" hint="Shared: 1-10. Single: always 1">
                 <Input id="maxSeats" name="maxSeats" type="number" min={1} max={10} defaultValue={settings.inventoryDefaultMaxSeats} />
               </AdminField>
               <AdminField label="Upstream expiry" htmlFor="upstreamExpiry" hint="WAT">
@@ -94,6 +100,9 @@ export default async function NewInventoryPage() {
                 </Select>
               </AdminField>
             </div>
+            <AdminNote>
+              A single-customer proxy always has one seat. It is used for the ₦5,000 Personal 30-Day Proxy and is never allocated to a shared plan.
+            </AdminNote>
 
             <AdminField label="Provider note (private)" htmlFor="providerNote" hint="Optional">
               <Input id="providerNote" name="providerNote" placeholder="Provider, invoice or reference" />

@@ -5,9 +5,11 @@ import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { buttonVariants } from "@/components/ui/button";
 import { requireUserPage } from "@/server/auth/guards";
+import { isAiSupportConfigured } from "@/lib/config";
 import { getTicketsForUser } from "@/server/data/customer";
 import { ticketStatusMeta, titleCase } from "@/lib/status";
 import { cn, formatRelativeTime } from "@/lib/utils";
+import { AiSupportAssistant } from "@/components/support/ai-assistant";
 
 export const dynamic = "force-dynamic";
 
@@ -35,7 +37,9 @@ export default async function SupportPage() {
       />
 
       <div className="mt-5 grid items-start gap-4 lg:grid-cols-[1.35fr_0.65fr]">
-        <div>
+        <div className="space-y-4">
+          <AiSupportAssistant configured={isAiSupportConfigured()} />
+          <div>
           {tickets.length === 0 ? (
             <EmptyState
               icon={LifeBuoy}
@@ -100,6 +104,7 @@ export default async function SupportPage() {
         </p>
       </div>
 
+        </div>
         </div>
 
         <aside className="space-y-3">

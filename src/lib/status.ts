@@ -125,6 +125,8 @@ export function ledgerTypeLabel(type: LedgerEntryType) {
       return "Transfer out";
     case "transfer_credit":
       return "Transfer in";
+    case "referral_credit":
+      return "Referral reward";
     case "reversal":
       return "Reversal";
   }

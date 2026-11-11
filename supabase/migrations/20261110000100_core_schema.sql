@@ -780,7 +780,7 @@ values
     'NGN',
     true,
     false,
-    '["Instant allocation", "Shared upstream proxy, up to 10 customers", "Connection details in your dashboard"]'::jsonb,
+    '["Instant allocation", "Shared upstream proxy", "Connection details in your dashboard"]'::jsonb,
     10
   ),
   (
@@ -793,7 +793,7 @@ values
     'NGN',
     true,
     false,
-    '["Instant allocation", "Shared upstream proxy, up to 10 customers", "Expires exactly 7 days after activation"]'::jsonb,
+    '["Instant allocation", "Shared upstream proxy", "Expires exactly 7 days after activation"]'::jsonb,
     20
   ),
   (
@@ -806,7 +806,7 @@ values
     'NGN',
     true,
     false,
-    '["Instant allocation", "Shared upstream proxy, up to 10 customers", "Expires exactly 30 days after activation"]'::jsonb,
+    '["Instant allocation", "Shared upstream proxy", "Expires exactly 30 days after activation"]'::jsonb,
     30
   ),
   (

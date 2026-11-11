@@ -118,7 +118,7 @@ export default function AboutPage() {
               {
                 icon: Users,
                 title: "Honest capacity",
-                copy: "Up to 10 active customers share one upstream proxy.",
+                copy: "Other active customers share one upstream proxy.",
               },
               {
                 icon: Layers3,
@@ -160,7 +160,7 @@ export default function AboutPage() {
             {[
               {
                 title: "We won't call a shared proxy a dedicated IP.",
-                copy: "Up to 10 customers share the same credentials and IP. Your access period is separate, but the network identity isn't.",
+                copy: "Shared plans use the same credentials and IP as other active customers. Your access period is separate, but the network identity isn't. The Personal plan is limited to one customer per proxy.",
               },
               {
                 title: "We won't promise individual network revocation.",

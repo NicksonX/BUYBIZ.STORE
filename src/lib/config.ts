@@ -22,6 +22,10 @@ export function isDatabaseConfigured() {
   return isDemoMode() || Boolean(process.env.DATABASE_URL);
 }
 
+export function isAiSupportConfigured() {
+  return Boolean(process.env.AI_SUPPORT_API_KEY);
+}
+
 export function isPaystackConfigured() {
   return Boolean(process.env.PAYSTACK_SECRET_KEY);
 }

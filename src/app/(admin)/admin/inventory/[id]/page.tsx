@@ -119,7 +119,7 @@ export default async function AdminInventoryDetailPage({
         }
       />
 
-      <div className="grid grid-cols-2 gap-2.5 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2.5 xl:grid-cols-5">
         <div className="surface-card rounded-[12px] p-3.5">
           <div className="flex items-center justify-between">
             <p className="text-[9.5px] text-muted-foreground">Seats used</p>
@@ -145,6 +145,16 @@ export default async function AdminInventoryDetailPage({
           <p className={cn("mt-1 text-[8.5px]", remaining.expired ? "text-danger" : "text-muted-foreground")}>
             {remaining.expired ? "Expired" : `${remaining.days}d ${remaining.hours}h remaining`}{inventory.expiryIsEstimated ? " · assumed" : " · provider confirmed"}
           </p>
+        </div>
+        <div className="surface-card rounded-[12px] p-3.5">
+          <div className="flex items-center justify-between">
+            <p className="text-[9.5px] text-muted-foreground">Access type</p>
+            <Users className="h-3.5 w-3.5 text-muted-foreground" />
+          </div>
+          <p className="mt-2 text-[13px] font-semibold">
+            {inventory.accessType === "single" ? "Single customer" : "Shared"}
+          </p>
+          <p className="mt-1 text-[8.5px] text-muted-foreground">Enforced by the database</p>
         </div>
         <div className="surface-card rounded-[12px] p-3.5">
           <div className="flex items-center justify-between">
@@ -181,8 +191,14 @@ export default async function AdminInventoryDetailPage({
                 <AdminField label="Purchase cost (NGN)" htmlFor="inv-cost">
                   <Input id="inv-cost" name="purchaseCost" inputMode="decimal" defaultValue={(inventory.purchaseCostMinor / 100).toString()} />
                 </AdminField>
-                <AdminField label="Maximum seats" htmlFor="inv-max" hint={`${inventory.activeSeats} active`}>
+                <AdminField label="Maximum seats" htmlFor="inv-max" hint={`${inventory.activeSeats} active. Single access is always 1.`}>
                   <Input id="inv-max" name="maxSeats" type="number" min={1} max={10} defaultValue={inventory.maxSeats} />
+                </AdminField>
+                <AdminField label="Access type" htmlFor="inv-access">
+                  <Select id="inv-access" name="accessType" defaultValue={inventory.accessType}>
+                    <option value="shared">Shared access</option>
+                    <option value="single">Single customer (personal)</option>
+                  </Select>
                 </AdminField>
               </div>
               <AdminField label="Provider note (private)" htmlFor="inv-provider">

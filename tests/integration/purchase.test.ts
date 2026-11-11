@@ -238,3 +238,37 @@ describe("atomic proxy purchase", () => {
     expect(byId.get(resultB.allocationId)).toBe("active");
   });
 });
+
+describe("personal proxy", () => {
+  it("uses a single-customer inventory and blocks a second active personal proxy", async () => {
+    // Two separate single-customer proxies exist, so the block must come from
+    // the per-customer product limit, not from stock exhaustion.
+    await createTestInventory({ maxSeats: 1, accessType: "single", expiresInSeconds: 45 * 86400 });
+    await createTestInventory({ maxSeats: 1, accessType: "single", expiresInSeconds: 45 * 86400 });
+    const user = await createTestUser("personal");
+    await fundWallet(user.id, 1_000_000);
+
+    const first = await purchaseProxy({
+      userId: user.id,
+      productSlug: "proxy-personal-30-days",
+      idempotencyKey: key(),
+    });
+    expect(first.outcome).toBe("allocated");
+
+    await expect(
+      purchaseProxy({
+        userId: user.id,
+        productSlug: "proxy-personal-30-days",
+        idempotencyKey: key(),
+      }),
+    ).rejects.toMatchObject({ code: "CONFLICT" });
+
+    const db = await getDb();
+    const active = await db.query<{ count: number }>(
+      `select count(*)::int as count from proxy_allocations
+        where user_id=$1 and status='active' and expires_at > now()`,
+      [user.id],
+    );
+    expect(active.rows[0].count).toBe(1);
+  });
+});

@@ -36,6 +36,10 @@ beforeAll(async () => {
   await db.exec(sql("supabase/migrations/20261110000500_internal_transfers.sql"));
   await db.exec(sql("supabase/migrations/20261110000510_internal_transfers_tables.sql"));
   await db.exec(sql("supabase/migrations/20261110000600_internal_transfers_rls.sql"));
+  await db.exec(sql("supabase/migrations/20261110000700_referral_enum.sql"));
+  await db.exec(sql("supabase/migrations/20261110000710_referrals.sql"));
+  await db.exec(sql("supabase/migrations/20261110000720_personal_proxy.sql"));
+  await db.exec(sql("supabase/migrations/20261110000800_referrals_rls.sql"));
 
   await db.query(
     `insert into auth.users (id,email,email_confirmed_at,raw_user_meta_data)
@@ -59,6 +63,11 @@ beforeAll(async () => {
      select w.id, w.user_id, 'deposit_credit', 500000, 500000, 'NGN', 'rls-deposit-a', 'RLS test'
        from wallet_accounts w where w.user_id=$1`,
     [userA],
+  );
+  await db.query(
+    `insert into referrals (referrer_id,referee_id,referral_code)
+     select $1,$2,referral_code from profiles where id=$1`,
+    [userA, userB],
   );
 });
 
@@ -118,6 +127,29 @@ describe("Supabase RLS policies", () => {
     await assumeUser(userA);
     await expect(db.query(`select host from proxy_inventory`)).rejects.toThrow();
     await expect(db.query(`select * from wallet_transfers`)).resolves.toBeDefined();
+    await resetRole();
+  });
+
+  it("shows referrals only to the referrer and blocks client writes", async () => {
+    await assumeUser(userA);
+    const rows = await db.query<{ count: number }>(
+      `select count(*)::int as count from referrals`,
+    );
+    expect(rows.rows[0].count).toBe(1);
+    await expect(
+      db.query(
+        `insert into referrals (referrer_id,referee_id,referral_code)
+         values ($1,$2,'CLIENT')`,
+        [userA, userA],
+      ),
+    ).rejects.toThrow();
+    await resetRole();
+
+    await assumeUser(userB);
+    const hidden = await db.query<{ count: number }>(
+      `select count(*)::int as count from referrals`,
+    );
+    expect(hidden.rows[0].count).toBe(0);
     await resetRole();
   });
 

@@ -47,6 +47,7 @@ export default async function AdminLedgerPage({
           <option value="deposit_credit">Deposit credits</option>
           <option value="purchase_debit">Purchase debits</option>
           <option value="refund_credit">Refund credits</option>
+          <option value="referral_credit">Referral rewards</option>
           <option value="admin_credit">Admin credits</option>
           <option value="admin_debit">Admin debits</option>
           <option value="reversal">Reversals</option>

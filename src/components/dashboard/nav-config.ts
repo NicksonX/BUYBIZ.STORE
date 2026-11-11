@@ -7,6 +7,7 @@ import {
   Settings,
   Store,
   Wallet,
+  Gift,
   type LucideIcon,
 } from "lucide-react";
 
@@ -23,6 +24,7 @@ export const customerNav: DashboardNavItem[] = [
   { href: "/dashboard/proxies", label: "My proxies", icon: Network },
   { href: "/dashboard/orders", label: "My orders", icon: ReceiptText },
   { href: "/dashboard/wallet", label: "Wallet", icon: Wallet },
+  { href: "/dashboard/referrals", label: "Refer & earn", icon: Gift },
   { href: "/dashboard/transactions", label: "Transactions", icon: ArrowLeftRight },
   { href: "/dashboard/support", label: "Support", icon: LifeBuoy },
   { href: "/dashboard/settings", label: "Settings", icon: Settings },

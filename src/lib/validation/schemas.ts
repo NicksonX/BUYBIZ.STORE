@@ -33,6 +33,12 @@ export const signupSchema = z
     acceptTerms: z.literal("on", {
       message: "Accept the draft terms and privacy notice to continue.",
     }),
+    referralCode: z
+      .string()
+      .trim()
+      .max(24)
+      .optional()
+      .or(z.literal("")),
   })
   .strict();
 
@@ -167,6 +173,7 @@ export const inventorySchema = z.object({
   providerNote: z.string().trim().max(500).optional().or(z.literal("")),
   purchaseCost: z.string().optional().or(z.literal("")),
   maxSeats: z.coerce.number().int().min(1).max(10).default(10),
+  accessType: z.enum(["shared", "single"]).default("shared"),
   upstreamExpiry: z.string().min(1, "Set an upstream expiry date."),
   expiryIsEstimated: z.enum(["true", "false"]).default("true"),
   adminNotes: z.string().trim().max(1000).optional().or(z.literal("")),
@@ -201,6 +208,7 @@ export const inventoryEditSchema = z.object({
   adminNotes: z.string().trim().max(1000).optional().or(z.literal("")),
   purchaseCost: z.string().optional().or(z.literal("")),
   maxSeats: z.coerce.number().int().min(1).max(10),
+  accessType: z.enum(["shared", "single"]).default("shared"),
 });
 
 export const rotateCredentialsSchema = z.object({
