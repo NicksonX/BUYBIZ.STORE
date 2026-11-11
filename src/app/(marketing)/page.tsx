@@ -239,7 +239,7 @@ export default async function HomePage() {
                   {
                     icon: Users,
                     value: "Shared access",
-                    label: "Up to 10 per proxy",
+                    label: "With other customers",
                   },
                 ].map((item) => (
                   <div key={item.value} className="min-w-0">
@@ -285,7 +285,7 @@ export default async function HomePage() {
               </Link>
             </div>
 
-            <div className="mt-4 grid grid-cols-2 gap-2 sm:mt-6 sm:gap-3 xl:grid-cols-4">
+            <div className="mt-5 grid grid-cols-2 gap-3 sm:mt-7 sm:gap-4 xl:grid-cols-4 xl:gap-5">
               {services.map((service) => {
                 const roadmap = service.name === "More digital services";
                 return (
@@ -293,7 +293,7 @@ export default async function HomePage() {
                   key={service.name}
                   href={service.href}
                   className={cn(
-                    "group relative flex min-h-[132px] flex-col justify-between overflow-hidden rounded-[13px] border p-4 transition-all duration-300 sm:min-h-[170px] sm:rounded-[15px] sm:p-5 xl:min-h-[196px]",
+                    "group relative flex min-h-[136px] flex-col justify-between overflow-hidden rounded-[13px] border p-4 transition-all duration-300 sm:min-h-[176px] sm:rounded-[15px] sm:p-5 xl:min-h-[200px]",
                     service.live
                       ? "col-span-2 border-[#0A0B0D]/15 bg-[#FBFBFC] shadow-[0_16px_30px_-24px_rgba(0,0,0,0.3)] hover:-translate-y-0.5 hover:border-[#0A0B0D]/30 sm:col-span-1"
                       : roadmap
@@ -377,7 +377,7 @@ export default async function HomePage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 sm:gap-3">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4">
               {benefits.map((benefit) => (
                 <div
                   key={benefit.title}
@@ -474,7 +474,7 @@ export default async function HomePage() {
               An administrator has not published any proxy plans. Check back soon.
             </Alert>
           ) : (
-            <div className="mt-6 grid gap-3 sm:mt-8 sm:grid-cols-2 lg:mt-9 lg:grid-cols-2 2xl:grid-cols-4">
+            <div className="mt-6 grid gap-4 sm:mt-8 sm:gap-5 sm:grid-cols-2 lg:mt-9 lg:grid-cols-2 2xl:grid-cols-4">
               {plans.map((plan) => (
                 <div key={plan.product.id}>
                   <PlanCard
