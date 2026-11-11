@@ -31,7 +31,7 @@ export function StatCard({
           <p className="truncate text-[11.5px] font-medium text-muted-foreground">{label}</p>
           <p
             className={cn(
-              "tabular mt-2.5 truncate text-[22px] font-semibold leading-none tracking-[-0.035em] sm:text-[25px]",
+              "tabular mt-2.5 truncate text-[19px] font-semibold leading-none tracking-[-0.035em] sm:text-[25px]",
               valueClassName,
             )}
           >

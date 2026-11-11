@@ -91,7 +91,7 @@ export function DashboardTopbar({
             </span>
           ) : null}
         </Link>
-        <ThemeToggle className="border-0 bg-transparent" />
+        <ThemeToggle className="hide-under-360 border-0 bg-transparent" />
         <Dropdown>
           <DropdownTrigger className="ml-0.5 outline-none">
             <span className="flex items-center gap-1.5 rounded-full border border-border p-0.5 pr-1.5 transition-colors hover:bg-accent">

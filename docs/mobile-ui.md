@@ -54,7 +54,7 @@ The app does not sniff user agents. It responds to viewport width and input capa
 
 - The same single-column layout with slightly more breathing room.
 - Hero headline at 38px, two lines.
-- Services panel uses a full-width live proxy card and two-up coming-soon cards.
+- Services use a full-width live proxy card, paired coming-soon cards and a full-width roadmap card on phones. At tablet width the four cards form a balanced 2x2 grid.
 - Plan cards are vertical and full width for clear price comparison.
 - All pill filters and primary controls have at least a 44px touch height.
 - Header CTA is 40px high with a 44px menu button.
@@ -113,6 +113,10 @@ Screenshots:
 
 - [Mobile hero, 360px](screenshots/mobile-360-hero-v2.png)
 - [Mobile services, 360px](screenshots/mobile-360-services.png)
+- [Mobile services, 440px after grid fix](screenshots/mobile-440-services-v3.png)
+- [Tablet services, 768px after grid fix](screenshots/tablet-768-services-v3.png)
+- [Small phone hero, 320px](screenshots/mobile-320-hero-v3.png)
+- [Checkout, 320px](screenshots/mobile-320-checkout-v3.png)
 - [Mobile plans, 360px](screenshots/mobile-360-plans.png)
 - [Customer dashboard, 360px](screenshots/mobile-360-dash-home.png)
 - [Wallet, 360px](screenshots/mobile-360-dash-wallet.png)

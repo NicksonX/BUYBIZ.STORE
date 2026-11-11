@@ -56,6 +56,12 @@ export function DashboardMobileNav({ unread }: { unread: number }) {
   }, [open]);
 
   const moreActive = moreItems.some((item) => isNavActive(pathname, item));
+  const focusFlow =
+    pathname.startsWith("/dashboard/checkout") ||
+    pathname.startsWith("/dashboard/wallet/demo") ||
+    pathname.startsWith("/dashboard/wallet/callback");
+
+  if (focusFlow) return null;
 
   return (
     <>

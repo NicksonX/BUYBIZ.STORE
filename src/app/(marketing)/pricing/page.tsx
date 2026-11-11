@@ -95,7 +95,7 @@ export default async function PricingPage() {
               relying on plan availability.
             </Alert>
           ) : null}
-          <div className="grid gap-3 lg:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
             {plans.map((plan) => (
               <PlanCard
                 key={plan.product.id}
@@ -111,7 +111,7 @@ export default async function PricingPage() {
             lifetime to cover the full package plus a safety buffer.
           </p>
 
-          <div className="mt-12 overflow-hidden rounded-[18px] border border-black/[0.06] bg-white">
+          <div className="mt-12 hidden overflow-hidden rounded-[18px] border border-black/[0.06] bg-white md:block">
             <div className="border-b border-black/[0.06] px-5 py-4">
               <h2 className="text-[16px] font-semibold tracking-[-0.025em] text-[#0A0B0D]">
                 Compare plans

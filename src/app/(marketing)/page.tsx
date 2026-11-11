@@ -177,7 +177,7 @@ export default async function HomePage() {
                 Live now: 24-hour, 7-day and 30-day plans.
               </div>
 
-              <h1 className="mt-5 text-[38px] font-semibold leading-[0.98] tracking-[-0.055em] sm:text-[55px] lg:text-[60px] xl:text-[66px]">
+              <h1 className="mt-5 text-[32px] font-semibold leading-[0.98] tracking-[-0.055em] min-[360px]:text-[38px] sm:text-[55px] lg:text-[60px] xl:text-[66px]">
                 <span className="block">Buy proxy access.</span>
                 <span className="block text-silver">Pay in naira.</span>
               </h1>
@@ -286,15 +286,19 @@ export default async function HomePage() {
             </div>
 
             <div className="mt-4 grid grid-cols-2 gap-2 sm:mt-6 sm:gap-3 xl:grid-cols-4">
-              {services.map((service) => (
+              {services.map((service) => {
+                const roadmap = service.name === "More digital services";
+                return (
                 <Link
                   key={service.name}
                   href={service.href}
                   className={cn(
-                    "group relative flex min-h-[132px] flex-col justify-between overflow-hidden rounded-[13px] border p-4 transition-all duration-300 sm:min-h-[196px] sm:rounded-[15px] sm:p-5",
+                    "group relative flex min-h-[132px] flex-col justify-between overflow-hidden rounded-[13px] border p-4 transition-all duration-300 sm:min-h-[170px] sm:rounded-[15px] sm:p-5 xl:min-h-[196px]",
                     service.live
                       ? "col-span-2 border-[#0A0B0D]/15 bg-[#FBFBFC] shadow-[0_16px_30px_-24px_rgba(0,0,0,0.3)] hover:-translate-y-0.5 hover:border-[#0A0B0D]/30 sm:col-span-1"
-                      : "border-black/[0.05] bg-[#F6F6F7] hover:-translate-y-0.5 hover:border-black/10 hover:bg-[#F1F1F3]",
+                      : roadmap
+                        ? "col-span-2 border-black/[0.05] bg-[#F6F6F7] hover:-translate-y-0.5 hover:border-black/10 hover:bg-[#F1F1F3] sm:col-span-1"
+                        : "border-black/[0.05] bg-[#F6F6F7] hover:-translate-y-0.5 hover:border-black/10 hover:bg-[#F1F1F3]",
                   )}
                 >
                   <div>
@@ -324,7 +328,7 @@ export default async function HomePage() {
                     <h3 className="mt-4 text-[12px] font-semibold tracking-[-0.02em] text-[#0A0B0D] sm:mt-5 sm:text-[14px]">
                       {service.name}
                     </h3>
-                    <p className={cn("mt-1.5 text-[12px] leading-[1.6] text-[#6E7178]", service.live ? "block" : "hidden sm:block")}>
+                    <p className="mt-1.5 text-[12px] leading-[1.6] text-[#6E7178]">
                       {service.description}
                     </p>
                   </div>
@@ -333,7 +337,8 @@ export default async function HomePage() {
                     <ArrowUpRight className="h-3 w-3 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
                   </div>
                 </Link>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>
@@ -469,7 +474,7 @@ export default async function HomePage() {
               An administrator has not published any proxy plans. Check back soon.
             </Alert>
           ) : (
-            <div className="mt-6 grid gap-3 sm:mt-8 sm:grid-cols-2 lg:mt-9 lg:grid-cols-3">
+            <div className="mt-6 grid gap-3 sm:mt-8 sm:grid-cols-2 md:grid-cols-3 lg:mt-9">
               {plans.map((plan) => (
                 <div key={plan.product.id}>
                   <PlanCard

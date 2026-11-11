@@ -193,7 +193,7 @@ export default async function MarketplacePage({
                   {plans.filter((plan) => plan.available).length} of {plans.length} available
                 </span>
               </div>
-              <div className="grid gap-2.5 md:grid-cols-2 xl:grid-cols-3">
+              <div className="grid gap-2.5 md:grid-cols-3">
                 {plans.map((plan) => (
                   <PlanCard
                     key={plan.product.id}

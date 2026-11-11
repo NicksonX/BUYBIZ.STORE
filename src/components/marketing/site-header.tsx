@@ -150,7 +150,14 @@ export function SiteHeader({
               "h-11 rounded-full px-4 text-[12px] font-semibold sm:hidden",
             )}
           >
-            {isAuthenticated ? "Dashboard" : "Create account"}
+            {isAuthenticated ? (
+              "Dashboard"
+            ) : (
+              <>
+                <span className="min-[360px]:hidden">Join</span>
+                <span className="hidden min-[360px]:inline">Create account</span>
+              </>
+            )}
           </Link>
           <button
             type="button"

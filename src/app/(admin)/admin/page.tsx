@@ -135,7 +135,7 @@ export default async function AdminOverviewPage() {
               </p>
               <item.icon className="h-3.5 w-3.5 text-muted-foreground" />
             </div>
-            <p className="tabular mt-2 text-[16px] font-semibold tracking-[-0.03em]">
+            <p className="tabular mt-2 break-words text-[14.5px] font-semibold leading-tight tracking-[-0.03em] min-[400px]:text-[16px]">
               {item.value}
             </p>
             <p className="mt-1 text-[9px] leading-4 text-muted-foreground">
