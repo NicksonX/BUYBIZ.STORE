@@ -841,3 +841,12 @@ html:has([data-theme="light"]) {
 nextjs-portal {
   display: none !important;
 }
+
+
+/* The customer sidebar can collapse to an icon rail on desktop. */
+@media (min-width: 1024px) {
+  .dashboard-main {
+    padding-left: var(--dashboard-sidebar, 252px);
+    transition: padding-left 200ms ease;
+  }
+}

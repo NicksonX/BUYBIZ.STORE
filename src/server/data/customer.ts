@@ -232,6 +232,7 @@ export async function getAllocationDetail(
       encryptedPassword: string | null;
       orderId: string;
       productId: string;
+      productPriceMinor: number;
     }
   >(
     `select a.id, p.name as "productName", p.slug as "productSlug", a.status,
@@ -243,7 +244,8 @@ export async function getAllocationDetail(
             i.encrypted_username as "encryptedUsername",
             i.encrypted_password as "encryptedPassword",
             o.order_number as "orderNumber", o.id as "orderId",
-            p.id as "productId", p.duration_seconds as "durationSeconds"
+            p.id as "productId", p.duration_seconds as "durationSeconds",
+            p.price_minor as "productPriceMinor"
        from proxy_allocations a
        join proxy_inventory i on i.id = a.proxy_inventory_id
        join products p on p.id = a.product_id

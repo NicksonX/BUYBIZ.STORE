@@ -95,6 +95,7 @@ Money is stored as integer kobo. Wallet balances are derived from an append-only
 - Supabase Auth email/password plus Google and Apple wiring for production.
 - Paystack deposit initialization, callback verification, webhook verification and idempotent crediting.
 - Atomic proxy purchase with 24-hour, 7-day, 30-day and Personal 30-day packages. The Personal plan is limited to one active customer per proxy and one active Personal plan per customer.
+- Manual proxy renewal while an allocation is active. It extends from the current expiry, debits the wallet and checks upstream lifetime before charging.
 - Proxy credentials encrypted with AES-256-GCM and revealed only to the owner while active.
 - Expiry lifecycle, upstream interruption, no-stock refunds and independent seat release.
 - Customer dashboard, wallet, orders, proxies, referrals, support, settings and notifications.
@@ -156,12 +157,15 @@ The test suite covers:
 - money parsing and formatting;
 - Paystack webhook HMAC verification and raw-body idempotency references;
 - demo password hashing and AES-256-GCM credential encryption;
-- atomic purchase, insufficient balance, no-stock refund, insufficient upstream lifetime, 12-way concurrency with a 10-seat cap, and independent expiry;
+- atomic purchase, insufficient balance, no-stock refund, insufficient upstream lifetime, 12-way concurrency with the configured seat cap, and independent expiry;
+- personal-proxy one-customer and one-active-per-customer rules;
+- manual renewal success, insufficient upstream lifetime and expired-allocation rejection;
+- referral qualification, one-time reward, self-referral rejection and transfer-credit exclusion;
 - deposit idempotency and amount mismatch handling;
 - RLS policies for customer isolation, blocked self-promotion, locked inventory and anonymous access;
 - internal transfers disabled by default and the double-entry path when explicitly enabled in an isolated test.
 
-RLS is verified locally with PGlite by applying the real Supabase auth and RLS migrations to a stubbed `auth` schema. Production still needs the migrations applied to the actual Supabase project.
+The suite currently contains 45 automated tests. RLS is verified locally with PGlite by applying the real Supabase auth and RLS migrations to a stubbed `auth` schema. Production still needs the migrations applied to the actual Supabase project.
 
 ## Production database and auth
 

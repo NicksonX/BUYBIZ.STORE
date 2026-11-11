@@ -23,6 +23,7 @@ WALLET AND DEPOSITS
 
 PURCHASES, EXPIRY AND REFUNDS
 - Price is fixed and paid from the BUYBIZ wallet. There is no auto-renewal.
+- While a proxy is active, the customer can manually renew it from the proxy page. A renewal debits the wallet and adds the same access window from the current expiry. It is blocked if the upstream does not have enough remaining lifetime or the wallet balance is too low.
 - Access expiry starts at successful allocation, not at registration or wallet funding.
 - If no eligible proxy is available, the order is recorded and the full amount is refunded to the BUYBIZ wallet automatically. Refunds are internal wallet credit, not cash.
 - A customer can hold one active Personal 30-Day Proxy at a time.

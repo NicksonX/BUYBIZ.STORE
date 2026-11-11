@@ -179,6 +179,12 @@ export const inventorySchema = z.object({
   adminNotes: z.string().trim().max(1000).optional().or(z.literal("")),
 });
 
+export const renewalSchema = z.object({
+  allocationId: z.string().uuid(),
+  idempotencyKey: z.string().min(8).max(80),
+  confirm: z.literal("on", { message: "Confirm the renewal debit." }),
+});
+
 export const suspendUserSchema = z.object({
   userId: z.string().uuid(),
   reason: z.string().trim().min(5, "Provide a reason.").max(500),

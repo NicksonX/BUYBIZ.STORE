@@ -73,7 +73,7 @@ const groups = [
       },
       {
         q: "Does my access renew automatically?",
-        a: "No. There is no auto-renewal. When your window ends, the entitlement is marked expired and the connection details are hidden in your dashboard.",
+        a: "No automatic renewal. While an active proxy still has remaining time, the proxy page shows a manual renewal option. A renewal debits your wallet, adds the same access window from your current expiry, and is only allowed when the upstream has enough remaining lifetime. Once the window ends, buy a new plan instead.",
       },
       {
         q: "Can BUYBIZ revoke only my access to a shared proxy?",

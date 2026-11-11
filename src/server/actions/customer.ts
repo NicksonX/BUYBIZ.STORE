@@ -10,6 +10,7 @@ import { parseNairaToKobo } from "@/lib/utils";
 import {
   depositSchema,
   purchaseSchema,
+  renewalSchema,
   ticketReplySchema,
   ticketSchema,
   zodFieldErrors,
@@ -21,6 +22,7 @@ import {
 } from "@/lib/validation/action-state";
 import { requireUserPage, requireVerifiedUser } from "@/server/auth/guards";
 import { purchaseProxy } from "@/server/services/purchase";
+import { renewProxy } from "@/server/services/renewals";
 import {
   cancelDemoDeposit,
   completeDemoDeposit,
@@ -91,6 +93,62 @@ export async function purchaseAction(
   revalidatePath("/dashboard/transactions");
   if (destination) redirect(destination);
   return formError("The purchase could not be completed.");
+}
+
+export async function renewProxyAction(
+  _previous: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const user = await requireVerifiedUser();
+  const parsed = renewalSchema.safeParse({
+    allocationId: formData.get("allocationId"),
+    idempotencyKey: formData.get("idempotencyKey"),
+    confirm: formData.get("confirm"),
+  });
+  if (!parsed.success) {
+    return formError(
+      "Please confirm the renewal debit.",
+      zodFieldErrors(parsed.error),
+    );
+  }
+  const meta = await getRequestMeta();
+  const limit = await rateLimit({
+    action: "renewal",
+    identifier: user.id,
+    limit: 10,
+    windowSeconds: 60,
+  });
+  if (!limit.allowed) {
+    return formError("Too many renewal attempts. Please wait a minute.");
+  }
+  try {
+    const result = await renewProxy({
+      userId: user.id,
+      allocationId: parsed.data.allocationId,
+      idempotencyKey: parsed.data.idempotencyKey,
+      ip: meta.ip,
+      userAgent: meta.userAgent,
+    });
+    revalidatePath("/dashboard");
+    revalidatePath("/dashboard/proxies");
+    revalidatePath(`/dashboard/proxies/${parsed.data.allocationId}`);
+    revalidatePath("/dashboard/wallet");
+    revalidatePath("/dashboard/transactions");
+    revalidatePath("/dashboard/orders");
+    return formSuccess(
+      `Proxy renewed. New expiry ${result.newExpiresAt.toLocaleString("en-NG", {
+        dateStyle: "medium",
+        timeStyle: "short",
+        timeZone: "Africa/Lagos",
+      })} WAT.`,
+    );
+  } catch (error) {
+    if (error instanceof AppError) return formError(error.userMessage);
+    console.error("[buybiz/renewal] failed", error);
+    return formError(
+      toUserMessage(error, "The proxy could not be renewed. Nothing was charged."),
+    );
+  }
 }
 
 export async function initializeDepositAction(

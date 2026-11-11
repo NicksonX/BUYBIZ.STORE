@@ -474,7 +474,7 @@ export default async function HomePage() {
               An administrator has not published any proxy plans. Check back soon.
             </Alert>
           ) : (
-            <div className="mt-6 grid gap-3 sm:mt-8 sm:grid-cols-2 lg:mt-9 lg:grid-cols-4">
+            <div className="mt-6 grid gap-3 sm:mt-8 sm:grid-cols-2 lg:mt-9 lg:grid-cols-2 2xl:grid-cols-4">
               {plans.map((plan) => (
                 <div key={plan.product.id}>
                   <PlanCard

@@ -110,10 +110,16 @@ const sections: LegalSection[] = [
           inventory actually provides one.
         </p>
         <p>
-          Shared plans are a shared proxy product. BUYBIZ does not promise a dedicated IP,
+          Shared plans use a shared proxy product. BUYBIZ does not promise a dedicated IP,
           a unique upstream username or password for each customer, or a
           particular geographic location unless the assigned inventory actually
           provides it.
+        </p>
+        <p>
+          Packaged access does not renew automatically. While an allocation is
+          active, the customer may choose to renew it manually. A renewal is a
+          fresh wallet purchase, extends the expiry by the same access window,
+          and is subject to wallet balance, upstream lifetime and availability.
         </p>
         <p>
           You must not use the proxy for unlawful activity, fraud, harassment,

@@ -40,6 +40,8 @@ beforeAll(async () => {
   await db.exec(sql("supabase/migrations/20261110000710_referrals.sql"));
   await db.exec(sql("supabase/migrations/20261110000720_personal_proxy.sql"));
   await db.exec(sql("supabase/migrations/20261110000800_referrals_rls.sql"));
+  await db.exec(sql("supabase/migrations/20261110000900_proxy_renewals.sql"));
+  await db.exec(sql("supabase/migrations/20261110000910_proxy_renewals_rls.sql"));
 
   await db.query(
     `insert into auth.users (id,email,email_confirmed_at,raw_user_meta_data)

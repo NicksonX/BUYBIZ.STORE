@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { randomUUID } from "node:crypto";
 import {
   ArrowRight,
   ArrowUpRight,
@@ -10,6 +11,7 @@ import {
   Network,
   ShieldAlert,
   ShieldCheck,
+  UserRound,
   Users,
 } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
@@ -24,9 +26,13 @@ import { decryptOptional } from "@/lib/security/encryption";
 import {
   cn,
   formatDateTime,
+  formatDuration,
+  formatNaira,
   formatRemaining,
 } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
+import { AdminActionForm } from "@/components/admin/action-form";
+import { renewProxyAction } from "@/server/actions/customer";
 
 export const dynamic = "force-dynamic";
 
@@ -46,6 +52,7 @@ export default async function ProxyDetailPage({
   if (!allocation) notFound();
 
   const isNew = query.new === "1";
+  const renewalKey = randomUUID();
   const now = new Date();
   const packageActive =
     allocation.status === "active" &&
@@ -79,6 +86,10 @@ export default async function ProxyDetailPage({
   const remainingPct = packageActive
     ? Math.max(0, Math.min(100, ((expires - Date.now()) / (expires - activated)) * 100))
     : 0;
+  const renewalPriceMinor = Number(allocation.productPriceMinor ?? 0);
+  const renewalExpiresAt = allocation.durationSeconds
+    ? new Date(expires + Number(allocation.durationSeconds) * 1000)
+    : null;
 
   return (
     <div>
@@ -87,7 +98,7 @@ export default async function ProxyDetailPage({
         backLabel="Back to my proxies"
         eyebrow="Proxy allocation"
         title={allocation.productName}
-        description={`Order ${allocation.orderNumber} · ${allocation.region ?? "Region not set"} · shared proxy`}
+        description={`Order ${allocation.orderNumber} · ${allocation.region ?? "Region not set"} · ${allocation.accessType === "single" ? "personal proxy" : "shared proxy"}`}
         actions={
           <div className="flex items-center gap-2">
             <Badge tone={statusTone[effective]} className="capitalize">
@@ -132,7 +143,12 @@ export default async function ProxyDetailPage({
               </div>
             </div>
             <Badge tone={packageActive ? "onDark" : "neutral"} className={packageActive ? "bg-foreground text-background" : ""}>
-              <Users className="h-3 w-3" /> Shared
+              {allocation.accessType === "single" ? (
+                <UserRound className="h-3 w-3" />
+              ) : (
+                <Users className="h-3 w-3" />
+              )}{" "}
+              {allocation.accessType === "single" ? "Personal" : "Shared"}
             </Badge>
           </div>
 
@@ -265,6 +281,50 @@ export default async function ProxyDetailPage({
               allocation, not from when you opened your dashboard.
             </div>
           </section>
+
+          {packageActive && renewalExpiresAt ? (
+            <section className="surface-card rounded-[16px] p-4">
+              <h2 className="text-[13px] font-semibold">Renew this proxy</h2>
+              <p className="mt-1.5 text-[10px] leading-5 text-muted-foreground">
+                Add another {formatDuration(allocation.durationSeconds)} for{" "}
+                {formatNaira(renewalPriceMinor, { exact: true })}. The extension
+                starts from your current expiry. There is no auto-renewal.
+              </p>
+              <div className="mt-3 rounded-[9px] border border-border bg-surface-subtle px-3 py-2.5 text-[9.5px]">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-muted-foreground">Current expiry</span>
+                  <span className="font-medium">{formatDateTime(allocation.expiresAt)}</span>
+                </div>
+                <div className="mt-1.5 flex items-center justify-between gap-2">
+                  <span className="text-muted-foreground">New expiry</span>
+                  <span className="font-medium">{formatDateTime(renewalExpiresAt)}</span>
+                </div>
+              </div>
+              <div className="mt-3">
+                <AdminActionForm
+                  action={renewProxyAction}
+                  hidden={{
+                    allocationId: allocation.id,
+                    idempotencyKey: renewalKey,
+                  }}
+                  submitLabel={`Renew for ${formatNaira(renewalPriceMinor, { exact: true })}`}
+                  pendingLabel="Renewing…"
+                  confirmMessage="Renew this proxy and debit your wallet?"
+                >
+                  <label className="flex items-start gap-2 text-[9.5px] leading-4 text-muted-foreground">
+                    <input
+                      type="checkbox"
+                      name="confirm"
+                      required
+                      className="mt-0.5 h-3.5 w-3.5 rounded border-border-strong accent-foreground"
+                    />
+                    I confirm the wallet debit. Renewal is only possible while the
+                    proxy is active and upstream lifetime is sufficient.
+                  </label>
+                </AdminActionForm>
+              </div>
+            </section>
+          ) : null}
 
           <section className="surface-card rounded-[16px] p-4">
             <h2 className="text-[13px] font-semibold">Allocation trail</h2>

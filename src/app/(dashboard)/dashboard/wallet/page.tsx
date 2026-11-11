@@ -45,7 +45,7 @@ export default async function WalletPage() {
         actions={
           <Link
             href="/dashboard/transactions"
-            className="inline-flex h-11 items-center gap-1.5 rounded-full border border-border bg-surface px-4 text-[12px] font-medium hover:bg-accent sm:h-9 sm:px-3.5 sm:text-[11px]"
+            className="tap-target hidden h-11 items-center gap-1.5 rounded-full border border-border bg-surface px-4 text-[12px] font-medium hover:bg-accent sm:inline-flex sm:h-9 sm:px-3.5 sm:text-[11px]"
           >
             Full ledger <ArrowUpRight className="h-3.5 w-3.5" />
           </Link>
@@ -60,7 +60,7 @@ export default async function WalletPage() {
       ) : null}
 
       <div className="mt-5 grid items-start gap-3 lg:grid-cols-[1.15fr_0.85fr]">
-        <section className="relative overflow-hidden rounded-[18px] border border-[#22252a] bg-[#0A0B0D] p-5 text-white shadow-[0_40px_80px_-50px_rgba(0,0,0,0.9)] sm:p-6">
+        <section className="relative overflow-hidden rounded-[18px] border border-[#22252a] bg-[#0A0B0D] p-4 text-white shadow-[0_40px_80px_-50px_rgba(0,0,0,0.9)] sm:p-6">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(110%_80%_at_85%_-10%,rgba(255,255,255,0.16),transparent_52%)]" />
           <div className="pointer-events-none absolute -bottom-24 -left-16 h-56 w-56 rounded-full border border-white/[0.06]" />
           <div className="relative">
@@ -80,14 +80,29 @@ export default async function WalletPage() {
               </div>
               <Badge tone="onDark">NGN</Badge>
             </div>
-            <p className="tabular mt-6 text-[34px] font-semibold leading-none tracking-[-0.055em] sm:text-[40px]">
+            <p className="tabular mt-5 text-[31px] font-semibold leading-none tracking-[-0.055em] sm:mt-6 sm:text-[40px]">
               {formatNaira(wallet.balanceMinor, { exact: true })}
             </p>
-            <p className="mt-2 text-[9.5px] text-white/30">
-              Not a bank account. No cash withdrawal.
+            <p className="mt-2 text-[10px] text-white/35">
+              Available to spend on BUYBIZ. No cash withdrawal.
             </p>
 
-            <div className="mt-7 grid grid-cols-3 gap-3 border-t border-white/[0.08] pt-4">
+            <div className="mt-4 grid grid-cols-2 gap-2 sm:hidden">
+              <a
+                href="#add-funds"
+                className="inline-flex h-11 items-center justify-center rounded-full bg-white text-[11.5px] font-semibold text-[#0A0B0D]"
+              >
+                Add money
+              </a>
+              <Link
+                href="/dashboard/transactions"
+                className="inline-flex h-11 items-center justify-center rounded-full border border-white/15 bg-white/[0.04] text-[11.5px] font-medium text-white/75"
+              >
+                History
+              </Link>
+            </div>
+
+            <div className="mt-6 hidden grid-cols-3 gap-3 border-t border-white/[0.08] pt-4 sm:grid">
               <div>
                 <p className="text-[9.5px] text-white/35">
                   Deposited
@@ -119,7 +134,13 @@ export default async function WalletPage() {
           </div>
         </section>
 
-        <section className="surface-card rounded-[16px] p-5">
+        <div className="flex items-center justify-between px-1 text-[9px] text-muted-foreground sm:hidden">
+          <span>Deposited <strong className="font-medium text-foreground">{formatNaira(wallet.totalDepositedMinor)}</strong></span>
+          <span>Spent <strong className="font-medium text-foreground">{formatNaira(Math.max(0, wallet.totalSpentMinor - wallet.totalRefundedMinor))}</strong></span>
+          <span>Refunded <strong className="font-medium text-[#16794A]">{formatNaira(wallet.totalRefundedMinor)}</strong></span>
+        </div>
+
+        <section id="add-funds" className="surface-card scroll-mt-24 rounded-[16px] p-4 sm:p-5">
           <div className="flex items-center justify-between">
             <h2 className="text-[13px] font-semibold">Add funds</h2>
             <span className="flex items-center gap-1 text-[8.5px] text-muted-foreground">
@@ -229,7 +250,19 @@ export default async function WalletPage() {
           )}
         </section>
 
-        <div className="space-y-3">
+        <div className="lg:hidden">
+          <p className="text-[10px] leading-4 text-muted-foreground">
+            {demo
+              ? "Demo data: deposits are simulated and labelled. No real money is involved."
+              : "Deposits are credited only after server-side payment verification."}{" "}
+            <Link href="/faq" className="underline underline-offset-2">
+              Read the deposit FAQ
+            </Link>
+            .
+          </p>
+        </div>
+
+        <div className="hidden space-y-3 lg:block">
           <section className="rounded-[14px] border border-border bg-surface-subtle p-4">
             <h2 className="flex items-center gap-1.5 text-[11px] font-semibold">
               <Info className="h-3.5 w-3.5" /> How deposits work
