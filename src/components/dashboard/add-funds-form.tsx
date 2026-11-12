@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { ArrowRight, Landmark, Loader2, ShieldCheck } from "lucide-react";
 import { initializeDepositAction } from "@/server/actions/customer";
 import { initialActionState } from "@/lib/validation/action-state";
@@ -27,9 +27,24 @@ export function AddFundsForm({
     initialActionState,
   );
   const [amount, setAmount] = useState(String(Math.round(minMinor / 100)));
+  const [clientReference, setClientReference] = useState("");
+
+  useEffect(() => {
+    // The reference only exists in the browser, so it is created after mount.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setClientReference(`BZ-${crypto.randomUUID()}`);
+  }, []);
+
+  useEffect(() => {
+    if (state.status === "error") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setClientReference(`BZ-${crypto.randomUUID()}`);
+    }
+  }, [state.status]);
 
   return (
     <form action={formAction} className="space-y-4">
+      <input type="hidden" name="clientReference" value={clientReference} />
       {state.message && state.status === "error" ? (
         <Alert tone="danger">{state.message}</Alert>
       ) : null}
@@ -104,7 +119,7 @@ export function AddFundsForm({
 
       <button
         type="submit"
-        disabled={pending || (!paymentsEnabled && !demoMode)}
+        disabled={pending || !clientReference || (!paymentsEnabled && !demoMode)}
         className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-foreground text-[12px] font-semibold text-background transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-45"
       >
         {pending ? (

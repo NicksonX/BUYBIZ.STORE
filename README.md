@@ -231,6 +231,27 @@ No Paystack public key is required because the integration uses hosted checkout 
 
 Every customer gets a code on `Dashboard > Refer and earn`. The reward is ₦1,000 in internal BUYBIZ wallet credit after a referred customer makes one verified external deposit of at least ₦3,000. The trigger is inside external deposit crediting only, so internal user transfers, refunds, admin credits and adjustments cannot qualify. One reward is allowed per referred account. Self-referrals and duplicate-account abuse are rejected.
 
+## Wallet funding and payment states
+
+Wallet funding is opened from an **Add money** button. The amount, presets, checkout options and submit button stay inside a dialog and are not mounted until the customer opens it. Closing the dialog unmounts the form and returns the wallet to its normal view.
+
+Each deposit attempt carries a browser-generated reference. The server reuses the existing deposit if the same reference is submitted twice, and concurrent duplicate inserts are rejected by the unique provider reference. The checkout button is disabled while a request is pending.
+
+Payment results have dedicated routes:
+
+- `/dashboard/wallet/payment/success`
+- `/dashboard/wallet/payment/failed`
+- `/dashboard/wallet/payment/pending`
+
+Each route calls the backend verifier. A redirect or query string alone never marks a deposit successful. Pending payments are never treated as credited.
+
+## Error and offline states
+
+- A branded 404 page covers unknown routes.
+- A root error boundary and a global error boundary provide retry actions.
+- An offline banner appears when the browser loses connectivity and clears when it returns.
+- Empty wallet history is shown as an empty state, separate from a network or server error.
+
 ## Paystack test and live separation
 
 Replacing Paystack keys does not reset balances or remove test history. Do not point live keys at the current test database. The safe launch path is a fresh live Supabase project, with the test project retained for auditing. The full explanation and launch procedure are in [docs/paystack-test-live.md](docs/paystack-test-live.md).

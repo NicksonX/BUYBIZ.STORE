@@ -2,9 +2,11 @@ import Link from "next/link";
 import {
   ArrowDownLeft,
   ArrowUpRight,
+  ChevronRight,
   Clock3,
   Info,
-  Landmark,
+  LifeBuoy,
+  Network,
   ReceiptText,
   ShieldCheck,
   Wallet,
@@ -13,15 +15,34 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Alert } from "@/components/ui/alert";
 import { EmptyState } from "@/components/ui/empty-state";
-import { AddFundsForm } from "@/components/dashboard/add-funds-form";
+import { FundWalletButton } from "@/components/dashboard/fund-wallet-dialog";
+import { WalletBalanceAmount } from "@/components/wallet/balance-amount";
 import { requireUserPage } from "@/server/auth/guards";
 import { getDepositsForUser, getWalletSummary } from "@/server/data/customer";
 import { getAppSettings } from "@/server/data/settings";
 import { getPaystackMode, isDemoMode, isPaystackConfigured } from "@/lib/config";
 import { depositStatusMeta } from "@/lib/status";
 import { cn, formatDateTime, formatNaira } from "@/lib/utils";
+import type { Deposit } from "@/lib/db/types";
 
 export const dynamic = "force-dynamic";
+
+function depositHref(deposit: Deposit) {
+  if (deposit.provider === "demo" && deposit.status === "pending") {
+    return `/dashboard/wallet/demo/${deposit.id}`;
+  }
+  const state =
+    deposit.status === "credited" || deposit.status === "successful"
+      ? "success"
+      : ["failed", "abandoned", "reversed"].includes(deposit.status)
+        ? "failed"
+        : "pending";
+  return `/dashboard/wallet/payment/${state}?reference=${encodeURIComponent(deposit.providerReference)}`;
+}
+
+function quickActionClass() {
+  return "flex min-h-[84px] flex-col items-start justify-between rounded-[11px] border border-border bg-surface-subtle p-3 text-left transition-colors hover:border-border-strong hover:bg-accent";
+}
 
 export default async function WalletPage() {
   const user = await requireUserPage();
@@ -35,42 +56,52 @@ export default async function WalletPage() {
   const pendingDemo = deposits.find(
     (deposit) => deposit.provider === "demo" && deposit.status === "pending",
   );
+  const funding = {
+    minMinor: settings.depositMinMinor,
+    maxMinor: settings.depositMaxMinor,
+    demoMode: demo,
+    paymentsEnabled,
+    channels: settings.paystackChannels,
+  };
 
   return (
     <div>
       <PageHeader
         eyebrow="Wallet"
-        title="Your wallet."
-        description="Spend it on BUYBIZ services. It is not a bank account, and there is no cash withdrawal."
+        title="Wallet"
+        description="Manage your balance, funding and wallet activity."
         actions={
-          <Link
-            href="/dashboard/transactions"
-            className="tap-target hidden h-11 items-center gap-1.5 rounded-full border border-border bg-surface px-4 text-[12px] font-medium hover:bg-accent sm:inline-flex sm:h-9 sm:px-3.5 sm:text-[11px]"
-          >
-            Full ledger <ArrowUpRight className="h-3.5 w-3.5" />
-          </Link>
+          <div className="hidden items-center gap-2 sm:flex">
+            <FundWalletButton {...funding} />
+            <Link
+              href="/dashboard/transactions"
+              className="tap-target inline-flex h-9 items-center gap-1.5 rounded-full border border-border bg-surface px-3.5 text-[11px] font-medium hover:bg-accent"
+            >
+              Full ledger <ArrowUpRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
         }
       />
 
       {settings.maintenanceMode ? (
         <Alert tone="warning" title="Deposits are paused" className="mt-4">
-          The platform is in maintenance mode. Existing wallet balances and
-          proxy access are unaffected.
+          The platform is in maintenance mode. Existing wallet balances and proxy
+          access are unaffected.
         </Alert>
       ) : null}
 
-      <div className="mt-5 grid items-start gap-3 lg:grid-cols-[1.15fr_0.85fr]">
+      <div className="mt-5 grid items-stretch gap-3 lg:grid-cols-[1.35fr_0.65fr]">
         <section className="relative overflow-hidden rounded-[18px] border border-[#22252a] bg-[#0A0B0D] p-4 text-white shadow-[0_40px_80px_-50px_rgba(0,0,0,0.9)] sm:p-6">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(110%_80%_at_85%_-10%,rgba(255,255,255,0.16),transparent_52%)]" />
           <div className="pointer-events-none absolute -bottom-24 -left-16 h-56 w-56 rounded-full border border-white/[0.06]" />
           <div className="relative">
-            <div className="flex items-start justify-between">
+            <div className="flex items-start justify-between gap-3">
               <div className="flex items-center gap-2">
                 <span className="flex h-8 w-8 items-center justify-center rounded-[8px] border border-white/10 bg-white/[0.06]">
                   <Wallet className="h-4 w-4 text-white/70" />
                 </span>
                 <div>
-                  <p className="text-[10px] font-medium text-white/40">
+                  <p className="text-[10px] font-medium text-white/45">
                     Available balance
                   </p>
                   <p className="mt-0.5 text-[9px] text-white/25">
@@ -78,27 +109,21 @@ export default async function WalletPage() {
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-1.5">
+              <div className="flex flex-wrap items-center justify-end gap-1.5">
                 <Badge tone="onDark">NGN</Badge>
                 {!demo && getPaystackMode() === "test" ? (
                   <Badge tone="warning">Test funds</Badge>
                 ) : null}
               </div>
             </div>
-            <p className="tabular mt-5 text-[31px] font-semibold leading-none tracking-[-0.055em] sm:mt-6 sm:text-[40px]">
-              {formatNaira(wallet.balanceMinor, { exact: true })}
-            </p>
+
+            <WalletBalanceAmount amountMinor={wallet.balanceMinor} />
             <p className="mt-2 text-[10px] text-white/35">
               Available to spend on BUYBIZ. No cash withdrawal.
             </p>
 
             <div className="mt-4 grid grid-cols-2 gap-2 sm:hidden">
-              <a
-                href="#add-funds"
-                className="inline-flex h-11 items-center justify-center rounded-full bg-white text-[11.5px] font-semibold text-[#0A0B0D]"
-              >
-                Add money
-              </a>
+              <FundWalletButton {...funding} variant="light" className="w-full" />
               <Link
                 href="/dashboard/transactions"
                 className="inline-flex h-11 items-center justify-center rounded-full border border-white/15 bg-white/[0.04] text-[11.5px] font-medium text-white/75"
@@ -109,17 +134,13 @@ export default async function WalletPage() {
 
             <div className="mt-6 hidden grid-cols-3 gap-3 border-t border-white/[0.08] pt-4 sm:grid">
               <div>
-                <p className="text-[9.5px] text-white/35">
-                  Deposited
-                </p>
+                <p className="text-[9.5px] text-white/35">Deposited</p>
                 <p className="tabular mt-1.5 text-[12px] font-medium">
                   {formatNaira(wallet.totalDepositedMinor, { exact: true })}
                 </p>
               </div>
               <div>
-                <p className="text-[9.5px] text-white/35">
-                  Net spend
-                </p>
+                <p className="text-[9.5px] text-white/35">Net spend</p>
                 <p className="tabular mt-1.5 text-[12px] font-medium">
                   {formatNaira(
                     Math.max(0, wallet.totalSpentMinor - wallet.totalRefundedMinor),
@@ -128,9 +149,7 @@ export default async function WalletPage() {
                 </p>
               </div>
               <div>
-                <p className="text-[9.5px] text-white/35">
-                  Refunded
-                </p>
+                <p className="text-[9.5px] text-white/35">Refunded</p>
                 <p className="tabular mt-1.5 text-[12px] font-medium text-[#8EE7B8]">
                   {formatNaira(wallet.totalRefundedMinor, { exact: true })}
                 </p>
@@ -139,29 +158,60 @@ export default async function WalletPage() {
           </div>
         </section>
 
-        <div className="flex items-center justify-between px-1 text-[9px] text-muted-foreground sm:hidden">
-          <span>Deposited <strong className="font-medium text-foreground">{formatNaira(wallet.totalDepositedMinor)}</strong></span>
-          <span>Spent <strong className="font-medium text-foreground">{formatNaira(Math.max(0, wallet.totalSpentMinor - wallet.totalRefundedMinor))}</strong></span>
-          <span>Refunded <strong className="font-medium text-[#16794A]">{formatNaira(wallet.totalRefundedMinor)}</strong></span>
-        </div>
-
-        <section id="add-funds" className="surface-card scroll-mt-24 rounded-[16px] p-4 sm:p-5">
+        <aside className="surface-card hidden flex-col rounded-[18px] p-5 lg:flex">
           <div className="flex items-center justify-between">
-            <h2 className="text-[13px] font-semibold">Add funds</h2>
-            <span className="flex items-center gap-1 text-[8.5px] text-muted-foreground">
-              <ShieldCheck className="h-3 w-3" /> Verified server-side
+            <h2 className="text-[13px] font-semibold">Quick actions</h2>
+            <span className="text-[9px] uppercase tracking-[0.12em] text-muted-foreground">
+              Wallet
             </span>
           </div>
-          <div className="mt-4">
-            <AddFundsForm
-              minMinor={settings.depositMinMinor}
-              maxMinor={settings.depositMaxMinor}
-              demoMode={demo}
-              paymentsEnabled={paymentsEnabled}
-              channels={settings.paystackChannels}
+          <div className="mt-4 grid grid-cols-2 gap-2">
+            <FundWalletButton
+              {...funding}
+              variant="outline"
+              className="!min-h-[84px] w-full flex-col !items-start !justify-between !rounded-[11px] !bg-surface-subtle !px-3 !text-[10px]"
             />
+            <Link href="/dashboard/marketplace" className={quickActionClass()}>
+              <Network className="h-4 w-4 text-muted-foreground" />
+              <span className="mt-3 text-[10.5px] font-medium">Marketplace</span>
+            </Link>
+            <Link href="/dashboard/transactions" className={quickActionClass()}>
+              <ReceiptText className="h-4 w-4 text-muted-foreground" />
+              <span className="mt-3 text-[10.5px] font-medium">Full ledger</span>
+            </Link>
+            <Link href="/dashboard/support" className={quickActionClass()}>
+              <LifeBuoy className="h-4 w-4 text-muted-foreground" />
+              <span className="mt-3 text-[10.5px] font-medium">Support</span>
+            </Link>
           </div>
-        </section>
+          <div className="mt-auto pt-5">
+            <p className="flex items-start gap-2 rounded-[10px] border border-border bg-surface-subtle px-3 py-2.5 text-[9px] leading-4 text-muted-foreground">
+              <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              Deposits are verified on the server before your wallet is credited.
+            </p>
+          </div>
+        </aside>
+      </div>
+
+      <div className="mt-2 flex items-center justify-between px-1 text-[9px] text-muted-foreground sm:hidden">
+        <span>
+          Deposited{" "}
+          <strong className="font-medium text-foreground">
+            {formatNaira(wallet.totalDepositedMinor)}
+          </strong>
+        </span>
+        <span>
+          Spent{" "}
+          <strong className="font-medium text-foreground">
+            {formatNaira(Math.max(0, wallet.totalSpentMinor - wallet.totalRefundedMinor))}
+          </strong>
+        </span>
+        <span>
+          Refunded{" "}
+          <strong className="font-medium text-[#16794A]">
+            {formatNaira(wallet.totalRefundedMinor)}
+          </strong>
+        </span>
       </div>
 
       {pendingDemo ? (
@@ -180,117 +230,194 @@ export default async function WalletPage() {
         </div>
       ) : null}
 
-      <div className="mt-5 grid items-start gap-3 lg:grid-cols-[1.15fr_0.85fr]">
-        <section className="surface-card overflow-hidden rounded-[15px]">
-          <div className="flex items-center justify-between border-b border-border px-4 py-3.5">
+      <div className="mt-5 grid items-start gap-3 lg:grid-cols-[1.35fr_0.65fr]">
+        <section className="surface-card overflow-hidden rounded-[16px]">
+          <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-4 sm:px-5">
             <div>
-              <h2 className="text-[13px] font-semibold">Deposit history</h2>
+              <h2 className="text-[13px] font-semibold">Recent transactions</h2>
               <p className="mt-0.5 text-[9.5px] text-muted-foreground">
-                Paystack verifies payments server-side before credit.
+                Verified wallet deposits and payment attempts.
               </p>
             </div>
-            <Landmark className="h-4 w-4 text-muted-foreground" />
+            <Link
+              href="/dashboard/transactions"
+              className="inline-flex shrink-0 items-center gap-1 text-[10px] font-medium text-muted-foreground hover:text-foreground"
+            >
+              View all <ArrowUpRight className="h-3 w-3" />
+            </Link>
           </div>
+
           {deposits.length > 0 ? (
-            <div className="divide-y divide-border">
-              {deposits.map((deposit) => {
-                const meta = depositStatusMeta(deposit.status);
-                return (
-                  <div
-                    key={deposit.id}
-                    className="flex flex-wrap items-center justify-between gap-2 px-4 py-3"
-                  >
-                    <div className="flex min-w-0 items-center gap-2.5">
-                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border bg-surface-subtle">
-                        <ArrowDownLeft className="h-3.5 w-3.5 text-success" />
+            <>
+              <div className="divide-y divide-border sm:hidden">
+                {deposits.map((deposit) => {
+                  const meta = depositStatusMeta(deposit.status);
+                  const credited =
+                    deposit.status === "credited" || deposit.status === "successful";
+                  return (
+                    <Link
+                      key={deposit.id}
+                      href={depositHref(deposit)}
+                      className="flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-accent/50"
+                    >
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border bg-surface-subtle">
+                        <ArrowDownLeft
+                          className={cn(
+                            "h-4 w-4",
+                            credited ? "text-success" : "text-muted-foreground",
+                          )}
+                        />
                       </span>
-                      <div className="min-w-0">
-                        <p className="flex items-center gap-1.5 text-[10.5px] font-medium">
-                          {deposit.provider === "demo" ? "Demo top-up" : "Paystack deposit"}
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="truncate text-[12px] font-semibold">
+                              {deposit.provider === "demo"
+                                ? "Demo top-up"
+                                : "Wallet deposit"}
+                            </p>
+                            <p className="mt-0.5 truncate text-[9.5px] text-muted-foreground">
+                              {formatDateTime(deposit.createdAt)}
+                            </p>
+                          </div>
+                          <p
+                            className={cn(
+                              "tabular shrink-0 text-[12.5px] font-semibold",
+                              credited ? "text-success" : "text-foreground",
+                            )}
+                          >
+                            {credited ? "+" : ""}
+                            {formatNaira(deposit.amountMinor, { exact: true })}
+                          </p>
+                        </div>
+                        <div className="mt-1.5 flex min-w-0 items-center gap-1.5">
+                          <Badge tone={meta.tone} className="shrink-0">
+                            {meta.label}
+                          </Badge>
                           {deposit.provider === "demo" ? (
-                            <Badge tone="warning" className="px-1.5 py-0 text-[8px]">
+                            <span className="shrink-0 text-[8px] text-muted-foreground">
                               Simulated
-                            </Badge>
+                            </span>
                           ) : null}
-                        </p>
-                        <p className="mt-0.5 truncate font-mono text-[8.5px] text-muted-foreground">
-                          {deposit.providerReference}
-                        </p>
-                        <p className="mt-0.5 text-[8.5px] text-muted-foreground">
-                          {formatDateTime(deposit.createdAt)}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="text-right">
-                        <p className="tabular text-[11px] font-semibold">
-                          {formatNaira(deposit.amountMinor, { exact: true })}
-                        </p>
-                        <div className="mt-1 flex justify-end">
-                          <Badge tone={meta.tone}>{meta.label}</Badge>
+                          <span className="min-w-0 truncate font-mono text-[8px] text-muted-foreground/70">
+                            {deposit.providerReference}
+                          </span>
                         </div>
                       </div>
-                      {deposit.provider === "demo" && deposit.status === "pending" ? (
-                        <Link
-                          href={`/dashboard/wallet/demo/${deposit.id}`}
-                          className="text-[9px] font-medium underline underline-offset-2"
+                      <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/40" />
+                    </Link>
+                  );
+                })}
+              </div>
+
+              <div className="hidden sm:block">
+                <div className="grid grid-cols-[minmax(0,1fr)_130px_104px_20px] items-center gap-4 border-b border-border bg-surface-subtle/60 px-5 py-2.5 text-[9px] font-medium uppercase tracking-[0.1em] text-muted-foreground">
+                  <span>Transaction</span>
+                  <span className="text-right">Amount</span>
+                  <span>Status</span>
+                  <span />
+                </div>
+                <div className="divide-y divide-border">
+                  {deposits.map((deposit) => {
+                    const meta = depositStatusMeta(deposit.status);
+                    const credited =
+                      deposit.status === "credited" || deposit.status === "successful";
+                    return (
+                      <Link
+                        key={deposit.id}
+                        href={depositHref(deposit)}
+                        className="grid grid-cols-[minmax(0,1fr)_130px_104px_20px] items-center gap-4 px-5 py-3.5 transition-colors hover:bg-accent/50"
+                      >
+                        <div className="flex min-w-0 items-center gap-3">
+                          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border bg-surface-subtle">
+                            <ArrowDownLeft
+                              className={cn(
+                                "h-3.5 w-3.5",
+                                credited ? "text-success" : "text-muted-foreground",
+                              )}
+                            />
+                          </span>
+                          <div className="min-w-0">
+                            <p className="truncate text-[11px] font-medium">
+                              {deposit.provider === "demo"
+                                ? "Demo top-up"
+                                : "Wallet deposit"}
+                            </p>
+                            <p className="mt-0.5 truncate text-[9px] text-muted-foreground">
+                              {formatDateTime(deposit.createdAt)} ·{" "}
+                              {deposit.providerReference}
+                            </p>
+                          </div>
+                        </div>
+                        <p
+                          className={cn(
+                            "tabular text-right text-[11.5px] font-semibold",
+                            credited ? "text-success" : "text-foreground",
+                          )}
                         >
-                          Complete
-                        </Link>
-                      ) : null}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                          {credited ? "+" : ""}
+                          {formatNaira(deposit.amountMinor, { exact: true })}
+                        </p>
+                        <div className="flex items-center gap-1.5">
+                          <Badge tone={meta.tone}>{meta.label}</Badge>
+                          {deposit.provider === "demo" ? (
+                            <span className="text-[8px] text-muted-foreground">
+                              Demo
+                            </span>
+                          ) : null}
+                        </div>
+                        <ChevronRight className="h-4 w-4 text-muted-foreground/40" />
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            </>
           ) : (
-            <div className="p-4">
+            <div className="p-4 sm:p-5">
               <EmptyState
                 compact
                 icon={ReceiptText}
-                title="No deposits yet"
-                description="Add funds to start buying proxy plans with your wallet."
+                title="No wallet activity yet"
+                description="Your deposits and wallet credits will appear here after your first verified payment."
+                action={<FundWalletButton {...funding} variant="outline" />}
               />
             </div>
           )}
         </section>
 
-        <div className="lg:hidden">
-          <p className="text-[10px] leading-4 text-muted-foreground">
-            {demo
-              ? "Demo data: deposits are simulated and labelled. No real money is involved."
-              : "Deposits are credited only after server-side payment verification."}{" "}
-            <Link href="/faq" className="underline underline-offset-2">
-              Read the deposit FAQ
-            </Link>
-            .
-          </p>
-        </div>
-
-        <div className="hidden space-y-3 lg:block">
-          <section className="rounded-[14px] border border-border bg-surface-subtle p-4">
-            <h2 className="flex items-center gap-1.5 text-[11px] font-semibold">
-              <Info className="h-3.5 w-3.5" /> How deposits work
+        <div className="space-y-3">
+          <section className="relative overflow-hidden rounded-[16px] border border-[#22252a] bg-[#0A0B0D] p-5 text-white">
+            <div className="pointer-events-none absolute -right-10 -top-14 h-36 w-36 rounded-full border border-white/[0.08]" />
+            <ShieldCheck className="h-5 w-5 text-white/55" />
+            <h2 className="mt-4 text-[13px] font-semibold">
+              Secure, verified deposits
             </h2>
-            <p className="mt-2 text-[9.5px] leading-4 text-muted-foreground">
-              Your wallet is credited once the payment is verified on our server.
-              Duplicate callbacks cannot credit twice. Read the{" "}
-              <Link href="/faq" className="underline underline-offset-2">FAQ</Link>{" "}
-              or{" "}
-              <Link href="/terms#wallet" className="underline underline-offset-2">Terms</Link>{" "}
-              for the full policy.
+            <p className="mt-1.5 text-[10px] leading-5 text-white/40">
+              Paystack confirms every payment on our server before your wallet is
+              credited. Duplicate callbacks cannot credit twice.
             </p>
-            <p className="mt-2 text-[9px] text-warning">No cash withdrawal is available.</p>
+            <Link
+              href="/faq"
+              className="mt-4 inline-flex items-center gap-1 text-[10px] font-medium text-white/70 hover:text-white"
+            >
+              Read the deposit FAQ <ArrowUpRight className="h-3 w-3" />
+            </Link>
           </section>
 
           <section className="rounded-[14px] border border-border bg-surface p-4">
             <h2 className="flex items-center gap-1.5 text-[11px] font-semibold">
-              <Clock3 className="h-3.5 w-3.5" /> Payment states
+              <Info className="h-3.5 w-3.5" /> Payment states
             </h2>
             <p className="mt-2 text-[9.5px] leading-4 text-muted-foreground">
               A successful charge shows as credited only after it is verified and
-              matched to your pending deposit. Gateway status and wallet ledger
-              status are kept separate.
+              matched to your pending deposit. Pending payments are not credit.
+            </p>
+            <p className="mt-2 flex items-center gap-1.5 text-[9px] text-muted-foreground">
+              <Clock3 className="h-3 w-3" /> Pending can take a few moments to settle.
+            </p>
+            <p className="mt-2 text-[9px] text-warning">
+              No cash withdrawal is available.
             </p>
           </section>
 

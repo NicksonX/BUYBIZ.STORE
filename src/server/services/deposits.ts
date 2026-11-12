@@ -49,6 +49,19 @@ function newProviderReference() {
   return `BZ-${randomUUID()}`;
 }
 
+function resolveClientReference(value?: string) {
+  const candidate = value?.trim();
+  if (!candidate) return newProviderReference();
+  if (
+    !/^BZ-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+      candidate,
+    )
+  ) {
+    throw new AppError("VALIDATION", "The payment reference was invalid. Please try again.");
+  }
+  return candidate;
+}
+
 function normalizePayload(tx: PaystackTransaction): VerificationPayload {
   return {
     status: tx.status,
@@ -217,6 +230,7 @@ async function creditVerifiedDeposit(
 export async function createDeposit(input: {
   user: Profile;
   amountMinor: number;
+  clientReference?: string;
   ip?: string | null;
   userAgent?: string | null;
 }): Promise<{ depositId: string; authorizationUrl: string; provider: string }> {
@@ -264,26 +278,75 @@ export async function createDeposit(input: {
 
   const db = await getDb();
   const depositId = randomUUID();
-  const reference = newProviderReference();
+  const reference = resolveClientReference(input.clientReference);
   const provider = demo ? "demo" : "paystack";
   const demoUrl = `/dashboard/wallet/demo/${depositId}`;
   const callbackUrl = `${getAppUrl()}/dashboard/wallet/callback`;
 
-  await db.query(
+  const existingResult = await getDepositByReference(reference);
+  if (existingResult) {
+    if (existingResult.userId !== input.user.id) {
+      throw new AppError("CONFLICT", "That payment reference is not available.");
+    }
+    if (existingResult.status === "credited") {
+      return {
+        depositId: existingResult.id,
+        authorizationUrl: `${getAppUrl()}/dashboard/wallet/payment/success?reference=${encodeURIComponent(reference)}`,
+        provider: existingResult.provider,
+      };
+    }
+    if (
+      existingResult.status === "pending" ||
+      existingResult.status === "initiated" ||
+      existingResult.status === "successful"
+    ) {
+      return {
+        depositId: existingResult.id,
+        authorizationUrl:
+          existingResult.authorizationUrl ??
+          `${getAppUrl()}/dashboard/wallet/payment/pending?reference=${encodeURIComponent(reference)}`,
+        provider: existingResult.provider,
+      };
+    }
+    throw new AppError(
+      "CONFLICT",
+      "That payment attempt is closed. Close this window and choose Add money again to start a fresh attempt.",
+    );
+  }
+
+  const inserted = await db.query<{ id: string }>(
     `insert into deposits
        (id, user_id, provider, provider_reference, amount_minor, currency, status,
         metadata, authorization_url, created_at, updated_at)
-     values ($1,$2,$3,$4,$5,'NGN','initiated',$6::jsonb,$7,now(),now())`,
+     values ($1,$2,$3,$4,$5,'NGN','initiated',$6::jsonb,$7,now(),now())
+     on conflict (provider_reference) do nothing
+     returning id`,
     [
       depositId,
       input.user.id,
       provider,
       reference,
       input.amountMinor,
-      JSON.stringify({ demo, initiatedBy: input.user.id }),
+      JSON.stringify({ demo, initiatedBy: input.user.id, clientReference: Boolean(input.clientReference) }),
       demo ? demoUrl : null,
     ],
   );
+
+  if (!inserted.rows[0]) {
+    // A simultaneous request won the insert. Return its checkout or the
+    // pending page instead of creating a second payment attempt.
+    const concurrent = await getDepositByReference(reference);
+    if (!concurrent || concurrent.userId !== input.user.id) {
+      throw new AppError("CONFLICT", "That payment reference is not available.");
+    }
+    return {
+      depositId: concurrent.id,
+      authorizationUrl:
+        concurrent.authorizationUrl ??
+        `${getAppUrl()}/dashboard/wallet/payment/pending?reference=${encodeURIComponent(reference)}`,
+      provider: concurrent.provider,
+    };
+  }
 
   if (demo) {
     await db.query(
@@ -466,6 +529,13 @@ export async function verifyAndCreditDeposit(input: {
       deposit,
       alreadyCredited: true,
       message: "This payment has already been credited to your wallet.",
+    };
+  }
+  if (["failed", "abandoned", "reversed"].includes(deposit.status)) {
+    return {
+      status: deposit.status,
+      deposit,
+      message: "This payment did not complete. Your wallet was not credited.",
     };
   }
   if (deposit.provider === "demo") {

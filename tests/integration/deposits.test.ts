@@ -1,14 +1,17 @@
 import { randomUUID } from "node:crypto";
 import { beforeAll, describe, expect, it } from "vitest";
 import { getDb } from "@/lib/db";
-import { creditDepositFromVerification } from "@/server/services/deposits";
+import {
+  createDeposit,
+  creditDepositFromVerification,
+} from "@/server/services/deposits";
 import { createTestUser } from "../helpers";
 
 beforeAll(async () => {
   await getDb();
 });
 
-async function createDeposit(userId: string, amountMinor: number) {
+async function insertPendingDeposit(userId: string, amountMinor: number) {
   const db = await getDb();
   const id = randomUUID();
   const reference = `BZ-VITEST-${randomUUID()}`;
@@ -36,7 +39,7 @@ function payload(reference: string, amountMinor: number) {
 describe("verified deposit crediting", () => {
   it("credits exactly once even when verification runs twice", async () => {
     const user = await createTestUser("deposit");
-    const deposit = await createDeposit(user.id, 100_000);
+    const deposit = await insertPendingDeposit(user.id, 100_000);
 
     const first = await creditDepositFromVerification({
       depositId: deposit.id,
@@ -64,9 +67,42 @@ describe("verified deposit crediting", () => {
     expect(Number(balance.rows[0].balance)).toBe(100_000);
   });
 
+  it("reuses the same deposit for duplicate client submissions", async () => {
+    const user = await createTestUser("duplicate");
+    const db = await getDb();
+    const profile = await db.query<import("@/lib/db/types").Profile>(
+      `select id, username, email, role, status,
+              email_verified as "emailVerified",
+              display_name as "displayName", avatar_url as "avatarUrl",
+              onboarding_complete as "onboardingComplete",
+              created_at as "createdAt", updated_at as "updatedAt"
+         from profiles where id=$1`,
+      [user.id],
+    );
+    const clientReference = `BZ-${randomUUID()}`;
+
+    const first = await createDeposit({
+      user: profile.rows[0],
+      amountMinor: 100_000,
+      clientReference,
+    });
+    const second = await createDeposit({
+      user: profile.rows[0],
+      amountMinor: 100_000,
+      clientReference,
+    });
+
+    expect(second.depositId).toBe(first.depositId);
+    const count = await db.query<{ count: number }>(
+      `select count(*)::int as count from deposits where provider_reference=$1`,
+      [clientReference],
+    );
+    expect(count.rows[0].count).toBe(1);
+  });
+
   it("marks a mismatched amount failed without crediting the wallet", async () => {
     const user = await createTestUser("badamount");
-    const deposit = await createDeposit(user.id, 100_000);
+    const deposit = await insertPendingDeposit(user.id, 100_000);
 
     const result = await creditDepositFromVerification({
       depositId: deposit.id,

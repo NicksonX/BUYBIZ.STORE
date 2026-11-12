@@ -181,6 +181,7 @@ export async function initializeDepositAction(
     const deposit = await createDeposit({
       user,
       amountMinor,
+      clientReference: String(formData.get("clientReference") ?? ""),
       ip: meta.ip,
       userAgent: meta.userAgent,
     });
