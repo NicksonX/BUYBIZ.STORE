@@ -41,7 +41,7 @@ function depositHref(deposit: Deposit) {
 }
 
 function quickActionClass() {
-  return "flex min-h-[84px] flex-col items-start justify-between rounded-[11px] border border-border bg-surface-subtle p-3 text-left transition-colors hover:border-border-strong hover:bg-accent";
+  return "flex min-h-[92px] flex-col items-center justify-center gap-2 rounded-[11px] border border-border bg-surface-subtle p-3 text-center transition-colors hover:border-border-strong hover:bg-accent";
 }
 
 export default async function WalletPage() {
@@ -169,19 +169,19 @@ export default async function WalletPage() {
             <FundWalletButton
               {...funding}
               variant="outline"
-              className="!min-h-[84px] w-full flex-col !items-start !justify-between !rounded-[11px] !bg-surface-subtle !px-3 !text-[10px]"
+              className="!min-h-[92px] w-full flex-col !items-center !justify-center !gap-2 !rounded-[11px] !bg-surface-subtle !px-3 !text-center !text-[10px]"
             />
             <Link href="/dashboard/marketplace" className={quickActionClass()}>
               <Network className="h-4 w-4 text-muted-foreground" />
-              <span className="mt-3 text-[10.5px] font-medium">Marketplace</span>
+              <span className="text-[10.5px] font-medium">Marketplace</span>
             </Link>
             <Link href="/dashboard/transactions" className={quickActionClass()}>
               <ReceiptText className="h-4 w-4 text-muted-foreground" />
-              <span className="mt-3 text-[10.5px] font-medium">Full ledger</span>
+              <span className="text-[10.5px] font-medium">Full ledger</span>
             </Link>
             <Link href="/dashboard/support" className={quickActionClass()}>
               <LifeBuoy className="h-4 w-4 text-muted-foreground" />
-              <span className="mt-3 text-[10.5px] font-medium">Support</span>
+              <span className="text-[10.5px] font-medium">Support</span>
             </Link>
           </div>
           <div className="mt-auto pt-5">
@@ -231,6 +231,7 @@ export default async function WalletPage() {
       ) : null}
 
       <div className="mt-5 grid items-start gap-3 lg:grid-cols-[1.35fr_0.65fr]">
+        <div className="min-w-0 space-y-3">
         <section className="surface-card overflow-hidden rounded-[16px]">
           <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-4 sm:px-5">
             <div>
@@ -385,6 +386,28 @@ export default async function WalletPage() {
             </div>
           )}
         </section>
+
+        <section className="surface-card rounded-[16px] p-4 sm:p-5">
+          <div className="flex items-start gap-3">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border bg-surface-subtle">
+              <LifeBuoy className="h-4 w-4 text-muted-foreground" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-[12px] font-semibold">Need help with a deposit?</p>
+              <p className="mt-1 max-w-[420px] text-[10px] leading-5 text-muted-foreground">
+                If a payment is pending or missing, contact support with the
+                reference. Do not pay twice for the same attempt.
+              </p>
+            </div>
+            <Link
+              href="/dashboard/support"
+              className="hidden shrink-0 items-center gap-1 text-[10px] font-medium text-muted-foreground hover:text-foreground sm:inline-flex"
+            >
+              Support <ArrowUpRight className="h-3 w-3" />
+            </Link>
+          </div>
+        </section>
+        </div>
 
         <div className="space-y-3">
           <section className="relative overflow-hidden rounded-[16px] border border-[#22252a] bg-[#0A0B0D] p-5 text-white">

@@ -71,18 +71,18 @@ export async function PaymentStatusView({ reference }: { reference?: string }) {
           <p className="mx-auto mt-1.5 max-w-[390px] text-[11.5px] leading-5 text-muted-foreground">
             {errorMessage}
           </p>
-          <div className="mt-5 flex flex-col gap-2 sm:flex-row">
+          <div className="mt-6 grid gap-2 sm:grid-cols-2">
             <Link
               href={`/dashboard/wallet/payment/pending?reference=${encodeURIComponent(reference)}`}
-              className="inline-flex h-11 flex-1 items-center justify-center gap-1.5 rounded-full bg-foreground text-[11px] font-semibold text-background"
+              className="order-1 inline-flex h-12 items-center justify-center gap-2 rounded-full bg-foreground px-5 text-[11.5px] font-semibold text-background transition-opacity hover:opacity-90 sm:order-2"
             >
-              <RefreshCw className="h-3.5 w-3.5" /> Check again
+              <RefreshCw className="h-4 w-4" /> Check again
             </Link>
             <Link
               href="/dashboard/wallet"
-              className="inline-flex h-11 flex-1 items-center justify-center gap-1.5 rounded-full border border-border bg-surface text-[11px] font-medium"
+              className="order-2 inline-flex h-12 items-center justify-center gap-2 rounded-full border border-border bg-surface px-5 text-[11.5px] font-medium transition-colors hover:bg-accent sm:order-1"
             >
-              <ArrowLeft className="h-3.5 w-3.5" /> Back to wallet
+              <ArrowLeft className="h-4 w-4" /> Back to wallet
             </Link>
           </div>
         </div>
@@ -201,35 +201,35 @@ export async function PaymentStatusView({ reference }: { reference?: string }) {
             </div>
           ) : null}
 
-          <div className="mt-5 flex flex-col gap-2 sm:flex-row">
-            <Link
-              href="/dashboard/wallet"
-              className="inline-flex h-11 flex-1 items-center justify-center gap-1.5 rounded-full border border-border bg-surface text-[11px] font-medium hover:bg-accent"
-            >
-              <ArrowLeft className="h-3.5 w-3.5" /> Back to wallet
-            </Link>
+          <div className="mt-6 grid gap-2 sm:grid-cols-2">
             {pending ? (
               <Link
                 href={refreshHref}
-                className="inline-flex h-11 flex-1 items-center justify-center gap-1.5 rounded-full bg-foreground text-[11px] font-semibold text-background hover:opacity-90"
+                className="order-1 inline-flex h-12 items-center justify-center gap-2 rounded-full bg-foreground px-5 text-[11.5px] font-semibold text-background transition-opacity hover:opacity-90 sm:order-2"
               >
-                <RefreshCw className="h-3.5 w-3.5" /> Check status
+                <RefreshCw className="h-4 w-4" /> Check status
               </Link>
             ) : credited ? (
               <Link
                 href="/dashboard/marketplace"
-                className="inline-flex h-11 flex-1 items-center justify-center gap-1.5 rounded-full bg-foreground text-[11px] font-semibold text-background hover:opacity-90"
+                className="order-1 inline-flex h-12 items-center justify-center gap-2 rounded-full bg-foreground px-5 text-[11.5px] font-semibold text-background transition-opacity hover:opacity-90 sm:order-2"
               >
-                Buy a proxy <ArrowRight className="h-3.5 w-3.5" />
+                Buy a proxy <ArrowRight className="h-4 w-4" />
               </Link>
             ) : (
               <Link
                 href="/dashboard/wallet"
-                className="inline-flex h-11 flex-1 items-center justify-center gap-1.5 rounded-full bg-foreground text-[11px] font-semibold text-background hover:opacity-90"
+                className="order-1 inline-flex h-12 items-center justify-center gap-2 rounded-full bg-foreground px-5 text-[11.5px] font-semibold text-background transition-opacity hover:opacity-90 sm:order-2"
               >
-                Try again <ArrowRight className="h-3.5 w-3.5" />
+                Try again <ArrowRight className="h-4 w-4" />
               </Link>
             )}
+            <Link
+              href="/dashboard/wallet"
+              className="order-2 inline-flex h-12 items-center justify-center gap-2 rounded-full border border-border bg-surface px-5 text-[11.5px] font-medium transition-colors hover:bg-accent sm:order-1"
+            >
+              <ArrowLeft className="h-4 w-4" /> Back to wallet
+            </Link>
           </div>
         </div>
       </div>
