@@ -43,9 +43,7 @@ services:
       - key: RATE_LIMIT_SALT
         sync: false
       - key: NEXT_PUBLIC_AUTH_GOOGLE_ENABLED
-        value: "false"
-      - key: NEXT_PUBLIC_AUTH_APPLE_ENABLED
-        value: "false"
+        value: "true"
       - key: ENABLE_WALLET_TRANSFERS
         value: "false"
       - key: AI_SUPPORT_API_KEY

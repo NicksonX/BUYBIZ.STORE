@@ -15,13 +15,11 @@ export function LoginForm({
   next,
   initialMessage,
   googleEnabled,
-  appleEnabled,
   demoMode,
 }: {
   next?: string;
   initialMessage?: string;
   googleEnabled: boolean;
-  appleEnabled: boolean;
   demoMode: boolean;
 }) {
   const [state, formAction, pending] = useActionState(loginAction, {
@@ -115,7 +113,6 @@ export function LoginForm({
       <SocialButtons
         next={next}
         googleEnabled={googleEnabled}
-        appleEnabled={appleEnabled}
         className="mt-6"
       />
 

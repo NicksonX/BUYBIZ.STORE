@@ -3,9 +3,10 @@ import { AlertTriangle, ArrowUpRight, FlaskConical, MailWarning } from "lucide-r
 import { DashboardSidebar } from "@/components/dashboard/sidebar";
 import { DashboardTopbar } from "@/components/dashboard/topbar";
 import { DashboardMobileNav } from "@/components/dashboard/mobile-nav";
+import { WalletBalanceAnnouncement } from "@/components/dashboard/balance-announcement";
 import type { Profile } from "@/lib/db/types";
-import { isDemoMode } from "@/lib/config";
-import { cn, formatNaira } from "@/lib/utils";
+import { getPaystackMode, isDemoMode } from "@/lib/config";
+import { cn } from "@/lib/utils";
 
 export function DashboardShell({
   user,
@@ -19,6 +20,7 @@ export function DashboardShell({
   children: React.ReactNode;
 }) {
   const demo = isDemoMode();
+  const testPayments = !demo && getPaystackMode() === "test";
 
   return (
     <div className="min-h-dvh bg-background text-foreground">
@@ -36,6 +38,16 @@ export function DashboardShell({
                 <span className="font-semibold">Demo mode</span>
                 <span className="text-warning/80">
                   Demo data. Simulated deposits. No real money.
+                </span>
+              </div>
+            ) : null}
+            {testPayments ? (
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-[9px] border border-info/20 bg-info-soft px-3 py-2 text-[11px] leading-4 text-info sm:text-[10.5px]">
+                <FlaskConical className="h-3.5 w-3.5 shrink-0" />
+                <span className="font-semibold">Paystack test mode</span>
+                <span className="text-info/80">
+                  Wallet credits from test payments are test funds. They will not
+                  become live money.
                 </span>
               </div>
             ) : null}
@@ -89,9 +101,7 @@ export function DashboardShell({
       </div>
       <DashboardMobileNav unread={unread} />
 
-      <div className="sr-only" aria-live="polite">
-        Wallet balance {formatNaira(balanceMinor, { exact: true })}.
-      </div>
+      <WalletBalanceAnnouncement balanceMinor={balanceMinor} />
     </div>
   );
 }

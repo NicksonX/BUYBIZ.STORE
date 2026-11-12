@@ -620,12 +620,12 @@ export async function oauthAction(
 ): Promise<ActionState> {
   const provider = String(formData.get("provider") ?? "");
   const next = safeNextPath(String(formData.get("next") ?? "/dashboard"));
-  if (provider !== "google" && provider !== "apple") {
+  if (provider !== "google") {
     return formError("Unsupported sign-in provider.");
   }
   if (isDemoMode() || !isSupabaseAuthConfigured()) {
     return formError(
-      "Google and Apple sign-in require Supabase OAuth credentials. Configure them in Supabase and enable the provider flag in this deployment.",
+      "Google sign-in requires Supabase OAuth credentials. Configure the provider in Supabase and enable the Google flag in this deployment.",
     );
   }
   const limit = await rateLimitByIp("auth:oauth", 12, 300);

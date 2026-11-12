@@ -92,7 +92,7 @@ Money is stored as integer kobo. Wallet balances are derived from an append-only
 ## Main flows
 
 - Email/password registration, login, logout, password reset and email verification in demo mode.
-- Supabase Auth email/password plus Google and Apple wiring for production.
+- Supabase Auth email/password plus Google OAuth for production.
 - Paystack deposit initialization, callback verification, webhook verification and idempotent crediting.
 - Atomic proxy purchase with 24-hour, 7-day, 30-day and Personal 30-day packages. The Personal plan is limited to one active customer per proxy and one active Personal plan per customer.
 - Manual proxy renewal while an allocation is active. It extends from the current expiry, debits the wallet and checks upstream lifetime before charging.
@@ -137,6 +137,14 @@ npm run dev
 ```
 
 Never set `DEMO_MODE=true` on a public deployment. Demo payments are simulated and clearly labelled; they are not proof of a real Paystack payment.
+
+## Marketplace wallet balance
+
+The marketplace deliberately does not show the customer's wallet balance. The balance remains on the Dashboard and Wallet pages, and the global sidebar hides its wallet card only while the marketplace is open. Checkout remains a separate confirmation step.
+
+## Authentication
+
+Email/password and Google OAuth are supported. Apple authentication has been removed from the application and environment configuration. Google requires the Supabase Google provider and redirect URLs to be configured.
 
 ## Mobile
 
@@ -202,7 +210,7 @@ set role = 'super_admin'
 where email = 'owner@example.com';
 ```
 
-8. To enable Google or Apple, configure the provider in Supabase Auth, then set `NEXT_PUBLIC_AUTH_GOOGLE_ENABLED=true` or `NEXT_PUBLIC_AUTH_APPLE_ENABLED=true` and redeploy. The buttons stay disabled until both Supabase and the provider are configured.
+8. To enable Google, configure the provider in Supabase Auth, then set `NEXT_PUBLIC_AUTH_GOOGLE_ENABLED=true` and redeploy. The button stays disabled until both Supabase and Google are configured.
 
 ## Paystack
 
@@ -222,6 +230,10 @@ No Paystack public key is required because the integration uses hosted checkout 
 ## Referral programme
 
 Every customer gets a code on `Dashboard > Refer and earn`. The reward is ₦1,000 in internal BUYBIZ wallet credit after a referred customer makes one verified external deposit of at least ₦3,000. The trigger is inside external deposit crediting only, so internal user transfers, refunds, admin credits and adjustments cannot qualify. One reward is allowed per referred account. Self-referrals and duplicate-account abuse are rejected.
+
+## Paystack test and live separation
+
+Replacing Paystack keys does not reset balances or remove test history. Do not point live keys at the current test database. The safe launch path is a fresh live Supabase project, with the test project retained for auditing. The full explanation and launch procedure are in [docs/paystack-test-live.md](docs/paystack-test-live.md).
 
 ## AI support assistant
 
@@ -309,7 +321,7 @@ It refuses to run unless `ENABLE_WALLET_TRANSFERS=true` **and** the database set
 
 1. Create the production Supabase project and apply every migration.
 2. Set the production environment variables in Render. Never enable `DEMO_MODE`.
-3. Configure Supabase Auth email, Google and Apple redirect URLs.
+3. Configure Supabase Auth email and Google redirect URLs.
 4. Create the owner account and promote it with the SQL in the database section.
 5. Create the Paystack account, set the webhook, and test deposits in test mode.
 6. Run one complete purchase, no-stock refund and support flow against the deployed URL.

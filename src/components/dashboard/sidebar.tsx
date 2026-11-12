@@ -34,6 +34,7 @@ export function DashboardSidebar({
   balanceMinor: number;
 }) {
   const pathname = usePathname();
+  const isMarketplace = pathname.startsWith("/dashboard/marketplace");
   const [collapsed, setCollapsed] = useState(false);
 
   useEffect(() => {
@@ -133,7 +134,7 @@ export function DashboardSidebar({
       </nav>
 
       <div className="mt-4 space-y-3">
-        {!collapsed ? (
+        {!collapsed && !isMarketplace ? (
         <div className="relative overflow-hidden rounded-[12px] border border-white/[0.09] bg-white/[0.035] p-3.5">
           <div className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-white/[0.07] blur-2xl" />
           <div className="flex items-center justify-between">

@@ -53,13 +53,6 @@ export function isGoogleAuthEnabled() {
   );
 }
 
-export function isAppleAuthEnabled() {
-  return (
-    process.env.NEXT_PUBLIC_AUTH_APPLE_ENABLED === "true" &&
-    isSupabaseAuthConfigured()
-  );
-}
-
 export function getSupportEmail() {
   return process.env.OFFICIAL_SUPPORT_EMAIL?.trim() || "";
 }

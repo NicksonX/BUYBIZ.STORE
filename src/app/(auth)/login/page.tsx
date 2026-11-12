@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { LoginForm } from "@/components/auth/login-form";
 import {
-  isAppleAuthEnabled,
   isDemoMode,
   isGoogleAuthEnabled,
 } from "@/lib/config";
@@ -45,7 +44,6 @@ export default async function LoginPage({
       next={next}
       initialMessage={errorCode ? errorMessages[errorCode] ?? errorMessages.link_invalid : undefined}
       googleEnabled={isGoogleAuthEnabled()}
-      appleEnabled={isAppleAuthEnabled()}
       demoMode={isDemoMode()}
     />
   );

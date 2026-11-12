@@ -1,7 +1,7 @@
 import { FlaskConical, ShieldCheck } from "lucide-react";
 import { AdminSidebar } from "@/components/admin/sidebar";
 import { AdminTopbar } from "@/components/admin/topbar";
-import { isDemoMode } from "@/lib/config";
+import { getPaystackMode, isDemoMode } from "@/lib/config";
 import type { Profile } from "@/lib/db/types";
 
 export function AdminShell({
@@ -26,6 +26,15 @@ export function AdminShell({
         />
         <main id="main" className="mx-auto w-full max-w-[1380px] px-4 pb-14 pt-4 sm:px-6 lg:px-8 lg:pt-6">
           <div className="space-y-2.5">
+            {!isDemoMode() && getPaystackMode() === "test" ? (
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-[8px] border border-info/20 bg-info-soft px-3 py-2 text-[10.5px] leading-4 text-info">
+                <FlaskConical className="h-3.5 w-3.5 shrink-0" />
+                <span className="font-semibold">Paystack test mode</span>
+                <span className="text-info/80">
+                  Test deposits and test wallet credits are not live money.
+                </span>
+              </div>
+            ) : null}
             {isDemoMode() ? (
               <div className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-[8px] border border-warning/20 bg-warning-soft px-3 py-2 text-[10.5px] leading-4 text-warning">
                 <FlaskConical className="h-3.5 w-3.5 shrink-0" />

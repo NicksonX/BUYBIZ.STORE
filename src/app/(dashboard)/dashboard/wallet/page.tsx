@@ -17,7 +17,7 @@ import { AddFundsForm } from "@/components/dashboard/add-funds-form";
 import { requireUserPage } from "@/server/auth/guards";
 import { getDepositsForUser, getWalletSummary } from "@/server/data/customer";
 import { getAppSettings } from "@/server/data/settings";
-import { isDemoMode, isPaystackConfigured } from "@/lib/config";
+import { getPaystackMode, isDemoMode, isPaystackConfigured } from "@/lib/config";
 import { depositStatusMeta } from "@/lib/status";
 import { cn, formatDateTime, formatNaira } from "@/lib/utils";
 
@@ -78,7 +78,12 @@ export default async function WalletPage() {
                   </p>
                 </div>
               </div>
-              <Badge tone="onDark">NGN</Badge>
+              <div className="flex items-center gap-1.5">
+                <Badge tone="onDark">NGN</Badge>
+                {!demo && getPaystackMode() === "test" ? (
+                  <Badge tone="warning">Test funds</Badge>
+                ) : null}
+              </div>
             </div>
             <p className="tabular mt-5 text-[31px] font-semibold leading-none tracking-[-0.055em] sm:mt-6 sm:text-[40px]">
               {formatNaira(wallet.balanceMinor, { exact: true })}

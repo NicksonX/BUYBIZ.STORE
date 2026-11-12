@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { RegisterForm } from "@/components/auth/register-form";
 import {
-  isAppleAuthEnabled,
   isDemoMode,
   isGoogleAuthEnabled,
 } from "@/lib/config";
@@ -33,7 +32,6 @@ export default async function RegisterPage({
       next={next}
       referralCode={referralCode}
       googleEnabled={isGoogleAuthEnabled()}
-      appleEnabled={isAppleAuthEnabled()}
       demoMode={isDemoMode()}
     />
   );

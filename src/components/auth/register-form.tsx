@@ -14,13 +14,11 @@ export function RegisterForm({
   next,
   referralCode,
   googleEnabled,
-  appleEnabled,
   demoMode,
 }: {
   next?: string;
   referralCode?: string;
   googleEnabled: boolean;
-  appleEnabled: boolean;
   demoMode: boolean;
 }) {
   const [state, formAction, pending] = useActionState(
@@ -167,7 +165,6 @@ export function RegisterForm({
       <SocialButtons
         next={next}
         googleEnabled={googleEnabled}
-        appleEnabled={appleEnabled}
         className="mt-6"
       />
 
