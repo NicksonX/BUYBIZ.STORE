@@ -8,7 +8,7 @@ export function WalletBalanceAmount({ amountMinor }: { amountMinor: number }) {
   const [visible, setVisible] = useState(true);
 
   return (
-    <div className="mt-5 flex items-center gap-2.5 sm:mt-6">
+    <div className="mt-4 flex items-center gap-2.5 sm:mt-5">
       <p className="tabular text-[31px] font-semibold leading-none tracking-[-0.055em] sm:text-[40px]">
         {visible ? formatNaira(amountMinor, { exact: true }) : "₦••••••"}
       </p>

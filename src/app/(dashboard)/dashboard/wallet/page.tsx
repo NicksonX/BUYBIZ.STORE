@@ -41,7 +41,7 @@ function depositHref(deposit: Deposit) {
 }
 
 function quickActionClass() {
-  return "flex min-h-[92px] flex-col items-center justify-center gap-2 rounded-[11px] border border-border bg-surface-subtle p-3 text-center transition-colors hover:border-border-strong hover:bg-accent";
+  return "flex min-h-[74px] flex-col items-center justify-center gap-1.5 rounded-[11px] border border-border bg-surface-subtle p-3 text-center transition-colors hover:border-border-strong hover:bg-accent";
 }
 
 export default async function WalletPage() {
@@ -91,7 +91,7 @@ export default async function WalletPage() {
       ) : null}
 
       <div className="mt-5 grid items-stretch gap-3 lg:grid-cols-[1.35fr_0.65fr]">
-        <section className="relative overflow-hidden rounded-[18px] border border-[#22252a] bg-[#0A0B0D] p-4 text-white shadow-[0_40px_80px_-50px_rgba(0,0,0,0.9)] sm:p-6">
+        <section className="relative overflow-hidden rounded-[18px] border border-[#22252a] bg-[#0A0B0D] p-4 text-white shadow-[0_40px_80px_-50px_rgba(0,0,0,0.9)] sm:p-5">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(110%_80%_at_85%_-10%,rgba(255,255,255,0.16),transparent_52%)]" />
           <div className="pointer-events-none absolute -bottom-24 -left-16 h-56 w-56 rounded-full border border-white/[0.06]" />
           <div className="relative">
@@ -118,7 +118,7 @@ export default async function WalletPage() {
             </div>
 
             <WalletBalanceAmount amountMinor={wallet.balanceMinor} />
-            <p className="mt-2 text-[10px] text-white/35">
+            <p className="mt-1.5 text-[10px] text-white/35">
               Available to spend on BUYBIZ. No cash withdrawal.
             </p>
 
@@ -132,7 +132,7 @@ export default async function WalletPage() {
               </Link>
             </div>
 
-            <div className="mt-6 hidden grid-cols-3 gap-3 border-t border-white/[0.08] pt-4 sm:grid">
+            <div className="mt-4 hidden grid-cols-3 gap-3 border-t border-white/[0.08] pt-3.5 sm:grid">
               <div>
                 <p className="text-[9.5px] text-white/35">Deposited</p>
                 <p className="tabular mt-1.5 text-[12px] font-medium">
@@ -158,18 +158,18 @@ export default async function WalletPage() {
           </div>
         </section>
 
-        <aside className="surface-card hidden flex-col rounded-[18px] p-5 lg:flex">
+        <aside className="surface-card hidden flex-col rounded-[18px] p-4 lg:flex">
           <div className="flex items-center justify-between">
             <h2 className="text-[13px] font-semibold">Quick actions</h2>
             <span className="text-[9px] uppercase tracking-[0.12em] text-muted-foreground">
               Wallet
             </span>
           </div>
-          <div className="mt-4 grid grid-cols-2 gap-2">
+          <div className="mt-3 grid flex-1 auto-rows-fr grid-cols-2 gap-2">
             <FundWalletButton
               {...funding}
               variant="outline"
-              className="!min-h-[92px] w-full flex-col !items-center !justify-center !gap-2 !rounded-[11px] !bg-surface-subtle !px-3 !text-center !text-[10px]"
+              className="!min-h-[74px] w-full flex-col !items-center !justify-center !gap-1.5 !rounded-[11px] !bg-surface-subtle !px-3 !text-center !text-[10px]"
             />
             <Link href="/dashboard/marketplace" className={quickActionClass()}>
               <Network className="h-4 w-4 text-muted-foreground" />
@@ -183,12 +183,6 @@ export default async function WalletPage() {
               <LifeBuoy className="h-4 w-4 text-muted-foreground" />
               <span className="text-[10.5px] font-medium">Support</span>
             </Link>
-          </div>
-          <div className="mt-auto pt-5">
-            <p className="flex items-start gap-2 rounded-[10px] border border-border bg-surface-subtle px-3 py-2.5 text-[9px] leading-4 text-muted-foreground">
-              <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-              Deposits are verified on the server before your wallet is credited.
-            </p>
           </div>
         </aside>
       </div>
