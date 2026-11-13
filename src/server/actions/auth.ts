@@ -211,7 +211,7 @@ export async function signupAction(
         const inserted = await tx.query<{ id: string }>(
           `insert into profiles
              (id, username, email, role, status, email_verified, onboarding_complete)
-           values (gen_random_uuid(), $1, $2, 'customer', 'active', false, true)
+           values (gen_random_uuid(), $1, $2, 'customer', 'active', false, false)
            returning id`,
           [parsed.data.username, parsed.data.email],
         );
@@ -229,7 +229,7 @@ export async function signupAction(
         return newId;
       });
       await setDemoSessionCookie(profileId);
-      destination = "/verify-email";
+      destination = "/verify-email?next=/onboarding";
     } else {
       if (!isSupabaseAuthConfigured()) {
         return formError("Authentication is not configured for this deployment.");
@@ -244,7 +244,7 @@ export async function signupAction(
             username: parsed.data.username,
             display_name: parsed.data.username,
           },
-          emailRedirectTo: `${getAppUrl()}/auth/callback?next=/dashboard`,
+          emailRedirectTo: `${getAppUrl()}/auth/callback?next=/onboarding`,
         },
       });
       if (error) providerError = formError(mapSupabaseAuthError(error.message));
@@ -258,7 +258,7 @@ export async function signupAction(
             console.error("[buybiz/auth] referral attach failed", referralError);
           }
         }
-        if (data.session) destination = "/dashboard";
+        if (data.session) destination = "/onboarding";
         else
           destination = `/verify-email?email=${encodeURIComponent(parsed.data.email)}`;
       }
@@ -449,7 +449,7 @@ export async function resendVerificationAction(
     type: "signup",
     email,
     options: {
-      emailRedirectTo: `${getAppUrl()}/auth/callback?next=/dashboard`,
+      emailRedirectTo: `${getAppUrl()}/auth/callback?next=/onboarding`,
     },
   });
   if (error) return formError(mapSupabaseAuthError(error.message));
@@ -461,43 +461,78 @@ export async function onboardingAction(
   formData: FormData,
 ): Promise<ActionState> {
   const user = await getCurrentUser();
-  if (!user) redirect("/login");
+  if (!user) redirect("/login?next=/onboarding");
+  if (user.onboardingComplete) {
+    redirect(user.role === "customer" ? "/dashboard" : "/admin");
+  }
+
   const parsed = onboardingSchema.safeParse({
-    username: formData.get("username"),
+    useCase: formData.get("useCase"),
+    username: formData.get("username") || undefined,
     next: formData.get("next") ?? undefined,
   });
   if (!parsed.success) {
-    return formError("Choose a valid username.", zodFieldErrors(parsed.error));
+    return formError("Choose how you will use proxies.", zodFieldErrors(parsed.error));
   }
 
+  const needsUsername = /^user_[a-f0-9]{10}$/i.test(user.username);
+  const chosenUsername = parsed.data.username?.trim();
+  if (needsUsername && !chosenUsername) {
+    return formError("Choose a username before continuing.", {
+      username: "Choose a username.",
+    });
+  }
+
+  const finalUsername = needsUsername && chosenUsername ? chosenUsername : user.username;
   const db = await getDb();
-  const taken = await db.query(
-    `select 1 from profiles where lower(username) = lower($1) and id <> $2 limit 1`,
-    [parsed.data.username, user.id],
-  );
-  if (taken.rows.length > 0) {
-    return formError("That username is already taken.", {
-      username: "That username is already taken.",
-    });
+  if (finalUsername.toLowerCase() !== user.username.toLowerCase()) {
+    const taken = await db.query(
+      `select 1 from profiles where lower(username) = lower($1) and id <> $2 limit 1`,
+      [finalUsername, user.id],
+    );
+    if (taken.rows.length > 0) {
+      return formError("That username is already taken.", {
+        username: "That username is already taken.",
+      });
+    }
   }
 
-  await db.query(
-    `update profiles set username = $1, onboarding_complete = true, updated_at = now() where id = $2`,
-    [parsed.data.username, user.id],
-  );
-  const meta = await getRequestMeta();
-  await db.transaction(async (tx) => {
-    await writeAuditLog(tx, {
-      actorUserId: user.id,
-      actorRole: user.role,
-      action: "profile.username_set",
-      entityType: "profile",
-      entityId: user.id,
-      ip: meta.ip,
-      userAgent: meta.userAgent,
+  try {
+    await db.transaction(async (tx) => {
+      await tx.query(
+        `update profiles
+            set username = $1,
+                proxy_use_case = $2,
+                onboarding_complete = true,
+                onboarding_completed_at = now(),
+                updated_at = now()
+          where id = $3`,
+        [finalUsername, parsed.data.useCase, user.id],
+      );
+      const meta = await getRequestMeta();
+      await writeAuditLog(tx, {
+        actorUserId: user.id,
+        actorRole: user.role,
+        action: "profile.onboarding_completed",
+        entityType: "profile",
+        entityId: user.id,
+        metadata: { useCase: parsed.data.useCase },
+        ip: meta.ip,
+        userAgent: meta.userAgent,
+      });
     });
-  });
-  redirect(safeNextPath(parsed.data.next, defaultLanding(user)));
+  } catch (error) {
+    if ((error as { code?: string }).code === "23505") {
+      return formError("That username is already taken.", {
+        username: "That username is already taken.",
+      });
+    }
+    console.error("[buybiz/auth] onboarding failed", error);
+    return formError("We could not save your setup. Please try again.");
+  }
+
+  const fallback = user.role === "customer" ? "/dashboard" : "/admin";
+  redirect(safeNextPath(parsed.data.next, fallback));
 }
 
 export async function updateProfileAction(

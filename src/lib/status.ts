@@ -69,6 +69,8 @@ export function allocationStatusMeta(
       return { label: "Interrupted", tone: "warning" };
     case "revoked":
       return { label: "Revoked", tone: "danger" };
+    case "terminated":
+      return { label: "Terminated", tone: "neutral" };
   }
 }
 

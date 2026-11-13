@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { OnboardingForm } from "@/components/auth/onboarding-form";
 import { getCurrentUser } from "@/server/auth/session";
 
-export const metadata: Metadata = { title: "Choose your username" };
+export const metadata: Metadata = { title: "Welcome to BUYBIZ" };
 export const dynamic = "force-dynamic";
 
 function first(value: string | string[] | undefined) {
@@ -18,7 +18,16 @@ export default async function OnboardingPage({
   const params = await searchParams;
   const user = await getCurrentUser();
   if (!user) redirect("/login?next=/onboarding");
-  if (user.onboardingComplete) redirect("/dashboard");
+  if (user.onboardingComplete) redirect(user.role === "customer" ? "/dashboard" : "/admin");
 
-  return <OnboardingForm next={first(params.next)} />;
+  const needsUsername = /^user_[a-f0-9]{10}$/i.test(user.username);
+
+  return (
+    <OnboardingForm
+      currentUsername={user.username}
+      needsUsername={needsUsername}
+      initialUseCase={user.proxyUseCase}
+      next={first(params.next)}
+    />
+  );
 }

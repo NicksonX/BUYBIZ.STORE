@@ -18,7 +18,7 @@ export type CustomerAllocationRow = {
   id: string;
   productName: string;
   productSlug: string;
-  status: "active" | "expired" | "interrupted" | "revoked";
+  status: "active" | "expired" | "interrupted" | "revoked" | "terminated";
   activatedAt: Date;
   expiresAt: Date;
   endedAt: Date | null;
@@ -188,7 +188,7 @@ export async function getActiveAllocations(
 
 export async function getAllocationsForUser(
   userId: string,
-  filter: "all" | "active" | "expired" | "interrupted" = "all",
+  filter: "all" | "active" | "expired" | "terminated" | "interrupted" = "all",
   limit = 50,
 ): Promise<CustomerAllocationRow[]> {
   const db = await getDb();
@@ -197,9 +197,11 @@ export async function getAllocationsForUser(
       ? "and a.status = 'active' and a.expires_at > now()"
       : filter === "expired"
         ? "and (a.status = 'expired' or (a.status = 'active' and a.expires_at <= now()))"
-        : filter === "interrupted"
-          ? "and a.status in ('interrupted','revoked')"
-          : "";
+        : filter === "terminated"
+          ? "and a.status = 'terminated'"
+          : filter === "interrupted"
+            ? "and a.status in ('interrupted','revoked')"
+            : "";
   const result = await db.query<CustomerAllocationRow>(
     `select a.id, p.name as "productName", p.slug as "productSlug", a.status,
             a.activated_at as "activatedAt", a.expires_at as "expiresAt",

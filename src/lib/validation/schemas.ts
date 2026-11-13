@@ -64,7 +64,15 @@ export const resetPasswordSchema = z
   });
 
 export const onboardingSchema = z.object({
-  username: usernameSchema,
+  useCase: z.enum([
+    "social_media",
+    "scraping",
+    "business",
+    "automation",
+    "research",
+    "other",
+  ]),
+  username: usernameSchema.optional(),
   next: z.string().optional(),
 });
 
@@ -99,6 +107,17 @@ export const purchaseSchema = z.object({
 
 export const depositSchema = z.object({
   amount: z.string().min(1, "Enter an amount."),
+});
+
+export const terminateProxySchema = z.object({
+  allocationId: z.string().uuid("Invalid proxy."),
+  confirm: z.literal("on", { message: "Confirm the termination." }),
+});
+
+export const switchProxySchema = z.object({
+  allocationId: z.string().uuid("Invalid proxy."),
+  inventoryId: z.string().uuid("Choose an available proxy."),
+  confirm: z.literal("on", { message: "Confirm the switch." }),
 });
 
 export const ticketSchema = z.object({

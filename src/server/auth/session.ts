@@ -17,6 +17,8 @@ const PROFILE_COLUMNS = `
   status,
   email_verified as "emailVerified",
   onboarding_complete as "onboardingComplete",
+  proxy_use_case as "proxyUseCase",
+  onboarding_completed_at as "onboardingCompletedAt",
   created_at as "createdAt",
   updated_at as "updatedAt"
 `;
@@ -95,7 +97,7 @@ export async function ensureProfileForAuthUser(user: User): Promise<Profile> {
           email,
           displayName,
           Boolean(user.email_confirmed_at),
-          Boolean(preferred),
+          false,
         ],
       );
       if (result.rows[0]) return result.rows[0];

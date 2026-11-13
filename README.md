@@ -138,6 +138,21 @@ npm run dev
 
 Never set `DEMO_MODE=true` on a public deployment. Demo payments are simulated and clearly labelled; they are not proof of a real Paystack payment.
 
+## Onboarding and tutorial
+
+New email and OAuth accounts are created with `onboarding_complete = false`. The onboarding page asks for a single intended use case, stores it in `profiles.proxy_use_case`, records `onboarding_completed_at`, and then opens the dashboard. Existing accounts keep their completed state and are not forced through onboarding again.
+
+The voiceover tutorial is available from onboarding and from the **How to use the platform** strip on the customer dashboard. The video and poster live under `public/tutorial/`.
+
+## Proxy termination and switching
+
+Active proxy details include **Switch proxy** and **Terminate proxy** actions.
+
+- Switching moves the allocation to another proxy of the same access type after a server-side capacity and upstream-lifetime check. It does not change `activated_at` or `expires_at`, create a purchase, charge a wallet, or trigger a refund.
+- Termination locks the allocation, records the completed 24-hour periods, calculates the refund from the original order amount and configured product duration, updates the allocation to `terminated`, releases the capacity slot, and credits the wallet once in the same transaction.
+- `proxy_terminations` and `proxy_switches` provide immutable history.
+- Shared inventory is capped at 10 active seats by application validation, the allocation trigger, and a database constraint. The customer switch UI shows availability without disclosing the exact number of other customers on a shared proxy.
+
 ## Marketplace wallet balance
 
 The marketplace deliberately does not show the customer's wallet balance. The balance remains on the Dashboard and Wallet pages, and the global sidebar hides its wallet card only while the marketplace is open. Checkout remains a separate confirmation step.

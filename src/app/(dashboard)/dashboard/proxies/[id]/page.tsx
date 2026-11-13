@@ -33,10 +33,21 @@ import {
 import { buttonVariants } from "@/components/ui/button";
 import { AdminActionForm } from "@/components/admin/action-form";
 import { renewProxyAction } from "@/server/actions/customer";
+import { ProxyTerminationDialog } from "@/components/dashboard/proxy-termination-dialog";
+import { ProxySwitchDialog } from "@/components/dashboard/proxy-switch-dialog";
+import {
+  getSwitchOptions,
+  getTerminationQuote,
+} from "@/server/services/proxy-management";
 
 export const dynamic = "force-dynamic";
 
-type EffectiveStatus = "active" | "expired" | "interrupted" | "revoked";
+type EffectiveStatus =
+  | "active"
+  | "expired"
+  | "interrupted"
+  | "revoked"
+  | "terminated";
 
 export default async function ProxyDetailPage({
   params,
@@ -52,6 +63,8 @@ export default async function ProxyDetailPage({
   if (!allocation) notFound();
 
   const isNew = query.new === "1";
+  const justTerminated = query.terminated === "1";
+  const justSwitched = query.switched === "1";
   const renewalKey = randomUUID();
   const now = new Date();
   const packageActive =
@@ -59,13 +72,22 @@ export default async function ProxyDetailPage({
     new Date(allocation.expiresAt) > now &&
     new Date(allocation.inventoryExpiresAt) > now;
   const effective: EffectiveStatus =
-    allocation.status === "interrupted"
-      ? "interrupted"
-      : allocation.status === "revoked"
-        ? "revoked"
-        : packageActive
-          ? "active"
-          : "expired";
+    allocation.status === "terminated"
+      ? "terminated"
+      : allocation.status === "interrupted"
+        ? "interrupted"
+        : allocation.status === "revoked"
+          ? "revoked"
+          : packageActive
+            ? "active"
+            : "expired";
+
+  const [termination, switchOptions] = packageActive
+    ? await Promise.all([
+        getTerminationQuote(user.id, allocation.id),
+        getSwitchOptions(user.id, allocation.id),
+      ])
+    : [null, []];
 
   const username = packageActive
     ? await decryptOptional(allocation.encryptedUsername)
@@ -79,6 +101,7 @@ export default async function ProxyDetailPage({
     expired: "neutral",
     interrupted: "warning",
     revoked: "danger",
+    terminated: "neutral",
   } as const;
 
   const activated = new Date(allocation.activatedAt).getTime();
@@ -121,6 +144,17 @@ export default async function ProxyDetailPage({
         <Alert tone="success" title="Proxy allocated" className="mt-4">
           Your access window is active. Copy the connection details below before
           you leave this page. They remain available in My Proxies until expiry.
+        </Alert>
+      ) : null}
+      {justTerminated ? (
+        <Alert tone="success" title="Proxy terminated" className="mt-4">
+          Access ended immediately. Any eligible refund has been credited to your
+          wallet and appears in your transaction history.
+        </Alert>
+      ) : null}
+      {justSwitched ? (
+        <Alert tone="success" title="Proxy switched" className="mt-4">
+          Your new proxy is active. Your subscription expiry did not change.
         </Alert>
       ) : null}
 
@@ -216,12 +250,16 @@ export default async function ProxyDetailPage({
                   <LockKeyhole className="h-4 w-4 text-muted-foreground" />
                 </span>
                 <p className="mt-3 text-[12px] font-semibold">
-                  Credentials hidden after expiry
+                  {effective === "terminated"
+                    ? "Proxy access ended"
+                    : "Credentials hidden after expiry"}
                 </p>
                 <p className="mx-auto mt-1 max-w-[360px] text-[10px] leading-4 text-muted-foreground">
-                  {allocation.status === "interrupted"
-                    ? "The upstream inventory expired before your package window. Your allocation was interrupted."
-                    : "This BUYBIZ access period has ended. The shared credentials are no longer displayed."}
+                  {allocation.status === "terminated"
+                    ? "You terminated this proxy. The allocation and its capacity slot were released."
+                    : allocation.status === "interrupted"
+                      ? "The upstream inventory expired before your package window. Your allocation was interrupted."
+                      : "This BUYBIZ access period has ended. The shared credentials are no longer displayed."}
                 </p>
                 <Link
                   href="/dashboard/support"
@@ -240,10 +278,14 @@ export default async function ProxyDetailPage({
               <h2 className="text-[13px] font-semibold">Access window</h2>
               <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
                 <Clock3 className="h-3 w-3" />{" "}
-                {packageActive ? (
+                {effective === "active" ? (
                   <Countdown expiresAt={allocation.expiresAt} />
+                ) : effective === "terminated" ? (
+                  "Terminated"
+                ) : effective === "interrupted" ? (
+                  "Interrupted"
                 ) : (
-                  formatRemaining(allocation.expiresAt)
+                  "Expired"
                 )}
               </span>
             </div>
@@ -281,6 +323,32 @@ export default async function ProxyDetailPage({
               allocation, not from when you opened your dashboard.
             </div>
           </section>
+
+          {packageActive && termination ? (
+            <section className="surface-card rounded-[16px] p-4 sm:p-5">
+              <h2 className="text-[13px] font-semibold">Manage access</h2>
+              <p className="mt-1.5 text-[10px] leading-5 text-muted-foreground">
+                Switch to another available proxy without changing your expiry,
+                or terminate this proxy. Termination ends access immediately.
+              </p>
+              <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                <ProxySwitchDialog
+                  allocationId={allocation.id}
+                  currentLabel={allocation.proxyLabel}
+                  options={switchOptions}
+                />
+                <ProxyTerminationDialog
+                  allocationId={allocation.id}
+                  productName={allocation.productName}
+                  amountPaidMinor={termination.amountPaidMinor}
+                  totalDays={termination.totalDays}
+                  daysUsed={termination.daysUsed}
+                  usedMinor={termination.usedMinor}
+                  refundMinor={termination.refundMinor}
+                />
+              </div>
+            </section>
+          ) : null}
 
           {packageActive && renewalExpiresAt ? (
             <section className="surface-card rounded-[16px] p-4">
@@ -343,9 +411,11 @@ export default async function ProxyDetailPage({
                 title={
                   effective === "active"
                     ? "Access active"
-                    : effective === "interrupted"
-                      ? "Interrupted"
-                      : "Access ended"
+                    : effective === "terminated"
+                      ? "Terminated by you"
+                      : effective === "interrupted"
+                        ? "Interrupted"
+                        : "Access ended"
                 }
                 detail={
                   effective === "active"

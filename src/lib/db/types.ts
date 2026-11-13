@@ -2,7 +2,7 @@ export type UserRole = "customer" | "support" | "admin" | "super_admin";
 export type AccountStatus = "active" | "suspended" | "pending_verification";
 export type ProxyProtocol = "http" | "https" | "socks4" | "socks5";
 export type ProxyStatus = "available" | "full" | "paused" | "expired" | "disabled";
-export type AllocationStatus = "active" | "expired" | "interrupted" | "revoked";
+export type AllocationStatus = "active" | "expired" | "interrupted" | "revoked" | "terminated";
 export type OrderStatus = "pending" | "completed" | "unfulfilled" | "refunded" | "cancelled";
 export type LedgerEntryType =
   | "deposit_credit"
@@ -44,6 +44,8 @@ export interface Profile {
   status: AccountStatus;
   emailVerified: boolean;
   onboardingComplete: boolean;
+  proxyUseCase?: string | null;
+  onboardingCompletedAt?: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }

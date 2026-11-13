@@ -20,13 +20,19 @@ import { cn, formatDateTime, formatNaira } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
-type EffectiveStatus = "active" | "expired" | "interrupted" | "revoked";
+type EffectiveStatus =
+  | "active"
+  | "expired"
+  | "interrupted"
+  | "revoked"
+  | "terminated";
 
 function effectiveStatus(allocation: {
   status: string;
   expiresAt: Date;
   inventoryExpiresAt: Date;
 }): EffectiveStatus {
+  if (allocation.status === "terminated") return "terminated";
   if (allocation.status === "interrupted" || allocation.status === "revoked") {
     return "interrupted";
   }
@@ -45,12 +51,14 @@ const statusTone = {
   expired: "neutral",
   interrupted: "warning",
   revoked: "danger",
+  terminated: "neutral",
 } as const;
 
 const filters = [
   { key: "all", label: "All" },
   { key: "active", label: "Active" },
   { key: "expired", label: "Expired" },
+  { key: "terminated", label: "Terminated" },
   { key: "interrupted", label: "Interrupted" },
 ] as const;
 
@@ -75,6 +83,7 @@ export default async function ProxiesPage({
     all: withStatus.length,
     active: withStatus.filter((item) => item.effective === "active").length,
     expired: withStatus.filter((item) => item.effective === "expired").length,
+    terminated: withStatus.filter((item) => item.effective === "terminated").length,
     interrupted: withStatus.filter((item) => item.effective === "interrupted").length,
   };
   // Revoked allocations are grouped with interrupted for the customer view;
@@ -232,9 +241,11 @@ export default async function ProxiesPage({
                   </div>
                 ) : (
                   <div className="mt-3 rounded-[8px] border border-border bg-background/60 px-3 py-2 text-[9.5px] leading-4 text-muted-foreground">
-                    {allocation.effective === "expired"
-                      ? "This access period has ended. Connection credentials are hidden."
-                      : "This allocation was interrupted when the upstream inventory expired. Credentials are hidden."}
+                    {allocation.effective === "terminated"
+                      ? "You terminated this proxy. Its capacity slot was released and any eligible refund is in your wallet."
+                      : allocation.effective === "expired"
+                        ? "This access period has ended. Connection credentials are hidden."
+                        : "This allocation was interrupted when the upstream inventory expired. Credentials are hidden."}
                   </div>
                 )}
 

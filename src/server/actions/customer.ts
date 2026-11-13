@@ -11,6 +11,8 @@ import {
   depositSchema,
   purchaseSchema,
   renewalSchema,
+  switchProxySchema,
+  terminateProxySchema,
   ticketReplySchema,
   ticketSchema,
   zodFieldErrors,
@@ -23,6 +25,10 @@ import {
 import { requireUserPage, requireVerifiedUser } from "@/server/auth/guards";
 import { purchaseProxy } from "@/server/services/purchase";
 import { renewProxy } from "@/server/services/renewals";
+import {
+  switchProxy,
+  terminateProxy,
+} from "@/server/services/proxy-management";
 import {
   cancelDemoDeposit,
   completeDemoDeposit,
@@ -229,6 +235,92 @@ export async function cancelDemoDepositAction(formData: FormData) {
   const depositId = String(formData.get("depositId") ?? "");
   await cancelDemoDeposit({ depositId, userId: user.id }).catch(() => undefined);
   redirect("/dashboard/wallet");
+}
+
+export async function terminateProxyAction(
+  _previous: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const user = await requireVerifiedUser();
+  const parsed = terminateProxySchema.safeParse({
+    allocationId: formData.get("allocationId"),
+    confirm: formData.get("confirm"),
+  });
+  if (!parsed.success) {
+    return formError("Confirm that you want to terminate this proxy.", zodFieldErrors(parsed.error));
+  }
+
+  const meta = await getRequestMeta();
+  const limit = await rateLimit({
+    action: "proxy:terminate",
+    identifier: user.id,
+    limit: 5,
+    windowSeconds: 60,
+  });
+  if (!limit.allowed) return formError("Too many attempts. Please wait a minute.");
+
+  try {
+    await terminateProxy({
+      userId: user.id,
+      allocationId: parsed.data.allocationId,
+      ip: meta.ip,
+      userAgent: meta.userAgent,
+    });
+  } catch (error) {
+    if (error instanceof AppError) return formError(error.userMessage);
+    console.error("[buybiz/proxy] termination failed", error);
+    return formError(toUserMessage(error));
+  }
+
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/proxies");
+  revalidatePath(`/dashboard/proxies/${parsed.data.allocationId}`);
+  revalidatePath("/dashboard/wallet");
+  revalidatePath("/dashboard/transactions");
+  redirect(`/dashboard/proxies/${parsed.data.allocationId}?terminated=1`);
+}
+
+export async function switchProxyAction(
+  _previous: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const user = await requireVerifiedUser();
+  const parsed = switchProxySchema.safeParse({
+    allocationId: formData.get("allocationId"),
+    inventoryId: formData.get("inventoryId"),
+    confirm: formData.get("confirm"),
+  });
+  if (!parsed.success) {
+    return formError("Choose an available proxy and confirm the switch.", zodFieldErrors(parsed.error));
+  }
+
+  const meta = await getRequestMeta();
+  const limit = await rateLimit({
+    action: "proxy:switch",
+    identifier: user.id,
+    limit: 8,
+    windowSeconds: 60,
+  });
+  if (!limit.allowed) return formError("Too many attempts. Please wait a minute.");
+
+  try {
+    await switchProxy({
+      userId: user.id,
+      allocationId: parsed.data.allocationId,
+      inventoryId: parsed.data.inventoryId,
+      ip: meta.ip,
+      userAgent: meta.userAgent,
+    });
+  } catch (error) {
+    if (error instanceof AppError) return formError(error.userMessage);
+    console.error("[buybiz/proxy] switch failed", error);
+    return formError(toUserMessage(error));
+  }
+
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/proxies");
+  revalidatePath(`/dashboard/proxies/${parsed.data.allocationId}`);
+  redirect(`/dashboard/proxies/${parsed.data.allocationId}?switched=1`);
 }
 
 export async function markAllNotificationsReadAction() {

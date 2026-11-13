@@ -6,6 +6,7 @@ import {
   Network,
   Plus,
   ReceiptText,
+  PlayCircle,
   ShoppingBag,
   Users,
   Wallet,
@@ -22,6 +23,7 @@ import { getPlanAvailability } from "@/server/data/products";
 import { ActivityChart } from "@/components/dashboard/activity-chart";
 import { TransactionRow } from "@/components/dashboard/transaction-row";
 import { PlanStrip } from "@/components/dashboard/plan-strip";
+import { TutorialVideo } from "@/components/tutorial/tutorial-video";
 import { Countdown } from "@/components/dashboard/countdown";
 import { StatCard } from "@/components/ui/stat-card";
 import { Badge } from "@/components/ui/badge";
@@ -196,6 +198,21 @@ export default async function DashboardOverviewPage() {
         />
       </div>
 
+      <section className="surface-card flex flex-col gap-3 rounded-[14px] px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex min-w-0 items-center gap-3">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border bg-surface-subtle">
+            <PlayCircle className="h-4 w-4 text-muted-foreground" />
+          </span>
+          <div className="min-w-0">
+            <p className="text-[11.5px] font-semibold">How to use the platform</p>
+            <p className="mt-0.5 text-[10px] leading-4 text-muted-foreground">
+              A 2-minute walkthrough of your wallet, buying and managing proxies.
+            </p>
+          </div>
+        </div>
+        <TutorialVideo variant="compact" />
+      </section>
+
       <div className="grid gap-3 lg:grid-cols-[1.65fr_1fr]">
         <ActivityChart data={activity} totalSpendMinor={totalSpend} />
 
@@ -313,8 +330,7 @@ export default async function DashboardOverviewPage() {
 
                   <div className="mt-3 flex items-center justify-between border-t border-border pt-2.5">
                     <span className="inline-flex items-center gap-1 text-[9px] text-muted-foreground">
-                      <Users className="h-2.5 w-2.5" /> Shared · up to{" "}
-                      {allocation.maxSeats} customers
+                      <Users className="h-2.5 w-2.5" /> Shared access
                     </span>
                     <ArrowUpRight className="h-3 w-3 text-muted-foreground transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
                   </div>

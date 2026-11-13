@@ -41,17 +41,24 @@ delete from public.contact_messages;
 delete from public.webhook_events;
 delete from public.rate_limits;
 delete from public.job_runs;
+alter table public.audit_logs disable trigger audit_logs_no_delete;
 delete from public.audit_logs;
+alter table public.audit_logs enable trigger audit_logs_no_delete;
 
--- Referral and renewal records depend on financial records
+-- Referral and proxy lifecycle records depend on financial records
 delete from public.referrals;
 delete from public.proxy_renewals;
+delete from public.proxy_terminations;
+delete from public.proxy_switches;
 
 -- Allocations depend on orders and inventory
 delete from public.proxy_allocations;
 
--- The ledger references orders, deposits and transfers
+-- The ledger references orders, deposits and transfers. Its append-only
+-- trigger is temporarily disabled inside this reviewed transaction only.
+alter table public.wallet_ledger disable trigger wallet_ledger_no_delete;
 delete from public.wallet_ledger;
+alter table public.wallet_ledger enable trigger wallet_ledger_no_delete;
 delete from public.wallet_transfers;
 
 -- Remove all test commercial records
@@ -88,6 +95,8 @@ union all select 'proxy_allocations', count(*)::int from public.proxy_allocation
 union all select 'proxy_inventory', count(*)::int from public.proxy_inventory
 union all select 'referrals', count(*)::int from public.referrals
 union all select 'proxy_renewals', count(*)::int from public.proxy_renewals
+union all select 'proxy_terminations', count(*)::int from public.proxy_terminations
+union all select 'proxy_switches', count(*)::int from public.proxy_switches
 union all select 'support_tickets', count(*)::int from public.support_tickets
 union all select 'notifications', count(*)::int from public.notifications
 union all select 'audit_logs', count(*)::int from public.audit_logs
