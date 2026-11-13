@@ -7,7 +7,7 @@ import { initialActionState } from "@/lib/validation/action-state";
 import { Alert } from "@/components/ui/alert";
 import { formatNaira } from "@/lib/utils";
 
-const presets = [5_000, 10_000, 25_000, 50_000];
+const presets = [3_000, 5_000, 10_000, 25_000];
 
 export function AddFundsForm({
   minMinor,
@@ -61,7 +61,7 @@ export function AddFundsForm({
           htmlFor="deposit-amount"
           className="text-[11px] font-medium text-foreground"
         >
-          Amount (NGN)
+          Amount (NGN credits)
         </label>
         <div className="relative mt-1.5">
           <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[15px] font-medium text-muted-foreground">
@@ -91,7 +91,7 @@ export function AddFundsForm({
           ))}
         </div>
         <p className="mt-2 text-[9px] text-muted-foreground">
-          Minimum {formatNaira(minMinor)} · Maximum {formatNaira(maxMinor)} · NGN only
+          Minimum {formatNaira(minMinor)} · Maximum {formatNaira(maxMinor)} · 1 credit = ₦1
         </p>
       </div>
 

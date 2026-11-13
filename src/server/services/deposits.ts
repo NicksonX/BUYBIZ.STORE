@@ -25,6 +25,7 @@ import { getAppSettings } from "@/server/data/settings";
 import { writeAuditLog } from "@/server/services/audit";
 import { qualifyReferralForDeposit } from "@/server/services/referrals";
 import { notifyUser } from "@/server/services/notifications";
+import { recordCustomerActivity } from "@/server/services/activity";
 
 export type DepositVerificationResult = {
   status: DepositStatus;
@@ -247,6 +248,12 @@ export async function createDeposit(input: {
       "Verify your email address before adding funds.",
     );
   }
+  if (input.user.status === "frozen") {
+    throw new AppError(
+      "ACCOUNT_FROZEN",
+      "This account is frozen. Reactivate it before adding funds.",
+    );
+  }
   if (input.user.status !== "active") {
     throw new AppError(
       "ACCOUNT_SUSPENDED",
@@ -277,6 +284,7 @@ export async function createDeposit(input: {
   }
 
   const db = await getDb();
+  await recordCustomerActivity(db, input.user.id);
   const depositId = randomUUID();
   const reference = resolveClientReference(input.clientReference);
   const provider = demo ? "demo" : "paystack";

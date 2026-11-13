@@ -4,6 +4,7 @@ import { AdminField, AdminNote } from "@/components/admin/field";
 import { Input, Select, Textarea } from "@/components/ui/input";
 import { requireAdminPage } from "@/server/auth/guards";
 import { getAppSettings } from "@/server/data/settings";
+import { getPlanAvailability } from "@/server/data/products";
 import { createInventoryAction } from "@/server/actions/admin";
 
 export const dynamic = "force-dynamic";
@@ -20,7 +21,10 @@ function defaultExpiry(days: number) {
 
 export default async function NewInventoryPage() {
   await requireAdminPage();
-  const settings = await getAppSettings();
+  const [settings, plans] = await Promise.all([
+    getAppSettings(),
+    getPlanAvailability(),
+  ]);
   const expiryDate = defaultExpiry(settings.stockExpiryDefaultDays);
 
   return (
@@ -57,6 +61,18 @@ export default async function NewInventoryPage() {
               </AdminField>
               <AdminField label="Port" htmlFor="port">
                 <Input id="port" name="port" type="number" min={1} max={65535} required placeholder="1080" />
+              </AdminField>
+              <AdminField label="Proxy package" htmlFor="productSlug" hint="Inventory is never mixed across packages">
+                <Select id="productSlug" name="productSlug" required defaultValue="proxy-24-hours">
+                  {plans.map((plan) => (
+                    <option key={plan.product.id} value={plan.product.slug}>
+                      {plan.product.name} · ₦{(plan.product.priceMinor / 100).toLocaleString("en-NG")}
+                    </option>
+                  ))}
+                </Select>
+              </AdminField>
+              <AdminField label="Credential group" htmlFor="credentialGroup" hint="A, B, C. Use a new group for a new upstream login.">
+                <Input id="credentialGroup" name="credentialGroup" defaultValue="A" required maxLength={24} />
               </AdminField>
               <AdminField label="Region" htmlFor="region" hint="Optional">
                 <Input id="region" name="region" placeholder="Nigeria" />
@@ -120,6 +136,7 @@ export default async function NewInventoryPage() {
               <li>Confirm the host, port and protocol with the provider.</li>
               <li>Record the real expiry if the provider supplied one.</li>
               <li>Use an assumed expiry when you only know the upload date.</li>
+              <li>Daily and weekly stock are separate categories and rotate manually.</li>
               <li>Customers are never shown your private provider note.</li>
               <li>Passwords are encrypted, never logged and not returned in list responses.</li>
             </ul>

@@ -28,6 +28,7 @@ const statusTone = {
   active: "success",
   suspended: "danger",
   pending_verification: "warning",
+  frozen: "warning",
 } as const;
 
 export default async function AdminUsersPage({
@@ -77,6 +78,7 @@ export default async function AdminUsersPage({
           <option value="active">Active</option>
           <option value="suspended">Suspended</option>
           <option value="pending_verification">Pending verification</option>
+          <option value="frozen">Frozen for inactivity</option>
         </Select>
         <button
           type="submit"
@@ -112,6 +114,7 @@ export default async function AdminUsersPage({
                   <TH>Wallet</TH>
                   <TH>Orders</TH>
                   <TH>Active</TH>
+                  <TH>Last activity</TH>
                   <TH>Joined</TH>
                   <TH />
                 </TR>
@@ -138,6 +141,7 @@ export default async function AdminUsersPage({
                     <TD className="tabular">{formatNaira(user.balanceMinor, { exact: true })}</TD>
                     <TD className="tabular">{user.orderCount}</TD>
                     <TD className="tabular">{user.activeProxies}</TD>
+                    <TD className="text-[9.5px] text-muted-foreground">{formatDate(user.lastActivityAt ?? user.createdAt)}</TD>
                     <TD className="text-[9.5px] text-muted-foreground">{formatDate(user.createdAt)}</TD>
                     <TD>
                       <Link

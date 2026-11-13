@@ -76,6 +76,9 @@ function invalidateAdmin() {
   revalidatePath("/admin/support");
   revalidatePath("/admin/products");
   revalidatePath("/admin/settings");
+  revalidatePath("/admin/inactivity");
+  revalidatePath("/admin/notifications");
+  revalidatePath("/admin/rotation");
 }
 
 export async function createInventoryAction(
@@ -98,6 +101,9 @@ export async function createInventoryAction(
     purchaseCost: formData.get("purchaseCost") ?? "",
     maxSeats: formData.get("maxSeats") ?? 10,
     accessType: formData.get("accessType") ?? "shared",
+    productSlug: formData.get("productSlug"),
+    credentialGroup: formData.get("credentialGroup") ?? "A",
+    rotationIntervalHours: formData.get("rotationIntervalHours") ?? 0,
     upstreamExpiry: formData.get("upstreamExpiry"),
     expiryIsEstimated: formData.get("expiryIsEstimated") ?? "true",
     adminNotes: formData.get("adminNotes") ?? "",
@@ -107,6 +113,17 @@ export async function createInventoryAction(
   }
   const data = parsed.data;
   const maxSeats = data.accessType === "single" ? 1 : data.maxSeats;
+  const rotationHours =
+    data.productSlug === "proxy-24-hours"
+      ? 24
+      : data.productSlug === "proxy-7-days"
+        ? 168
+        : null;
+  if (rotationHours && data.rotationIntervalHours && data.rotationIntervalHours !== rotationHours) {
+    return formError("The rotation interval is fixed by the package: 24 hours for daily, 168 hours for weekly.", {
+      rotationIntervalHours: "Use the package rotation interval.",
+    });
+  }
   if (Boolean(data.username) !== Boolean(data.password)) {
     return formError("Enter both the upstream username and password, or neither.", {
       username: "Username and password must be provided together.",
@@ -141,9 +158,12 @@ export async function createInventoryAction(
         `insert into proxy_inventory
            (id, label, protocol, host, port, encrypted_username, encrypted_password,
             region, provider_note, purchase_cost_minor, currency, max_seats,
-            access_type, uploaded_at, upstream_expires_at, expiry_is_estimated,
+            access_type, product_slug, credential_group, rotation_interval_hours,
+            next_rotation_at, uploaded_at, upstream_expires_at, expiry_is_estimated,
             status, admin_notes, created_by)
-         values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'NGN',$11,$12,now(),$13,$14,'available',$15,$16)`,
+         values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'NGN',$11,$12,$13,$14,$15,
+                 case when $15::int is not null then now() + make_interval(hours => $15::int) else null end,
+                 now(),$16,$17,'available',$18,$19)`,
         [
           id,
           data.label,
@@ -157,6 +177,9 @@ export async function createInventoryAction(
           costMinor,
           maxSeats,
           data.accessType,
+          data.productSlug,
+          data.credentialGroup,
+          rotationHours,
           expiry,
           data.expiryIsEstimated === "true",
           data.adminNotes?.trim() || null,
@@ -205,6 +228,9 @@ export async function updateInventoryAction(
     purchaseCost: formData.get("purchaseCost") ?? "",
     maxSeats: formData.get("maxSeats"),
     accessType: formData.get("accessType") ?? "shared",
+    productSlug: formData.get("productSlug"),
+    credentialGroup: formData.get("credentialGroup") ?? "A",
+    rotationIntervalHours: formData.get("rotationIntervalHours") ?? 0,
   });
   if (!parsed.success) {
     return formError("Check the highlighted fields.", zodFieldErrors(parsed.error));
@@ -224,8 +250,9 @@ export async function updateInventoryAction(
       const current = await tx.query<{
         activeSeats: number;
         label: string;
+        productSlug: string | null;
       }>(
-        `select i.label,
+        `select i.label, i.product_slug as "productSlug",
                 (select count(*)::int from proxy_allocations a
                   where a.proxy_inventory_id = i.id and a.status = 'active'
                     and a.expires_at > now()) as "activeSeats"
@@ -242,11 +269,27 @@ export async function updateInventoryAction(
           `This proxy already has ${row.activeSeats} active customers. Maximum seats cannot be lower than that.`,
         );
       }
+      if (row.activeSeats > 0 && row.productSlug !== parsed.data.productSlug) {
+        throw new AppError(
+          "CONFLICT",
+          "The package cannot be changed while customers are active on this proxy. Create a new inventory group for the new package.",
+        );
+      }
+      const rotationHours =
+        parsed.data.productSlug === "proxy-24-hours"
+          ? 24
+          : parsed.data.productSlug === "proxy-7-days"
+            ? 168
+            : null;
       await tx.query(
         `update proxy_inventory
             set label = $2, region = $3, provider_note = $4,
                 admin_notes = $5, purchase_cost_minor = $6, max_seats = $7,
-                access_type = $8, updated_at = now()
+                access_type = $8, product_slug = $9, credential_group = $10,
+                rotation_interval_hours = $11,
+                next_rotation_at = case when $11::int is null then null
+                  else coalesce(next_rotation_at, now() + make_interval(hours => $11::int)) end,
+                updated_at = now()
           where id = $1`,
         [
           parsed.data.inventoryId,
@@ -257,6 +300,9 @@ export async function updateInventoryAction(
           costMinor,
           nextMaxSeats,
           parsed.data.accessType,
+          parsed.data.productSlug,
+          parsed.data.credentialGroup,
+          rotationHours,
         ],
       );
       await tx.query(`select reconcile_proxy_status()`);
@@ -437,6 +483,8 @@ export async function rotateCredentialsAction(
     inventoryId: formData.get("inventoryId"),
     username: formData.get("username"),
     password: formData.get("password"),
+    host: formData.get("host") ?? "",
+    port: formData.get("port") || undefined,
     confirm: formData.get("confirm"),
   });
   if (!parsed.success) {
@@ -447,19 +495,84 @@ export async function rotateCredentialsAction(
   try {
     const encryptedUsername = await encryptOptional(parsed.data.username);
     const encryptedPassword = await encryptOptional(parsed.data.password);
+    let active = 0;
+    let expired = 0;
     await db.transaction(async (tx) => {
-      const exists = await tx.query<{ id: string; label: string }>(
-        `select id, label from proxy_inventory where id = $1 limit 1 for update`,
+      const current = await tx.query<{
+        label: string;
+        host: string;
+        port: number;
+        interval: number | null;
+        version: number;
+        active: number;
+        expired: number;
+      }>(
+        `select i.label, i.host, i.port, i.rotation_interval_hours as interval,
+                i.credential_version as version,
+                (select count(*)::int from proxy_allocations a
+                  where a.proxy_inventory_id=i.id and a.status='active' and a.expires_at>now()) as active,
+                (select count(*)::int from proxy_allocations a
+                  where a.proxy_inventory_id=i.id and a.status='active' and a.expires_at<=now()) as expired
+           from proxy_inventory i where i.id=$1 for update`,
         [parsed.data.inventoryId],
       );
-      if (!exists.rows[0]) {
-        throw new AppError("NOT_FOUND", "That inventory item was not found.");
+      const item = current.rows[0];
+      if (!item) throw new AppError("NOT_FOUND", "That inventory item was not found.");
+      active = Number(item.active);
+      expired = Number(item.expired);
+      if (active > 0) {
+        await tx.query(
+          `insert into admin_notifications
+             (type, severity, title, body, action_url, related_inventory_id, dedupe_key)
+           values ('rotation_completed_with_active', 'warning',
+                   'Credentials rotated while customers are active',
+                   $2 || ' was rotated with ' || $3::text || ' active customers. New credentials are available in BUYBIZ; the upstream provider may have invalidated the old login.',
+                   '/admin/inventory/' || $1::text, $1,
+                   'rotation_active:' || $1::text || ':' || extract(epoch from now())::text)
+           on conflict (dedupe_key) do nothing`,
+          [parsed.data.inventoryId, item.label, active],
+        );
       }
       await tx.query(
         `update proxy_inventory
-            set encrypted_username = $2, encrypted_password = $3, updated_at = now()
-          where id = $1`,
-        [parsed.data.inventoryId, encryptedUsername, encryptedPassword],
+            set encrypted_username=$2, encrypted_password=$3,
+                host=coalesce($4, host), port=coalesce($5, port),
+                credential_version=credential_version+1,
+                last_rotated_at=now(),
+                next_rotation_at=case when rotation_interval_hours is null then null
+                  else now() + make_interval(hours => rotation_interval_hours) end,
+                updated_at=now()
+          where id=$1`,
+        [
+          parsed.data.inventoryId,
+          encryptedUsername,
+          encryptedPassword,
+          parsed.data.host?.trim() || null,
+          parsed.data.port ?? null,
+        ],
+      );
+      await tx.query(
+        `insert into proxy_rotations
+           (inventory_id, rotated_by, rotated_at, previous_version, new_version,
+            affected_active, affected_expired, affected_unexpired, status, notes)
+         values ($1,$2,now(),$3,$4,$5,$6,$5,'completed',$7)`,
+        [
+          parsed.data.inventoryId,
+          actor.admin.id,
+          item.version,
+          item.version + 1,
+          active,
+          expired,
+          "Manual rotation confirmed by administrator.",
+        ],
+      );
+      await tx.query(
+        `update admin_notifications
+            set resolved_at=now()
+          where related_inventory_id=$1
+            and type in ('rotation_due_24h','rotation_due_7d','rotation_completed_with_active')
+            and resolved_at is null`,
+        [parsed.data.inventoryId],
       );
       await writeAuditLog(tx, {
         actorUserId: actor.admin.id,
@@ -468,8 +581,13 @@ export async function rotateCredentialsAction(
         entityType: "proxy_inventory",
         entityId: parsed.data.inventoryId,
         metadata: {
-          label: exists.rows[0].label,
-          warningAcknowledged: true,
+          label: item.label,
+          previousVersion: item.version,
+          newVersion: item.version + 1,
+          affectedActive: active,
+          affectedExpired: expired,
+          hostChanged: Boolean(parsed.data.host?.trim()),
+          portChanged: Boolean(parsed.data.port),
         },
         ip: meta.ip,
         userAgent: meta.userAgent,
@@ -477,7 +595,12 @@ export async function rotateCredentialsAction(
     });
     invalidateAdmin();
     revalidatePath(`/admin/inventory/${parsed.data.inventoryId}`);
-    return formSuccess("Upstream credentials rotated. Existing customers may need the new details.");
+    revalidatePath("/admin/rotation");
+    return formSuccess(
+      active > 0
+        ? `Credentials updated. ${active} active customer${active === 1 ? "" : "s"} will receive the new details immediately. The upstream provider may have invalidated the previous login.`
+        : "Credentials updated and rotation recorded. No active customers were affected.",
+    );
   } catch (error) {
     if (error instanceof AppError) return formError(error.userMessage);
     console.error("[buybiz/admin] credential rotation failed", error);
@@ -649,13 +772,36 @@ export async function reactivateUserAction(
   const meta = await getRequestMeta();
   try {
     await db.transaction(async (tx) => {
-      const target = await tx.query<{ username: string }>(
-        `select username from profiles where id = $1 limit 1 for update`,
+      const target = await tx.query<{ username: string; status: string }>(
+        `select username, status from profiles where id = $1 limit 1 for update`,
         [userId],
       );
       if (!target.rows[0]) throw new AppError("NOT_FOUND", "That user was not found.");
+      if (target.rows[0].status === "frozen") {
+        const freeze = await tx.query<{ id: string }>(
+          `select f.id
+             from account_freezes f
+             left join account_reactivations r on r.freeze_id=f.id
+            where f.user_id=$1 and r.id is null
+            order by f.frozen_at desc limit 1 for update of f`,
+          [userId],
+        );
+        if (!freeze.rows[0]) {
+          throw new AppError("CONFLICT", "No open freeze record was found.");
+        }
+        await tx.query(
+          `insert into account_reactivations
+             (freeze_id, user_id, method, fee_minor, reactivated_by, notes, reactivated_at)
+           values ($1,$2,'admin',0,$3,$4,now())`,
+          [freeze.rows[0].id, userId, actor.admin.id, reason],
+        );
+      }
       await tx.query(
-        `update profiles set status = 'active', updated_at = now() where id = $1`,
+        `update profiles
+            set status = 'active', frozen_at = null, freeze_reason = null,
+                last_activity_at = now(), last_reactivated_at = now(),
+                updated_at = now()
+          where id = $1`,
         [userId],
       );
       await writeAuditLog(tx, {
@@ -1088,16 +1234,35 @@ export async function updateSettingsAction(
     depositMax: formData.get("depositMax"),
     maintenanceMode: formData.get("maintenanceMode"),
     supportEmail: formData.get("supportEmail") ?? "",
+    inactivityDays: formData.get("inactivityDays") ?? 60,
+    reactivationFee: formData.get("reactivationFee") ?? "1000",
+    adminNotificationEmail: formData.get("adminNotificationEmail") ?? "",
+    adminNotificationPhone: formData.get("adminNotificationPhone") ?? "",
+    adminVoicePhone: formData.get("adminVoicePhone") ?? "",
+    adminReminderTime: formData.get("adminReminderTime") ?? "08:00",
+    adminTimezone: formData.get("adminTimezone") ?? "Africa/Lagos",
+    adminNotificationChannels: formData.getAll("adminNotificationChannels"),
   });
   if (!parsed.success) {
     return formError("Check the highlighted fields.", zodFieldErrors(parsed.error));
   }
   const minMinor = parseNairaToKobo(parsed.data.depositMin);
   const maxMinor = parseNairaToKobo(parsed.data.depositMax);
-  if (minMinor === null || maxMinor === null || minMinor <= 0 || maxMinor < minMinor) {
+  const reactivationFeeMinor = parseNairaToKobo(parsed.data.reactivationFee);
+  if (
+    minMinor === null ||
+    maxMinor === null ||
+    minMinor < 300_000 ||
+    maxMinor < minMinor
+  ) {
     return formError("Check the deposit limits.", {
-      depositMin: "Enter a valid minimum.",
+      depositMin: "The minimum deposit is ₦3,000 and cannot be lowered.",
       depositMax: "Maximum must be greater than the minimum.",
+    });
+  }
+  if (reactivationFeeMinor === null || reactivationFeeMinor < 0) {
+    return formError("Enter a valid reactivation fee.", {
+      reactivationFee: "Use a naira amount, for example 1000.",
     });
   }
   const db = await getDb();
@@ -1113,6 +1278,19 @@ export async function updateSettingsAction(
     ["deposit_max_minor", maxMinor],
     ["maintenance_mode", parsed.data.maintenanceMode === "true"],
     ["support_email", parsed.data.supportEmail?.trim() || ""],
+    ["inactivity_days", parsed.data.inactivityDays],
+    ["reactivation_fee_minor", reactivationFeeMinor],
+    ["admin_notification_email", parsed.data.adminNotificationEmail?.trim() || ""],
+    ["admin_notification_phone", parsed.data.adminNotificationPhone?.trim() || ""],
+    ["admin_voice_phone", parsed.data.adminVoicePhone?.trim() || ""],
+    [
+      "admin_notification_channels",
+      parsed.data.adminNotificationChannels.length
+        ? parsed.data.adminNotificationChannels
+        : ["in_app"],
+    ],
+    ["admin_reminder_time", parsed.data.adminReminderTime],
+    ["admin_timezone", parsed.data.adminTimezone],
   ];
   try {
     await db.transaction(async (tx) => {
@@ -1182,5 +1360,84 @@ export async function runLifecycleAction(
   } catch (error) {
     console.error("[buybiz/admin] lifecycle failed", error);
     return formError("The lifecycle job failed. Check server logs.");
+  }
+}
+
+
+export async function markAdminNotificationReadAction(
+  _previous: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  try {
+    await requireStaff();
+  } catch (error) {
+    return formError(toUserMessage(error));
+  }
+  const id = String(formData.get("notificationId") ?? "");
+  if (!id) return formError("Missing notification.");
+  const db = await getDb();
+  await db.query(
+    `update admin_notifications set read_at=coalesce(read_at,now()) where id=$1`,
+    [id],
+  );
+  revalidatePath("/admin/notifications");
+  revalidatePath("/admin");
+  return formSuccess("Notification marked as read.");
+}
+
+export async function markAllAdminNotificationsReadAction(
+  _previous: ActionState,
+  _formData: FormData,
+): Promise<ActionState> {
+  try {
+    await requireStaff();
+  } catch (error) {
+    return formError(toUserMessage(error));
+  }
+  const db = await getDb();
+  await db.query(
+    `update admin_notifications set read_at=coalesce(read_at,now())
+      where read_at is null`,
+  );
+  revalidatePath("/admin/notifications");
+  revalidatePath("/admin");
+  return formSuccess("All administrator notifications are marked as read.");
+}
+
+export async function runAdminJobsAction(
+  _previous: ActionState,
+  _formData: FormData,
+): Promise<ActionState> {
+  let admin: Profile;
+  try {
+    admin = await requireSuperAdmin();
+  } catch (error) {
+    return formError(toUserMessage(error));
+  }
+  const db = await getDb();
+  const meta = await getRequestMeta();
+  try {
+    const [inactivity, reminders] = await Promise.all([
+      db.query<{ result: unknown }>(`select public.run_inactivity_jobs() as result`),
+      db.query<{ result: unknown }>(`select public.run_admin_reminder_jobs() as result`),
+    ]);
+    await writeAuditLog(db, {
+      actorUserId: admin.id,
+      actorRole: admin.role,
+      action: "admin_jobs.manual_run",
+      entityType: "system",
+      entityId: null,
+      metadata: {
+        inactivity: inactivity.rows[0]?.result ?? {},
+        reminders: reminders.rows[0]?.result ?? {},
+      },
+      ip: meta.ip,
+      userAgent: meta.userAgent,
+    });
+    invalidateAdmin();
+    return formSuccess("Inactivity and administrator reminder jobs completed.");
+  } catch (error) {
+    console.error("[buybiz/admin] admin jobs failed", error);
+    return formError("The scheduled admin jobs failed. Check server logs.");
   }
 }

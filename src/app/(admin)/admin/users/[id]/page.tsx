@@ -91,6 +91,13 @@ export default async function AdminUserDetailPage({
         <StatCard label="Refunds" value={formatNaira(wallet.totalRefunds, { exact: true })} icon={Wallet} hint="Wallet credits" />
       </div>
 
+      {profile.status === "frozen" ? (
+        <div className="rounded-[10px] border border-warning/25 bg-warning-soft px-3.5 py-2.5 text-[9.5px] leading-4 text-warning">
+          Frozen for inactivity. Last activity: {formatDateTime(profile.lastActivityAt)}. Frozen: {formatDateTime(profile.frozenAt)}. Wallet balance is preserved above.
+          {profile.freezeReason ? ` Reason: ${profile.freezeReason}.` : ""}
+        </div>
+      ) : null}
+
       <div className="grid items-start gap-3 xl:grid-cols-[1fr_1fr]">
         <section className="surface-card rounded-[14px] p-4">
           <h2 className="text-[12px] font-semibold">Account actions</h2>
@@ -98,14 +105,14 @@ export default async function AdminUserDetailPage({
             Actions are audited. You cannot edit a wallet balance directly.
           </p>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            {profile.status === "suspended" ? (
+            {profile.status === "suspended" || profile.status === "frozen" ? (
               <AdminActionForm
                 action={reactivateUserAction}
                 hidden={{ userId: profile.id }}
-                submitLabel="Reactivate account"
+                submitLabel={profile.status === "frozen" ? "Unfreeze account" : "Reactivate account"}
                 variant="outline"
                 pendingLabel="Reactivating…"
-                confirmMessage="Reactivate this account?"
+                confirmMessage={profile.status === "frozen" ? "Unfreeze this account and waive the reactivation fee?" : "Reactivate this account?"}
               >
                 <AdminField label="Reason for reactivation" htmlFor="reactivate-reason">
                   <Textarea id="reactivate-reason" name="reason" required minLength={5} className="min-h-20 text-[11px]" placeholder="e.g. Support resolved the account issue" />

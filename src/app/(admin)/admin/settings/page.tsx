@@ -52,6 +52,16 @@ export default async function AdminSettingsPage() {
       ok: true,
       value: "Server-side key",
     },
+    {
+      label: "Upstream proxy provider",
+      ok: false,
+      value: "Manual credentials only",
+    },
+    {
+      label: "Admin email / SMS / voice",
+      ok: false,
+      value: "External provider not configured",
+    },
   ];
 
   return (
@@ -99,7 +109,57 @@ export default async function AdminSettingsPage() {
                 <AdminField label="Maximum deposit (NGN)" htmlFor="deposit-max">
                   <Input id="deposit-max" name="depositMax" inputMode="decimal" defaultValue={(settings.depositMaxMinor / 100).toString()} />
                 </AdminField>
+                <AdminField label="Inactivity freeze (days)" htmlFor="inactivity-days" hint="Default 60. Minimum 1.">
+                  <Input id="inactivity-days" name="inactivityDays" type="number" min={1} max={3650} defaultValue={settings.inactivityDays} />
+                </AdminField>
+                <AdminField label="Reactivation fee (NGN)" htmlFor="reactivation-fee">
+                  <Input id="reactivation-fee" name="reactivationFee" inputMode="decimal" defaultValue={(settings.reactivationFeeMinor / 100).toString()} />
+                </AdminField>
               </div>
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                <AdminField label="Admin reminder email" htmlFor="admin-email" hint="Optional. Delivery is off until an email provider is configured.">
+                  <Input id="admin-email" name="adminNotificationEmail" type="email" defaultValue={settings.adminNotificationEmail} placeholder="alerts@buybiz.store" />
+                </AdminField>
+                <AdminField label="Admin SMS phone" htmlFor="admin-phone" hint="Optional. No SMS provider is configured.">
+                  <Input id="admin-phone" name="adminNotificationPhone" defaultValue={settings.adminNotificationPhone} placeholder="+234..." />
+                </AdminField>
+                <AdminField label="Admin voice phone" htmlFor="admin-voice" hint="Optional. No voice-call provider is configured.">
+                  <Input id="admin-voice" name="adminVoicePhone" defaultValue={settings.adminVoicePhone} placeholder="+234..." />
+                </AdminField>
+                <AdminField label="Reminder local time" htmlFor="admin-time" hint="Africa/Lagos by default">
+                  <div className="flex gap-2">
+                    <Input id="admin-time" name="adminReminderTime" type="time" defaultValue={settings.adminReminderTime} />
+                    <Input name="adminTimezone" defaultValue={settings.adminTimezone} aria-label="Reminder timezone" />
+                  </div>
+                </AdminField>
+              </div>
+              <fieldset className="mt-3">
+                <legend className="mb-2 text-[10px] font-medium text-foreground">Preferred reminder channels</legend>
+                <div className="flex flex-wrap gap-3">
+                  {[
+                    ["in_app", "In-app", true],
+                    ["email", "Email", false],
+                    ["sms", "SMS", false],
+                    ["voice", "Voice call", false],
+                  ].map(([value, label, available]) => (
+                    <label key={String(value)} className="inline-flex items-center gap-1.5 text-[9.5px] text-muted-foreground">
+                      <input
+                        type="checkbox"
+                        name="adminNotificationChannels"
+                        value={String(value)}
+                        defaultChecked={settings.adminNotificationChannels.includes(String(value))}
+                        className="h-3.5 w-3.5 rounded border-border-strong accent-foreground"
+                      />
+                      {label}
+                      {!available ? <span className="text-[8px] text-warning">provider required</span> : null}
+                    </label>
+                  ))}
+                </div>
+                <p className="mt-1.5 text-[8.5px] leading-4 text-muted-foreground">
+                  In-app notifications work now. Email, SMS and voice calls stay inactive
+                  until an owner-approved provider is configured.
+                </p>
+              </fieldset>
               <AdminField label="Official support email" htmlFor="support-email" hint="Leave blank until supplied">
                 <Input id="support-email" name="supportEmail" type="email" defaultValue={settings.supportEmail} placeholder="Not published" />
               </AdminField>

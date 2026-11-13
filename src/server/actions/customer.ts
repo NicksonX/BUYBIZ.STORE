@@ -22,6 +22,7 @@ import {
   formSuccess,
   type ActionState,
 } from "@/lib/validation/action-state";
+import { getCurrentUser } from "@/server/auth/session";
 import { requireUserPage, requireVerifiedUser } from "@/server/auth/guards";
 import { purchaseProxy } from "@/server/services/purchase";
 import { renewProxy } from "@/server/services/renewals";
@@ -41,6 +42,8 @@ import {
   replyToOwnTicket,
 } from "@/server/services/support";
 import { getTicketForUser } from "@/server/data/customer";
+import { getAppSettings } from "@/server/data/settings";
+import { writeAuditLog } from "@/server/services/audit";
 
 export async function purchaseAction(
   _previous: ActionState,
@@ -235,6 +238,158 @@ export async function cancelDemoDepositAction(formData: FormData) {
   const depositId = String(formData.get("depositId") ?? "");
   await cancelDemoDeposit({ depositId, userId: user.id }).catch(() => undefined);
   redirect("/dashboard/wallet");
+}
+
+export async function reactivateAccountAction(
+  _previous: ActionState,
+  _formData: FormData,
+): Promise<ActionState> {
+  const user = await getCurrentUser();
+  if (!user) redirect("/login?next=/reactivate");
+  if (user.status !== "frozen") {
+    redirect(user.role === "customer" ? "/dashboard" : "/admin");
+  }
+
+  const limit = await rateLimit({
+    action: "account:reactivate",
+    identifier: user.id,
+    limit: 5,
+    windowSeconds: 300,
+  });
+  if (!limit.allowed) return formError("Too many attempts. Please wait a few minutes.");
+
+  const settings = await getAppSettings();
+  const fee = settings.reactivationFeeMinor;
+  const db = await getDb();
+  const meta = await getRequestMeta();
+
+  try {
+    await db.transaction(async (tx) => {
+      const locked = await tx.query<{
+        status: string;
+        username: string;
+      }>(
+        `select status, username from profiles where id = $1 for update`,
+        [user.id],
+      );
+      const profile = locked.rows[0];
+      if (!profile) throw new AppError("NOT_FOUND", "Your account could not be found.");
+      if (profile.status !== "frozen") {
+        throw new AppError("CONFLICT", "This account is not frozen.");
+      }
+
+      let freeze = await tx.query<{ id: string }>(
+        `select f.id
+           from account_freezes f
+           left join account_reactivations r on r.freeze_id = f.id
+          where f.user_id = $1 and r.id is null
+          order by f.frozen_at desc
+          limit 1
+          for update of f`,
+        [user.id],
+      );
+      if (!freeze.rows[0]) {
+        const created = await tx.query<{ id: string }>(
+          `insert into account_freezes (user_id, reason, last_activity_at, frozen_at)
+           values ($1, 'inactivity', $2, $3)
+           returning id`,
+          [user.id, user.lastActivityAt ?? new Date(), user.frozenAt ?? new Date()],
+        );
+        freeze = created;
+      }
+
+      await tx.query(
+        `insert into wallet_accounts (user_id) values ($1)
+         on conflict (user_id) do nothing`,
+        [user.id],
+      );
+      const wallet = await tx.query<{ id: string }>(
+        `select id from wallet_accounts where user_id = $1 for update`,
+        [user.id],
+      );
+      if (!wallet.rows[0]) throw new AppError("UNKNOWN", "Your wallet could not be loaded.");
+      const balanceResult = await tx.query<{ balance: number }>(
+        `select coalesce(sum(amount_minor),0)::bigint as balance
+           from wallet_ledger where wallet_account_id = $1`,
+        [wallet.rows[0].id],
+      );
+      const balance = Number(balanceResult.rows[0]?.balance ?? 0);
+      if (fee > 0 && balance < fee) {
+        throw new AppError(
+          "INSUFFICIENT_BALANCE",
+          "Your preserved credit is below the reactivation fee. Contact support or an administrator. Your balance has not been changed.",
+        );
+      }
+
+      if (fee > 0) {
+        await tx.query(
+          `insert into wallet_ledger
+             (wallet_account_id, user_id, entry_type, amount_minor, balance_after_minor,
+              currency, reference, description, created_by)
+           values ($1,$2,'admin_debit',$3,$4,'NGN',$5,$6,$2)`,
+          [
+            wallet.rows[0].id,
+            user.id,
+            -fee,
+            balance - fee,
+            `reactivation:${freeze.rows[0].id}`,
+            "Account reactivation fee",
+          ],
+        );
+      }
+
+      await tx.query(
+        `insert into account_reactivations
+           (freeze_id, user_id, method, fee_minor, reactivated_by, notes, reactivated_at)
+         values ($1,$2,'wallet',$3,$2,'Customer self-reactivation',$4)`,
+        [freeze.rows[0].id, user.id, fee, new Date()],
+      );
+      await tx.query(
+        `update profiles
+            set status = 'active',
+                frozen_at = null,
+                freeze_reason = null,
+                last_activity_at = now(),
+                last_reactivated_at = now(),
+                updated_at = now()
+          where id = $1`,
+        [user.id],
+      );
+      await tx.query(
+        `insert into notifications (user_id, type, title, body, href)
+         values ($1,'security','Your account is active again',$2,'/dashboard')`,
+        [
+          user.id,
+          fee > 0
+            ? `Your BUYBIZ account was reactivated. ${formatNairaValue(fee)} was deducted from your preserved credit.`
+            : "Your BUYBIZ account was reactivated. Your preserved credit is unchanged.",
+        ],
+      );
+      await writeAuditLog(tx, {
+        actorUserId: user.id,
+        actorRole: "customer",
+        action: "account.reactivated",
+        entityType: "profile",
+        entityId: user.id,
+        metadata: { method: "wallet", feeMinor: fee, freezeId: freeze.rows[0].id },
+        ip: meta.ip,
+        userAgent: meta.userAgent,
+      });
+    });
+  } catch (error) {
+    if (error instanceof AppError) return formError(error.userMessage);
+    console.error("[buybiz/account] reactivation failed", error);
+    return formError(toUserMessage(error));
+  }
+
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/wallet");
+  revalidatePath("/reactivate");
+  redirect("/dashboard");
+}
+
+function formatNairaValue(minor: number) {
+  return `₦${(minor / 100).toLocaleString("en-NG")}`;
 }
 
 export async function terminateProxyAction(

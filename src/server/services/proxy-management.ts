@@ -5,6 +5,7 @@ import { AppError } from "@/lib/errors";
 import { formatNaira } from "@/lib/utils";
 import { writeAuditLog } from "@/server/services/audit";
 import { notifyUser } from "@/server/services/notifications";
+import { notifyAdmin } from "@/server/services/admin-notifications";
 
 const DAY_MS = 86_400_000;
 
@@ -267,6 +268,17 @@ export async function terminateProxy(input: {
           : "Your proxy was terminated. No refund was due after the completed usage period.",
       href: "/dashboard/proxies",
     });
+    if (quote.refundMinor > 0) {
+      await notifyAdmin(tx, {
+        type: "wallet_refund",
+        severity: "info",
+        title: "Customer wallet refund issued",
+        body: `${formatNaira(quote.refundMinor, { exact: true })} was refunded to a customer wallet after terminating ${allocation.productName}.`,
+        actionUrl: `/admin/users/${input.userId}`,
+        relatedUserId: input.userId,
+        dedupeKey: `termination_refund:${allocation.id}`,
+      });
+    }
     await writeAuditLog(tx, {
       actorUserId: input.userId,
       actorRole: "customer",

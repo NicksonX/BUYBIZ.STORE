@@ -74,6 +74,26 @@ export default async function AdminOverviewPage() {
         }
       />
 
+      {(overview.frozenAccounts > 0 || overview.inactivityAtRisk > 0 || overview.rotationDue > 0) ? (
+        <div className="flex flex-wrap gap-2">
+          {overview.rotationDue > 0 ? (
+            <Link href="/admin/rotation" className="inline-flex items-center gap-1.5 rounded-full border border-warning/25 bg-warning-soft px-3 py-1.5 text-[9.5px] font-medium text-warning">
+              Rotation due: {overview.rotationDue}
+            </Link>
+          ) : null}
+          {overview.frozenAccounts > 0 ? (
+            <Link href="/admin/inactivity" className="inline-flex items-center gap-1.5 rounded-full border border-warning/25 bg-warning-soft px-3 py-1.5 text-[9.5px] font-medium text-warning">
+              Frozen accounts: {overview.frozenAccounts}
+            </Link>
+          ) : null}
+          {overview.inactivityAtRisk > 0 ? (
+            <Link href="/admin/inactivity" className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-1.5 text-[9.5px] font-medium text-muted-foreground">
+              Inactivity due: {overview.inactivityAtRisk}
+            </Link>
+          ) : null}
+        </div>
+      ) : null}
+
       <div className="grid grid-cols-2 gap-2.5 xl:grid-cols-4">
         <StatCard
           label="Total sales"

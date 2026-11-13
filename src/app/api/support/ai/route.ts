@@ -18,6 +18,12 @@ export async function POST(request: Request) {
   if (!user) {
     return NextResponse.json({ message: "Please sign in first." }, { status: 401 });
   }
+  if (user.status === "frozen") {
+    return NextResponse.json(
+      { message: "This account is frozen. Reactivate it before using support features." },
+      { status: 403 },
+    );
+  }
 
   const limit = await rateLimit({
     action: "ai:support:user",

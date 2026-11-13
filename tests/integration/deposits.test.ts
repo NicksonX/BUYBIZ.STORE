@@ -83,12 +83,12 @@ describe("verified deposit crediting", () => {
 
     const first = await createDeposit({
       user: profile.rows[0],
-      amountMinor: 100_000,
+      amountMinor: 300_000,
       clientReference,
     });
     const second = await createDeposit({
       user: profile.rows[0],
-      amountMinor: 100_000,
+      amountMinor: 300_000,
       clientReference,
     });
 

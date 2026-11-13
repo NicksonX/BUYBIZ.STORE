@@ -193,6 +193,9 @@ export const inventorySchema = z.object({
   purchaseCost: z.string().optional().or(z.literal("")),
   maxSeats: z.coerce.number().int().min(1).max(10).default(10),
   accessType: z.enum(["shared", "single"]).default("shared"),
+  productSlug: z.string().trim().min(1, "Choose the package this proxy serves.").max(80),
+  credentialGroup: z.string().trim().min(1).max(24).default("A"),
+  rotationIntervalHours: z.coerce.number().int().min(0).max(8760).optional(),
   upstreamExpiry: z.string().min(1, "Set an upstream expiry date."),
   expiryIsEstimated: z.enum(["true", "false"]).default("true"),
   adminNotes: z.string().trim().max(1000).optional().or(z.literal("")),
@@ -223,6 +226,16 @@ export const settingsSchema = z.object({
   depositMax: z.string().min(1),
   maintenanceMode: z.enum(["true", "false"]),
   supportEmail: z.string().trim().max(200).optional().or(z.literal("")),
+  inactivityDays: z.coerce.number().int().min(1).max(3650),
+  reactivationFee: z.string().min(1),
+  adminNotificationEmail: z.string().trim().max(200).optional().or(z.literal("")),
+  adminNotificationPhone: z.string().trim().max(40).optional().or(z.literal("")),
+  adminVoicePhone: z.string().trim().max(40).optional().or(z.literal("")),
+  adminReminderTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Use HH:MM."),
+  adminTimezone: z.string().trim().min(3).max(80),
+  adminNotificationChannels: z
+    .array(z.enum(["in_app", "email", "sms", "voice"]))
+    .default(["in_app"]),
 });
 
 export const inventoryEditSchema = z.object({
@@ -234,12 +247,17 @@ export const inventoryEditSchema = z.object({
   purchaseCost: z.string().optional().or(z.literal("")),
   maxSeats: z.coerce.number().int().min(1).max(10),
   accessType: z.enum(["shared", "single"]).default("shared"),
+  productSlug: z.string().trim().min(1).max(80),
+  credentialGroup: z.string().trim().min(1).max(24),
+  rotationIntervalHours: z.coerce.number().int().min(0).max(8760).optional(),
 });
 
 export const rotateCredentialsSchema = z.object({
   inventoryId: z.string().uuid(),
   username: z.string().trim().min(1, "Enter the upstream username.").max(200),
   password: z.string().min(1, "Enter the upstream password.").max(500),
+  host: z.string().trim().max(255).optional().or(z.literal("")),
+  port: z.coerce.number().int().min(1).max(65535).optional(),
   confirm: z.literal("on", {
     message: "Confirm that shared customers may be affected.",
   }),

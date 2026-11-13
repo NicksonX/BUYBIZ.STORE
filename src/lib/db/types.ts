@@ -1,5 +1,9 @@
 export type UserRole = "customer" | "support" | "admin" | "super_admin";
-export type AccountStatus = "active" | "suspended" | "pending_verification";
+export type AccountStatus =
+  | "active"
+  | "suspended"
+  | "pending_verification"
+  | "frozen";
 export type ProxyProtocol = "http" | "https" | "socks4" | "socks5";
 export type ProxyStatus = "available" | "full" | "paused" | "expired" | "disabled";
 export type AllocationStatus = "active" | "expired" | "interrupted" | "revoked" | "terminated";
@@ -46,6 +50,9 @@ export interface Profile {
   onboardingComplete: boolean;
   proxyUseCase?: string | null;
   onboardingCompletedAt?: Date | null;
+  lastActivityAt?: Date | null;
+  frozenAt?: Date | null;
+  freezeReason?: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -265,6 +272,14 @@ export interface AppSettings {
   inventoryExpiryRemedy: string;
   paystackChannels: string[];
   legalReviewRequired: boolean;
+  inactivityDays: number;
+  reactivationFeeMinor: number;
+  adminNotificationEmail: string;
+  adminNotificationPhone: string;
+  adminVoicePhone: string;
+  adminNotificationChannels: string[];
+  adminReminderTime: string;
+  adminTimezone: string;
 }
 
 export interface Paginated<T> {

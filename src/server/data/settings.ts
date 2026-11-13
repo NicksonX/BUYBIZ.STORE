@@ -6,13 +6,21 @@ const DEFAULTS: AppSettings = {
   inventoryDefaultMaxSeats: 10,
   allocationSafetyBufferSeconds: 3600,
   stockExpiryDefaultDays: 30,
-  depositMinMinor: 50_000,
+  depositMinMinor: 300_000,
   depositMaxMinor: 100_000_000,
   maintenanceMode: false,
   supportEmail: "",
   inventoryExpiryRemedy: "manual_review",
   paystackChannels: ["card", "bank", "ussd", "bank_transfer"],
   legalReviewRequired: true,
+  inactivityDays: 60,
+  reactivationFeeMinor: 100_000,
+  adminNotificationEmail: "",
+  adminNotificationPhone: "",
+  adminVoicePhone: "",
+  adminNotificationChannels: ["in_app"],
+  adminReminderTime: "08:00",
+  adminTimezone: "Africa/Lagos",
 };
 
 export async function getAppSettings(): Promise<AppSettings> {
@@ -53,7 +61,7 @@ export async function getAppSettings(): Promise<AppSettings> {
         1,
         num("stock_expiry_default_days", DEFAULTS.stockExpiryDefaultDays),
       ),
-      depositMinMinor: Math.max(1, num("deposit_min_minor", DEFAULTS.depositMinMinor)),
+      depositMinMinor: Math.max(300_000, num("deposit_min_minor", DEFAULTS.depositMinMinor)),
       depositMaxMinor: Math.max(
         num("deposit_min_minor", DEFAULTS.depositMinMinor),
         num("deposit_max_minor", DEFAULTS.depositMaxMinor),
@@ -66,6 +74,18 @@ export async function getAppSettings(): Promise<AppSettings> {
           ? (channels as string[])
           : DEFAULTS.paystackChannels,
       legalReviewRequired: bool("legal_review_required", DEFAULTS.legalReviewRequired),
+      inactivityDays: Math.min(3650, Math.max(1, num("inactivity_days", DEFAULTS.inactivityDays))),
+      reactivationFeeMinor: Math.max(0, num("reactivation_fee_minor", DEFAULTS.reactivationFeeMinor)),
+      adminNotificationEmail: str("admin_notification_email", DEFAULTS.adminNotificationEmail),
+      adminNotificationPhone: str("admin_notification_phone", DEFAULTS.adminNotificationPhone),
+      adminVoicePhone: str("admin_voice_phone", DEFAULTS.adminVoicePhone),
+      adminNotificationChannels:
+        Array.isArray(map.get("admin_notification_channels")) &&
+        (map.get("admin_notification_channels") as unknown[]).every((item) => typeof item === "string")
+          ? (map.get("admin_notification_channels") as string[])
+          : DEFAULTS.adminNotificationChannels,
+      adminReminderTime: str("admin_reminder_time", DEFAULTS.adminReminderTime),
+      adminTimezone: str("admin_timezone", DEFAULTS.adminTimezone),
     };
   } catch (error) {
     console.error("[buybiz/settings] falling back to defaults", error);

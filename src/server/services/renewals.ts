@@ -6,6 +6,7 @@ import { formatDateTime } from "@/lib/utils";
 import { getAppSettings } from "@/server/data/settings";
 import { writeAuditLog } from "@/server/services/audit";
 import { notifyUser } from "@/server/services/notifications";
+import { recordCustomerActivity } from "@/server/services/activity";
 
 function renewalOrderNumber() {
   const now = new Date();
@@ -99,6 +100,8 @@ export async function renewProxy(input: {
     if (allocation.archivedAt || !allocation.durationSeconds) {
       throw new AppError("CONFLICT", "This proxy can no longer be renewed.");
     }
+
+    await recordCustomerActivity(tx, input.userId);
 
     const newExpiry = new Date(
       previousExpiry.getTime() + Number(allocation.durationSeconds) * 1000,

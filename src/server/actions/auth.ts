@@ -31,12 +31,16 @@ import {
   setDemoSessionCookie,
 } from "@/server/auth/demo-cookie";
 import { writeAuditLog } from "@/server/services/audit";
+import { recordCustomerActivity } from "@/server/services/activity";
 import {
   attachReferralForSignup,
   validateReferralCode,
 } from "@/server/services/referrals";
 
-function defaultLanding(profile: Pick<Profile, "role" | "onboardingComplete">) {
+function defaultLanding(
+  profile: Pick<Profile, "role" | "onboardingComplete" | "status">,
+) {
+  if (profile.status === "frozen") return "/reactivate";
   if (!profile.onboardingComplete) return "/onboarding";
   if (profile.role === "admin" || profile.role === "super_admin" || profile.role === "support") {
     return "/admin";
@@ -118,6 +122,7 @@ export async function loginAction(
         );
       }
       await setDemoSessionCookie(row.id);
+      await db.transaction((tx) => recordCustomerActivity(tx, row.id));
       destination = next || defaultLanding(row);
     } else {
       if (!isSupabaseAuthConfigured()) {
@@ -140,6 +145,8 @@ export async function loginAction(
           "This account is suspended. Contact support if you believe this is a mistake.",
         );
       }
+      const activityDb = await getDb();
+      await activityDb.transaction((tx) => recordCustomerActivity(tx, profile.id));
       destination = next || defaultLanding(profile);
     }
   } catch (error) {
@@ -462,6 +469,7 @@ export async function onboardingAction(
 ): Promise<ActionState> {
   const user = await getCurrentUser();
   if (!user) redirect("/login?next=/onboarding");
+  if (user.status === "frozen") redirect("/reactivate");
   if (user.onboardingComplete) {
     redirect(user.role === "customer" ? "/dashboard" : "/admin");
   }

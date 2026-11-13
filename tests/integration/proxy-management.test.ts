@@ -40,7 +40,7 @@ describe("proxy termination", () => {
   it("calculates completed-day refunds and credits the wallet only once", async () => {
     const user = await createTestUser("terminate");
     await fundWallet(user.id, SEVEN_DAY_PRICE + 10_000);
-    const inventory = await createTestInventory({ maxSeats: 10 });
+    const inventory = await createTestInventory({ maxSeats: 10, productSlug: "proxy-7-days" });
     const purchase = await buySevenDay(user.id);
 
     const db = await getDb();
@@ -108,7 +108,7 @@ describe("proxy termination", () => {
   it("rejects termination after the access window has ended", async () => {
     const user = await createTestUser("terminateexpired");
     await fundWallet(user.id, SEVEN_DAY_PRICE);
-    await createTestInventory({ maxSeats: 10 });
+    await createTestInventory({ maxSeats: 10, productSlug: "proxy-7-days" });
     const purchase = await buySevenDay(user.id);
     const db = await getDb();
     await db.query(
@@ -135,8 +135,8 @@ describe("proxy switching", () => {
   it("moves the slot without changing the subscription window or charging twice", async () => {
     const user = await createTestUser("switch");
     await fundWallet(user.id, SEVEN_DAY_PRICE);
-    const source = await createTestInventory({ maxSeats: 10 });
-    const target = await createTestInventory({ maxSeats: 10 });
+    const source = await createTestInventory({ maxSeats: 10, productSlug: "proxy-7-days" });
+    const target = await createTestInventory({ maxSeats: 10, productSlug: "proxy-7-days" });
     const purchase = await buySevenDay(user.id);
     const db = await getDb();
     const before = await db.query<{
@@ -213,10 +213,10 @@ describe("proxy switching", () => {
     const second = await createTestUser("switchraceb");
     await fundWallet(first.id, SEVEN_DAY_PRICE);
     await fundWallet(second.id, SEVEN_DAY_PRICE);
-    const source = await createTestInventory({ maxSeats: 10 });
+    const source = await createTestInventory({ maxSeats: 10, productSlug: "proxy-7-days" });
     const firstBuy = await buySevenDay(first.id);
     const secondBuy = await buySevenDay(second.id);
-    const target = await createTestInventory({ maxSeats: 1 });
+    const target = await createTestInventory({ maxSeats: 1, productSlug: "proxy-7-days" });
 
     const results = await Promise.allSettled([
       switchProxy({

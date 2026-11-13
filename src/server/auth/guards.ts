@@ -18,6 +18,7 @@ function loginUrl(nextPath: string) {
 export async function requireUserPage(): Promise<Profile> {
   const user = await getCurrentUser();
   if (!user) redirect(loginUrl(await currentPathname()));
+  if (user.status === "frozen") redirect("/reactivate");
   if (!user.onboardingComplete) redirect("/onboarding");
   return user;
 }
@@ -53,6 +54,12 @@ export async function requireVerifiedUser(): Promise<Profile> {
     throw new AppError(
       "ACCOUNT_SUSPENDED",
       "Your account is suspended. Contact support to restore access.",
+    );
+  }
+  if (user.status === "frozen") {
+    throw new AppError(
+      "ACCOUNT_FROZEN",
+      "This account is frozen. Reactivate it before making purchases or deposits.",
     );
   }
   if (!user.emailVerified) {

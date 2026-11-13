@@ -395,3 +395,12 @@ scripts                 lifecycle runner
 ## Marketing photo credit
 
 The desktop home hero uses a Pexels photo by ANTONI SHKRABA production. Pexels allows free commercial use without required attribution; the credit is recorded here for provenance.
+
+
+## Wallet credits, inactivity and rotation
+
+The wallet minimum is 3,000 credits (₦3,000), at 1 credit = ₦1. Credits never expire. Package prices remain ₦500, ₦1,000 and ₦3,000 for the 24-hour, 7-day and 30-day plans.
+
+Customer accounts freeze after the configurable inactivity period, defaulting to 60 days. Frozen balances and history are preserved. A customer can reactivate by paying the configured ₦1,000 wallet fee when their preserved credit is sufficient, or an administrator can unfreeze the account manually. Expired proxy subscriptions are not restored by reactivation.
+
+Daily and weekly proxy inventory is package-specific and uses manual upstream rotation. See [proxy limitations](docs/proxy-limitations.md) for what BUYBIZ can and cannot enforce upstream. In-app admin reminders are in the notification centre; external email, SMS and voice delivery are intentionally disabled until a provider is configured.

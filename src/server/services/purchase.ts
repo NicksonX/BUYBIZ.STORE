@@ -3,9 +3,11 @@ import { randomBytes, randomUUID } from "node:crypto";
 import { getDb } from "@/lib/db";
 import type { SqlTransaction } from "@/lib/db/driver";
 import { AppError } from "@/lib/errors";
-import { formatDateTime } from "@/lib/utils";
+import { formatDateTime, formatNaira } from "@/lib/utils";
 import { writeAuditLog } from "@/server/services/audit";
 import { notifyUser } from "@/server/services/notifications";
+import { recordCustomerActivity } from "@/server/services/activity";
+import { notifyAdmin } from "@/server/services/admin-notifications";
 
 export type PurchaseOutcome =
   | {
@@ -151,6 +153,12 @@ export async function purchaseProxy(input: {
           "Your account is suspended. Contact support to restore access.",
         );
       }
+      if (profile.status === "frozen") {
+        throw new AppError(
+          "ACCOUNT_FROZEN",
+          "Your account is frozen for inactivity. Reactivate it before purchasing.",
+        );
+      }
       if (!profile.emailVerified) {
         throw new AppError(
           "EMAIL_NOT_VERIFIED",
@@ -160,6 +168,8 @@ export async function purchaseProxy(input: {
       if (!profile.onboardingComplete) {
         throw new AppError("FORBIDDEN", "Finish setting up your account first.");
       }
+
+      await recordCustomerActivity(tx, input.userId);
 
       const settings = await loadSettings(tx);
       if (settings.maintenanceMode) {
@@ -171,13 +181,14 @@ export async function purchaseProxy(input: {
 
       const productResult = await tx.query<{
         id: string;
+        slug: string;
         name: string;
         durationSeconds: number;
         priceMinor: number;
         accessType: "shared" | "single";
         maxActivePerCustomer: number | null;
       }>(
-        `select id, name, duration_seconds as "durationSeconds",
+        `select id, slug, name, duration_seconds as "durationSeconds",
                 price_minor as "priceMinor",
                 access_type as "accessType",
                 max_active_per_customer as "maxActivePerCustomer"
@@ -252,12 +263,13 @@ export async function purchaseProxy(input: {
           where i.archived_at is null
             and i.status in ('available','full')
             and i.access_type = $3
+            and i.product_slug = $4
             and i.upstream_expires_at >=
                 now() + (($1::int + $2::int) * interval '1 second')
           order by i.uploaded_at asc, i.id asc
           limit 25
           for update skip locked`,
-        [product.durationSeconds, settings.safetyBufferSeconds, product.accessType],
+        [product.durationSeconds, settings.safetyBufferSeconds, product.accessType, product.slug],
       );
 
       let selectedInventoryId: string | null = null;
@@ -286,6 +298,7 @@ export async function purchaseProxy(input: {
               where i.archived_at is null
                 and i.status in ('available','full')
                 and i.access_type = $1
+                and i.product_slug = $2
                 and i.upstream_expires_at > now()
                 and (
                   select count(*) from proxy_allocations a
@@ -294,7 +307,7 @@ export async function purchaseProxy(input: {
                      and a.expires_at > now()
                 ) < i.max_seats
            ) as "insufficientLife"`,
-        [product.accessType],
+        [product.accessType, product.slug],
         );
         const reason = reasonResult.rows[0]?.insufficientLife
           ? "INSUFFICIENT_STOCK_LIFETIME"
@@ -360,6 +373,15 @@ export async function purchaseProxy(input: {
           title: "Purchase refunded to your wallet",
           body: `We could not allocate ${product.name} (${orderNumber}) because no eligible proxy inventory was available. The full amount has been returned to your BUYBIZ wallet.`,
           href: `/dashboard/orders/${orderId}`,
+        });
+        await notifyAdmin(tx, {
+          type: "failed_allocation",
+          severity: "warning",
+          title: "Proxy allocation failed and was refunded",
+          body: `${product.name} could not be allocated for order ${orderNumber}. The full ${formatNaira(price, { exact: true })} was refunded to the customer wallet. Reason: ${reason}.`,
+          actionUrl: `/admin/orders/${orderId}`,
+          relatedUserId: input.userId,
+          dedupeKey: `failed_allocation:${orderId}`,
         });
         await writeAuditLog(tx, {
           actorUserId: input.userId,

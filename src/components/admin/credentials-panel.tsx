@@ -16,9 +16,15 @@ import { Alert } from "@/components/ui/alert";
 export function CredentialsPanel({
   inventoryId,
   hasCredentials,
+  activeCustomers,
+  expiredCustomers,
+  rotationActionLabel = "CONFIRM CREDENTIAL ROTATION",
 }: {
   inventoryId: string;
   hasCredentials: boolean;
+  activeCustomers?: number;
+  expiredCustomers?: number;
+  rotationActionLabel?: string;
 }) {
   const [revealState, revealAction, revealing] = useActionState<
     CredentialsState,
@@ -104,10 +110,20 @@ export function CredentialsPanel({
               <div className="grid gap-2 sm:grid-cols-2">
                 <Input name="username" placeholder="New upstream username" required className="h-9 text-[11px]" />
                 <Input name="password" placeholder="New upstream password" required type="password" className="h-9 text-[11px]" />
+                <Input name="host" placeholder="New host (optional)" className="h-9 text-[11px]" />
+                <Input name="port" placeholder="New port (optional)" type="number" min={1} max={65535} className="h-9 text-[11px]" />
               </div>
               <p className="text-[8.5px] leading-4 text-warning">
-                Rotating shared credentials may disconnect every active customer on this proxy. Only do this when the upstream provider has changed the login and you intend to update all customers.
+                Rotating shared credentials may disconnect every active customer on this proxy. Only do this when the upstream provider has changed the login. BUYBIZ will show the new credentials to every active customer without changing their individual expiry. If active customers would be affected, the rotation centre shows the exact count and requires an explicit confirmation.
               </p>
+              {typeof activeCustomers === "number" ? (
+                <div className="grid grid-cols-2 gap-2 rounded-[8px] border border-border bg-surface-subtle p-2.5 text-[9px]">
+                  <span className="text-muted-foreground">Active customers</span>
+                  <span className="tabular text-right font-semibold">{activeCustomers}</span>
+                  <span className="text-muted-foreground">Expired / ended</span>
+                  <span className="tabular text-right">{expiredCustomers ?? 0}</span>
+                </div>
+              ) : null}
               <label className="flex items-start gap-2 text-[9px] leading-4 text-muted-foreground">
                 <input type="checkbox" name="confirm" required className="mt-0.5 h-3.5 w-3.5 accent-foreground" />
                 I understand the shared-customer impact.
@@ -118,7 +134,7 @@ export function CredentialsPanel({
                 className="inline-flex h-8 items-center gap-1.5 rounded-full border border-danger/25 bg-danger-soft px-3 text-[9.5px] font-medium text-danger disabled:opacity-50"
               >
                 {rotating ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
-                Rotate credentials
+                {rotationActionLabel}
               </button>
             </form>
           </div>

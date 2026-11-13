@@ -19,6 +19,9 @@ const PROFILE_COLUMNS = `
   onboarding_complete as "onboardingComplete",
   proxy_use_case as "proxyUseCase",
   onboarding_completed_at as "onboardingCompletedAt",
+  last_activity_at as "lastActivityAt",
+  frozen_at as "frozenAt",
+  freeze_reason as "freezeReason",
   created_at as "createdAt",
   updated_at as "updatedAt"
 `;

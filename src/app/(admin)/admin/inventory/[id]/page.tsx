@@ -21,6 +21,7 @@ import { CredentialsPanel } from "@/components/admin/credentials-panel";
 import { Input, Select, Textarea } from "@/components/ui/input";
 import { requireAdminPage } from "@/server/auth/guards";
 import { getAdminInventoryDetail } from "@/server/data/admin";
+import { getPlanAvailability } from "@/server/data/products";
 import {
   setInventoryStatusAction,
   updateInventoryAction,
@@ -51,7 +52,10 @@ export default async function AdminInventoryDetailPage({
 }) {
   const { id } = await params;
   await requireAdminPage();
-  const data = await getAdminInventoryDetail(id);
+  const [data, plans] = await Promise.all([
+    getAdminInventoryDetail(id),
+    getPlanAvailability(),
+  ]);
   if (!data) notFound();
   const { inventory, allocations } = data;
   const remaining = remainingParts(inventory.upstreamExpiresAt);
@@ -187,6 +191,18 @@ export default async function AdminInventoryDetailPage({
                 </AdminField>
                 <AdminField label="Region" htmlFor="inv-region">
                   <Input id="inv-region" name="region" defaultValue={inventory.region ?? ""} />
+                </AdminField>
+                <AdminField label="Proxy package" htmlFor="inv-product" hint="Cannot change while customers are active">
+                  <Select id="inv-product" name="productSlug" defaultValue={inventory.productSlug ?? "proxy-24-hours"}>
+                    {plans.map((plan) => (
+                      <option key={plan.product.id} value={plan.product.slug}>
+                        {plan.product.name}
+                      </option>
+                    ))}
+                  </Select>
+                </AdminField>
+                <AdminField label="Credential group" htmlFor="inv-group">
+                  <Input id="inv-group" name="credentialGroup" defaultValue={inventory.credentialGroup} maxLength={24} />
                 </AdminField>
                 <AdminField label="Purchase cost (NGN)" htmlFor="inv-cost">
                   <Input id="inv-cost" name="purchaseCost" inputMode="decimal" defaultValue={(inventory.purchaseCostMinor / 100).toString()} />

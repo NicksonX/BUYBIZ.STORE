@@ -50,6 +50,10 @@ delete from public.referrals;
 delete from public.proxy_renewals;
 delete from public.proxy_terminations;
 delete from public.proxy_switches;
+delete from public.proxy_rotations;
+delete from public.admin_notifications;
+delete from public.account_reactivations;
+delete from public.account_freezes;
 
 -- Allocations depend on orders and inventory
 delete from public.proxy_allocations;
@@ -97,6 +101,10 @@ union all select 'referrals', count(*)::int from public.referrals
 union all select 'proxy_renewals', count(*)::int from public.proxy_renewals
 union all select 'proxy_terminations', count(*)::int from public.proxy_terminations
 union all select 'proxy_switches', count(*)::int from public.proxy_switches
+union all select 'proxy_rotations', count(*)::int from public.proxy_rotations
+union all select 'admin_notifications', count(*)::int from public.admin_notifications
+union all select 'account_reactivations', count(*)::int from public.account_reactivations
+union all select 'account_freezes', count(*)::int from public.account_freezes
 union all select 'support_tickets', count(*)::int from public.support_tickets
 union all select 'notifications', count(*)::int from public.notifications
 union all select 'audit_logs', count(*)::int from public.audit_logs

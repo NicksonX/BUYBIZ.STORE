@@ -29,6 +29,8 @@ export type AdminUserRow = {
   role: UserRole;
   status: string;
   emailVerified: boolean;
+  lastActivityAt: Date | null;
+  frozenAt: Date | null;
   createdAt: Date;
   balanceMinor: number;
   orderCount: number;
@@ -45,6 +47,12 @@ export type AdminInventoryRow = {
   purchaseCostMinor: number;
   maxSeats: number;
   accessType: "shared" | "single";
+  productSlug: string | null;
+  credentialGroup: string;
+  rotationIntervalHours: number | null;
+  lastRotatedAt: Date | null;
+  nextRotationAt: Date | null;
+  credentialVersion: number;
   activeSeats: number;
   freeSeats: number;
   uploadedAt: Date;
@@ -125,6 +133,9 @@ export type AdminOverview = {
   openTickets: number;
   pendingDeposits: number;
   totalOrders: number;
+  frozenAccounts: number;
+  inactivityAtRisk: number;
+  rotationDue: number;
   monthlySales: { month: string; totalMinor: number }[];
   packageMix: { name: string; count: number; totalMinor: number }[];
   inventoryUtilization: {
@@ -159,6 +170,9 @@ export async function getAdminOverview(): Promise<AdminOverview> {
       openTickets: number;
       pendingDeposits: number;
       totalOrders: number;
+      frozenAccounts: number;
+      inactivityAtRisk: number;
+      rotationDue: number;
     }>(
       `select
          (select count(*)::int from profiles where role = 'customer') as "totalUsers",
@@ -184,7 +198,20 @@ export async function getAdminOverview(): Promise<AdminOverview> {
          (select coalesce(sum(purchase_cost_minor),0)::bigint from proxy_inventory) as "inventoryCost",
          (select count(*)::int from support_tickets where status in ('open','pending')) as "openTickets",
          (select count(*)::int from deposits where status in ('pending','initiated')) as "pendingDeposits",
-         (select count(*)::int from orders) as "totalOrders"`,
+         (select count(*)::int from orders) as "totalOrders",
+         (select count(*)::int from profiles where role='customer' and status='frozen') as "frozenAccounts",
+         (
+           select count(*)::int from profiles p
+            where p.role='customer' and p.status='active'
+              and p.last_activity_at <= now() - make_interval(
+                days => coalesce((select (value #>> '{}')::int from app_settings where key='inactivity_days'), 60)
+              )
+         ) as "inactivityAtRisk",
+         (
+           select count(*)::int from proxy_inventory
+            where archived_at is null and rotation_interval_hours is not null
+              and next_rotation_at is not null and next_rotation_at <= now()
+         ) as "rotationDue"`,
     ),
     db.query<{ month: string; totalMinor: number }>(
       `select to_char(date_trunc('month', created_at), 'YYYY-MM') as month,
@@ -241,6 +268,9 @@ export async function getAdminOverview(): Promise<AdminOverview> {
     openTickets: Number(m?.openTickets ?? 0),
     pendingDeposits: Number(m?.pendingDeposits ?? 0),
     totalOrders: Number(m?.totalOrders ?? 0),
+    frozenAccounts: Number(m?.frozenAccounts ?? 0),
+    inactivityAtRisk: Number(m?.inactivityAtRisk ?? 0),
+    rotationDue: Number(m?.rotationDue ?? 0),
     monthlySales: monthly.rows.map((row) => ({
       month: row.month,
       totalMinor: amount(row.totalMinor),
@@ -332,6 +362,8 @@ export async function getAdminUsers(input: {
     `select p.id, p.username, p.email,
             p.display_name as "displayName", p.role, p.status,
             p.email_verified as "emailVerified",
+            p.last_activity_at as "lastActivityAt",
+            p.frozen_at as "frozenAt",
             p.created_at as "createdAt",
             coalesce(w.balance,0)::bigint as "balanceMinor",
             coalesce(o.cnt,0)::int as "orderCount",
@@ -368,6 +400,8 @@ export async function getAdminUserDetail(userId: string) {
             avatar_url as "avatarUrl", role, status,
             email_verified as "emailVerified",
             onboarding_complete as "onboardingComplete",
+            last_activity_at as "lastActivityAt", frozen_at as "frozenAt",
+            freeze_reason as "freezeReason",
             created_at as "createdAt", updated_at as "updatedAt"
        from profiles where id = $1 limit 1`,
     [userId],
@@ -462,6 +496,7 @@ export async function getAdminInventory(input: {
   q?: string;
   status?: string;
   protocol?: string;
+  productSlugs?: string[];
 }) {
   const db = await getDb();
   const clauses: string[] = ["i.archived_at is null"];
@@ -484,10 +519,19 @@ export async function getAdminInventory(input: {
     params.push(input.protocol);
     index += 1;
   }
+  if (input.productSlugs?.length) {
+    clauses.push(`i.product_slug = any($${index}::text[])`);
+    params.push(input.productSlugs);
+    index += 1;
+  }
   const result = await db.query<AdminInventoryRow>(
     `select i.id, i.label, i.protocol, i.host, i.port, i.region,
             i.purchase_cost_minor as "purchaseCostMinor",
             i.max_seats as "maxSeats", i.access_type as "accessType",
+            i.product_slug as "productSlug", i.credential_group as "credentialGroup",
+            i.rotation_interval_hours as "rotationIntervalHours",
+            i.last_rotated_at as "lastRotatedAt", i.next_rotation_at as "nextRotationAt",
+            i.credential_version as "credentialVersion",
             coalesce(s.active,0)::int as "activeSeats",
             greatest(i.max_seats - coalesce(s.active,0),0)::int as "freeSeats",
             i.uploaded_at as "uploadedAt",
@@ -534,6 +578,10 @@ export async function getAdminInventoryDetail(id: string) {
             i.provider_note as "providerNote", i.admin_notes as "adminNotes",
             i.purchase_cost_minor as "purchaseCostMinor",
             i.max_seats as "maxSeats", i.access_type as "accessType",
+            i.product_slug as "productSlug", i.credential_group as "credentialGroup",
+            i.rotation_interval_hours as "rotationIntervalHours",
+            i.last_rotated_at as "lastRotatedAt", i.next_rotation_at as "nextRotationAt",
+            i.credential_version as "credentialVersion",
             coalesce(s.active,0)::int as "activeSeats",
             greatest(i.max_seats - coalesce(s.active,0),0)::int as "freeSeats",
             i.uploaded_at as "uploadedAt",
@@ -1229,5 +1277,184 @@ export async function getAdminReferrals() {
       rewarded: referrals.filter((row) => row.status === "rewarded").length,
       paidMinor: referrals.reduce((sum, row) => sum + (row.rewardMinor ?? 0), 0),
     },
+  };
+}
+
+export type AdminRotationInventoryRow = {
+  id: string;
+  label: string;
+  productSlug: string | null;
+  credentialGroup: string;
+  host: string;
+  port: number;
+  region: string | null;
+  protocol: string;
+  rotationIntervalHours: number | null;
+  lastRotatedAt: Date | null;
+  nextRotationAt: Date | null;
+  credentialVersion: number;
+  activeCustomers: number;
+  expiredCustomers: number;
+  status: string;
+  upstreamExpiresAt: Date;
+  hasCredentials: boolean;
+};
+
+export type AdminRotationHistoryRow = {
+  id: string;
+  inventoryLabel: string;
+  rotatedAt: Date;
+  previousVersion: number;
+  newVersion: number;
+  affectedActive: number;
+  affectedExpired: number;
+  status: string;
+  adminUsername: string | null;
+};
+
+export async function getAdminRotationOverview() {
+  const db = await getDb();
+  const inventory = await db.query<AdminRotationInventoryRow>(
+    `select i.id, i.label, i.product_slug as "productSlug",
+            i.credential_group as "credentialGroup", i.host, i.port, i.region,
+            i.protocol::text as protocol,
+            i.rotation_interval_hours as "rotationIntervalHours",
+            i.last_rotated_at as "lastRotatedAt", i.next_rotation_at as "nextRotationAt",
+            i.credential_version as "credentialVersion",
+            (select count(*)::int from proxy_allocations a
+              where a.proxy_inventory_id=i.id and a.status='active' and a.expires_at>now()) as "activeCustomers",
+            (select count(*)::int from proxy_allocations a
+              where a.proxy_inventory_id=i.id and (a.status='expired' or (a.status='active' and a.expires_at<=now()))) as "expiredCustomers",
+            i.status::text as status,
+            i.upstream_expires_at as "upstreamExpiresAt",
+            (i.encrypted_username is not null) as "hasCredentials"
+       from proxy_inventory i
+      where i.archived_at is null
+        and i.product_slug in ('proxy-24-hours','proxy-7-days')
+      order by i.product_slug, i.credential_group, i.label`,
+  );
+  const history = await db.query<AdminRotationHistoryRow>(
+    `select r.id, i.label as "inventoryLabel", r.rotated_at as "rotatedAt",
+            r.previous_version as "previousVersion", r.new_version as "newVersion",
+            r.affected_active as "affectedActive", r.affected_expired as "affectedExpired",
+            r.status, p.username as "adminUsername"
+       from proxy_rotations r
+       join proxy_inventory i on i.id=r.inventory_id
+       left join profiles p on p.id=r.rotated_by
+      order by r.rotated_at desc
+      limit 40`,
+  );
+  return { inventory: inventory.rows, history: history.rows };
+}
+
+export async function getAdminNotifications(limit = 100) {
+  const db = await getDb();
+  const result = await db.query<{
+    id: string;
+    type: string;
+    severity: string;
+    title: string;
+    body: string;
+    actionUrl: string | null;
+    inventoryLabel: string | null;
+    username: string | null;
+    readAt: Date | null;
+    resolvedAt: Date | null;
+    createdAt: Date;
+  }>(
+    `select n.id, n.type, n.severity, n.title, n.body,
+            n.action_url as "actionUrl", i.label as "inventoryLabel",
+            p.username, n.read_at as "readAt", n.resolved_at as "resolvedAt",
+            n.created_at as "createdAt"
+       from admin_notifications n
+       left join proxy_inventory i on i.id=n.related_inventory_id
+       left join profiles p on p.id=n.related_user_id
+      order by n.created_at desc
+      limit $1`,
+    [limit],
+  );
+  return result.rows;
+}
+
+export async function getAdminNotificationCount() {
+  const db = await getDb();
+  const result = await db.query<{ count: number }>(
+    `select count(*)::int as count from admin_notifications
+      where read_at is null and resolved_at is null`,
+  );
+  return Number(result.rows[0]?.count ?? 0);
+}
+
+export async function getInactivityOverview() {
+  const db = await getDb();
+  const settings = await db.query<{ key: string; value: unknown }>(
+    `select key, value from app_settings where key in ('inactivity_days','inactivity_warning_days')`,
+  );
+  const values = new Map(settings.rows.map((row) => [row.key, row.value]));
+  const days = Math.max(1, Number(values.get("inactivity_days") ?? 60));
+  const warningDays = Math.max(1, Number(values.get("inactivity_warning_days") ?? 7));
+  const frozen = await db.query<{
+    id: string;
+    username: string;
+    email: string;
+    lastActivityAt: Date;
+    frozenAt: Date | null;
+    freezeReason: string | null;
+    balanceMinor: number;
+    activeProxies: number;
+  }>(
+    `select p.id, p.username, p.email, p.last_activity_at as "lastActivityAt",
+            p.frozen_at as "frozenAt", p.freeze_reason as "freezeReason",
+            coalesce(w.balance,0)::bigint as "balanceMinor",
+            coalesce(a.count,0)::int as "activeProxies"
+       from profiles p
+       left join lateral (select sum(amount_minor) as balance from wallet_ledger l where l.user_id=p.id) w on true
+       left join lateral (select count(*)::int as count from proxy_allocations x where x.user_id=p.id and x.status='active' and x.expires_at>now()) a on true
+      where p.role='customer' and p.status='frozen'
+      order by p.frozen_at desc nulls last`,
+  );
+  const approaching = await db.query<{
+    id: string;
+    username: string;
+    email: string;
+    lastActivityAt: Date;
+    balanceMinor: number;
+  }>(
+    `select p.id, p.username, p.email, p.last_activity_at as "lastActivityAt",
+            coalesce(w.balance,0)::bigint as "balanceMinor"
+       from profiles p
+       left join lateral (select sum(amount_minor) as balance from wallet_ledger l where l.user_id=p.id) w on true
+      where p.role='customer' and p.status='active'
+        and p.last_activity_at <= now() - make_interval(days => $1::int - $2::int)
+        and p.last_activity_at > now() - make_interval(days => $1::int)
+      order by p.last_activity_at asc`,
+    [days, warningDays],
+  );
+  const history = await db.query<{
+    username: string;
+    method: string;
+    feeMinor: number;
+    reactivatedAt: Date;
+    freezeReason: string | null;
+  }>(
+    `select p.username, r.method, r.fee_minor as "feeMinor",
+            r.reactivated_at as "reactivatedAt", f.reason as "freezeReason"
+       from account_reactivations r
+       join profiles p on p.id=r.user_id
+       join account_freezes f on f.id=r.freeze_id
+      order by r.reactivated_at desc limit 30`,
+  );
+  return {
+    days,
+    warningDays,
+    frozen: frozen.rows.map((row) => ({
+      ...row,
+      balanceMinor: amount(row.balanceMinor),
+    })),
+    approaching: approaching.rows.map((row) => ({
+      ...row,
+      balanceMinor: amount(row.balanceMinor),
+    })),
+    history: history.rows,
   };
 }

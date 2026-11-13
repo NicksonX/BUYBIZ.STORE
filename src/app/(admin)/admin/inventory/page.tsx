@@ -47,7 +47,21 @@ export default async function AdminInventoryPage({
   const q = first(params.q) ?? "";
   const status = first(params.status) ?? "all";
   const protocol = first(params.protocol) ?? "all";
-  const items = await getAdminInventory({ q, status, protocol });
+  const category = first(params.category) ?? "all";
+  const categorySlugs =
+    category === "24-hours"
+      ? ["proxy-24-hours"]
+      : category === "7-days"
+        ? ["proxy-7-days"]
+        : category === "30-days"
+          ? ["proxy-30-days", "proxy-personal-30-days"]
+          : undefined;
+  const items = await getAdminInventory({
+    q,
+    status,
+    protocol,
+    productSlugs: categorySlugs,
+  });
   const liveItems = items.filter(
     (item) =>
       (item.status === "available" || item.status === "full") &&
@@ -75,7 +89,35 @@ export default async function AdminInventoryPage({
         }
       />
 
-      <div className="mt-4 grid grid-cols-3 gap-2.5">
+      <div className="mt-4 flex flex-wrap gap-1.5">
+        {[
+          ["all", "All inventory"],
+          ["24-hours", "24-Hour Proxies"],
+          ["7-days", "7-Day Proxies"],
+          ["30-days", "30-Day Proxies"],
+        ].map(([key, label]) => (
+          <Link
+            key={key}
+            href={key === "all" ? "/admin/inventory" : `/admin/inventory?category=${key}`}
+            className={cn(
+              "inline-flex h-8 items-center rounded-full border px-3.5 text-[10px] font-medium",
+              category === key
+                ? "border-foreground bg-foreground text-background"
+                : "border-border bg-surface text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {label}
+          </Link>
+        ))}
+        <Link
+          href="/admin/rotation"
+          className="inline-flex h-8 items-center rounded-full border border-warning/25 bg-warning-soft px-3.5 text-[10px] font-medium text-warning"
+        >
+          Rotation centre
+        </Link>
+      </div>
+
+      <div className="mt-3 grid grid-cols-3 gap-2.5">
         {[
           { label: "Live proxies", value: counts.available, icon: Package },
           { label: "Active seats", value: counts.seats, icon: Users },
@@ -143,7 +185,7 @@ export default async function AdminInventoryPage({
                     <div className="min-w-0">
                       <p className="truncate text-[12px] font-medium">{item.label}</p>
                       <p className="mt-0.5 truncate text-[9px] text-muted-foreground">
-                        {item.host}:{item.port} · {item.protocol.toUpperCase()} · {item.accessType === "single" ? "Single customer" : "Shared"} · {item.region ?? "No region"}
+                        {item.productSlug ?? "Unassigned"} · Group {item.credentialGroup} · {item.protocol.toUpperCase()} · {item.accessType === "single" ? "Single" : "Shared"} · {item.region ?? "No region"}
                       </p>
                     </div>
                   </div>

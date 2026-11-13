@@ -243,8 +243,8 @@ describe("personal proxy", () => {
   it("uses a single-customer inventory and blocks a second active personal proxy", async () => {
     // Two separate single-customer proxies exist, so the block must come from
     // the per-customer product limit, not from stock exhaustion.
-    await createTestInventory({ maxSeats: 1, accessType: "single", expiresInSeconds: 45 * 86400 });
-    await createTestInventory({ maxSeats: 1, accessType: "single", expiresInSeconds: 45 * 86400 });
+    await createTestInventory({ maxSeats: 1, accessType: "single", productSlug: "proxy-personal-30-days", expiresInSeconds: 45 * 86400 });
+    await createTestInventory({ maxSeats: 1, accessType: "single", productSlug: "proxy-personal-30-days", expiresInSeconds: 45 * 86400 });
     const user = await createTestUser("personal");
     await fundWallet(user.id, 1_000_000);
 
@@ -270,5 +270,33 @@ describe("personal proxy", () => {
       [user.id],
     );
     expect(active.rows[0].count).toBe(1);
+  });
+});
+
+describe("package catalogue and durations", () => {
+  it("sells the 30-day package only from 30-day inventory", async () => {
+    const user = await createTestUser("thirty");
+    await fundWallet(user.id, 300_000);
+    await createTestInventory({
+      maxSeats: 10,
+      productSlug: "proxy-30-days",
+      expiresInSeconds: 45 * 86400,
+    });
+
+    const result = await purchaseProxy({
+      userId: user.id,
+      productSlug: "proxy-30-days",
+      idempotencyKey: key(),
+    });
+    expect(result.outcome).toBe("allocated");
+    if (result.outcome !== "allocated") return;
+
+    const db = await getDb();
+    const duration = await db.query<{ hours: number }>(
+      `select extract(epoch from (expires_at - activated_at)) / 3600 as hours
+         from proxy_allocations where id=$1`,
+      [result.allocationId],
+    );
+    expect(Number(duration.rows[0].hours)).toBeCloseTo(720, 0);
   });
 });
