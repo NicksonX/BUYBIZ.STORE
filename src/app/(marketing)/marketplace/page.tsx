@@ -46,6 +46,8 @@ export default async function PublicMarketplacePage({
 }) {
   const params = await searchParams;
   const raw = first(params.category);
+  const query = (first(params.q) ?? "").trim();
+  const normalizedQuery = query.toLowerCase();
   const active = categories.some((category) => category.key === raw)
     ? (raw as (typeof categories)[number]["key"])
     : "all";
@@ -55,8 +57,18 @@ export default async function PublicMarketplacePage({
     getCurrentUser().catch(() => null),
   ]);
 
+  const matches = (product: Product) =>
+    !normalizedQuery ||
+    [product.name, product.description, product.slug, product.category]
+      .join(" ")
+      .toLowerCase()
+      .includes(normalizedQuery);
+  const visiblePlans = plans.filter((plan) => matches(plan.product));
+  const visibleComingSoon = comingSoon.filter(matches);
   const showProxy = active === "all" || active === "proxy";
   const showComing = active === "all" || active === "coming-soon";
+  const noResults =
+    Boolean(query) && visiblePlans.length === 0 && visibleComingSoon.length === 0;
 
   return (
     <>
@@ -84,6 +96,17 @@ export default async function PublicMarketplacePage({
 
       <section className="bg-[#F4F4F5] py-12 sm:py-16">
         <div className="mx-auto w-full max-w-[1100px] px-5 sm:px-8">
+          {query ? (
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-[10px] border border-black/[0.07] bg-white px-3.5 py-2.5 text-[10.5px] text-[#6E7178]">
+              <span>
+                Search results for <strong className="font-semibold text-[#0A0B0D]">“{query}”</strong>
+              </span>
+              <Link href="/marketplace" className="font-medium text-[#0A0B0D] underline underline-offset-2">
+                Clear search
+              </Link>
+            </div>
+          ) : null}
+
           <div className="mb-6 flex flex-wrap gap-1.5">
             {categories.map((category) => (
               <Link
@@ -107,7 +130,14 @@ export default async function PublicMarketplacePage({
             ))}
           </div>
 
-          {showProxy ? (
+          {noResults ? (
+            <Alert tone="info" title="No matching products">
+              No live or planned BUYBIZ service matches that search. Try “proxy”,
+              “24 hours” or “personal”.
+            </Alert>
+          ) : null}
+
+          {showProxy && !noResults ? (
             <section>
               <div className="mb-3 flex items-end justify-between gap-4">
                 <div>
@@ -119,16 +149,16 @@ export default async function PublicMarketplacePage({
                   </h2>
                 </div>
                 <p className="text-[10px] text-[#6E7178]">
-                  {plans.filter((plan) => plan.available).length} of {plans.length} plans available
+                  {visiblePlans.filter((plan) => plan.available).length} of {visiblePlans.length} plans available
                 </p>
               </div>
-              {plans.length === 0 ? (
+              {visiblePlans.length === 0 ? (
                 <Alert tone="warning" title="Live plans are temporarily unavailable">
                   The product catalogue could not be loaded. Please refresh.
                 </Alert>
               ) : (
                 <div className="grid gap-4 sm:gap-5 sm:grid-cols-2 2xl:grid-cols-4">
-                  {plans.map((plan) => (
+                  {visiblePlans.map((plan) => (
                     <PlanCard
                       key={plan.product.id}
                       product={plan.product}
@@ -155,7 +185,7 @@ export default async function PublicMarketplacePage({
             </section>
           ) : null}
 
-          {showComing ? (
+          {showComing && !noResults ? (
             <section className={cn(showProxy && "mt-10")}>
               <div className="mb-3">
                 <p className="text-[9.5px] font-semibold uppercase tracking-[0.14em] text-[#8C9097]">
@@ -166,7 +196,7 @@ export default async function PublicMarketplacePage({
                 </h2>
               </div>
               <div className="grid gap-3 md:grid-cols-2">
-                {comingSoon.map((product) => {
+                {visibleComingSoon.map((product) => {
                   const Icon = comingIcon(product);
                   return (
                     <Link

@@ -90,10 +90,10 @@ export function SiteHeader({
           className="hidden items-center gap-1 lg:flex"
         >
           {[
-            { href: "/marketplace", label: "Marketplace" },
-            { href: "/how-it-works", label: "How it works" },
-            { href: "/coming-soon", label: "Coming soon" },
+            { href: "/marketplace", label: "Products" },
+            { href: "/how-it-works", label: "Solutions" },
             { href: "/pricing", label: "Pricing" },
+            { href: "/contact", label: "Support" },
             { href: "/about", label: "About" },
           ].map((link) => (
             <Link
@@ -143,22 +143,6 @@ export function SiteHeader({
         </div>
 
         <div className="flex items-center gap-2 lg:hidden">
-          <Link
-            href={isAuthenticated ? "/dashboard" : "/register"}
-            className={cn(
-              buttonVariants({ variant: "inverse", size: "sm" }),
-              "h-11 rounded-full px-4 text-[12px] font-semibold sm:hidden",
-            )}
-          >
-            {isAuthenticated ? (
-              "Dashboard"
-            ) : (
-              <>
-                <span className="min-[360px]:hidden">Join</span>
-                <span className="hidden min-[360px]:inline">Create account</span>
-              </>
-            )}
-          </Link>
           <button
             type="button"
             onClick={() => setMobileOpen((open) => !open)}

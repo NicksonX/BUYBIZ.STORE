@@ -390,3 +390,8 @@ supabase/migrations     Postgres schema, auth integration, RLS, transfers, jobs
 tests                   unit, integration, RLS and Playwright tests
 scripts                 lifecycle runner
 ```
+
+
+## Marketing photo credit
+
+The desktop home hero uses a Pexels photo by ANTONI SHKRABA production. Pexels allows free commercial use without required attribution; the credit is recorded here for provenance.
