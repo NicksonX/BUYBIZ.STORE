@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { getDb } from "@/lib/db";
 import type { PlanAvailability, Product } from "@/lib/db/types";
 import { getAppSettings } from "@/server/data/settings";
@@ -25,7 +26,7 @@ function normalizeProduct(row: Product & { features: unknown }): Product {
   };
 }
 
-export async function getActiveProxyPlans(): Promise<Product[]> {
+export const getActiveProxyPlans = cache(async (): Promise<Product[]> => {
   const db = await getDb();
   const result = await db.query<Product>(
     `select ${PRODUCT_COLUMNS}
@@ -34,9 +35,9 @@ export async function getActiveProxyPlans(): Promise<Product[]> {
       order by sort_order asc, price_minor asc`,
   );
   return result.rows.map(normalizeProduct);
-}
+});
 
-export async function getComingSoonProducts(): Promise<Product[]> {
+export const getComingSoonProducts = cache(async (): Promise<Product[]> => {
   const db = await getDb();
   const result = await db.query<Product>(
     `select ${PRODUCT_COLUMNS}
@@ -45,26 +46,26 @@ export async function getComingSoonProducts(): Promise<Product[]> {
       order by sort_order asc`,
   );
   return result.rows.map(normalizeProduct);
-}
+});
 
-export async function getAllProducts(): Promise<Product[]> {
+export const getAllProducts = cache(async (): Promise<Product[]> => {
   const db = await getDb();
   const result = await db.query<Product>(
     `select ${PRODUCT_COLUMNS} from products order by sort_order asc, price_minor asc`,
   );
   return result.rows.map(normalizeProduct);
-}
+});
 
-export async function getProductBySlug(slug: string): Promise<Product | null> {
+export const getProductBySlug = cache(async (slug: string): Promise<Product | null> => {
   const db = await getDb();
   const result = await db.query<Product>(
     `select ${PRODUCT_COLUMNS} from products where slug = $1 limit 1`,
     [slug],
   );
   return result.rows[0] ? normalizeProduct(result.rows[0]) : null;
-}
+});
 
-export async function getPlanAvailability(): Promise<PlanAvailability[]> {
+export const getPlanAvailability = cache(async (): Promise<PlanAvailability[]> => {
   const db = await getDb();
   const settings = await getAppSettings();
   const plans = await getActiveProxyPlans();
@@ -122,4 +123,4 @@ export async function getPlanAvailability(): Promise<PlanAvailability[]> {
       available: availability.freeSeats > 0,
     };
   });
-}
+});

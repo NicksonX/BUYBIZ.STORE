@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { getDb } from "@/lib/db";
 import type { AppSettings } from "@/lib/db/types";
 
@@ -23,7 +24,7 @@ const DEFAULTS: AppSettings = {
   adminTimezone: "Africa/Lagos",
 };
 
-export async function getAppSettings(): Promise<AppSettings> {
+export const getAppSettings = cache(async (): Promise<AppSettings> => {
   try {
     const db = await getDb();
     const result = await db.query<{ key: string; value: unknown }>(
@@ -91,4 +92,4 @@ export async function getAppSettings(): Promise<AppSettings> {
     console.error("[buybiz/settings] falling back to defaults", error);
     return DEFAULTS;
   }
-}
+});

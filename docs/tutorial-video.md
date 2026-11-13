@@ -2,24 +2,26 @@
 
 Asset:
 
-- `public/tutorial/buybiz-getting-started.mp4`
+- `public/tutorial/buybiz-getting-started.mp4` — 1280×720, H.264/AAC, 1:27
 - `public/tutorial/poster.jpg`
 
-Format: 1280x720 H.264, AAC stereo, approximately 2 minutes 5 seconds.
+The walkthrough is a real interface tour recorded from the running BUYBIZ application, with highlighted controls, punctuated burned-in captions, transitions and a low-volume original ambient music bed.
 
-The narration is a Nigerian English voice. Scenes use screenshots from the live BUYBIZ interface and cover:
+## Chapters
 
-1. Creating an account and choosing a proxy use case.
-2. Navigating the dashboard.
-3. Funding the wallet and the server-verified payment rule.
-4. Choosing a marketplace plan.
-5. Reading the persistent proxy timer and connection details.
-6. Switching to another available proxy without changing the expiry.
-7. Terminating a proxy and receiving the completed-day refund.
-8. Closing guidance.
+1. Welcome to BUYBIZ.
+2. Creating an account.
+3. Email OTP verification and expiry.
+4. Choosing a proxy plan with live prices and stock.
+5. Wallet funding and server-verified credit.
+6. Buy, allocation/refund, connection details and expiry.
+7. Referral link and the 1,000-credit qualifying-deposit reward.
+8. Automatic Ambassador promotion and uncapped $3 commissions.
+9. USDT BEP20 payouts, address verification and processing.
+10. Close.
 
-The video is available from the customer dashboard in the subtle **How to use the platform** strip and from the onboarding page's **Getting started** card.
+## Production note
 
-## Narration
+The narration is a native Nigerian English neural voice (`en-NG-EzinneNeural`), generated for this build. No human voice recording was supplied in the project. The narration should be replaced with a human recording before using the video in a paid campaign that requires a strictly human spokesperson. The music is an original synthesized ambient bed.
 
-The voiceover script is stored in the private build workspace used to render the video. The published asset is the source of truth for the final narration.
+The visual walkthrough includes the OTP screen. Live OTP delivery still depends on configuring the transactional email provider described in `docs/email-setup.md`.

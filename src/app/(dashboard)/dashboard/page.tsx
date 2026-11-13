@@ -203,7 +203,7 @@ export default async function DashboardOverviewPage() {
           <div className="min-w-0">
             <p className="text-[11.5px] font-semibold">How to use the platform</p>
             <p className="mt-0.5 text-[10px] leading-4 text-muted-foreground">
-              A 2-minute walkthrough of your wallet, buying and managing proxies.
+              A 90-second walkthrough of your wallet, proxy access, referrals and Ambassador rewards.
             </p>
           </div>
         </div>

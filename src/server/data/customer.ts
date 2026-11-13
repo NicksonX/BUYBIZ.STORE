@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { getDb } from "@/lib/db";
 import type {
   Allocation,
@@ -46,7 +47,7 @@ export type WalletSummary = {
 
 export type TicketWithCount = SupportTicket & { messageCount: number };
 
-export async function getWalletSummary(userId: string): Promise<WalletSummary> {
+async function getWalletSummaryUncached(userId: string): Promise<WalletSummary> {
   const db = await getDb();
   const result = await db.query<{
     balanceMinor: number;
@@ -75,7 +76,7 @@ export async function getWalletSummary(userId: string): Promise<WalletSummary> {
   };
 }
 
-export async function getDashboardCounts(userId: string) {
+async function getDashboardCountsUncached(userId: string) {
   const db = await getDb();
   const result = await db.query<{
     totalOrders: number;
@@ -101,7 +102,7 @@ export async function getDashboardCounts(userId: string) {
   };
 }
 
-export async function getRecentLedger(
+async function getRecentLedgerUncached(
   userId: string,
   limit = 5,
 ): Promise<LedgerEntry[]> {
@@ -122,7 +123,7 @@ export async function getRecentLedger(
   return result.rows;
 }
 
-export async function getActivitySeries(userId: string) {
+async function getActivitySeriesUncached(userId: string) {
   const db = await getDb();
   const result = await db.query<{
     date: string;
@@ -160,7 +161,7 @@ export async function getActivitySeries(userId: string) {
   }));
 }
 
-export async function getActiveAllocations(
+async function getActiveAllocationsUncached(
   userId: string,
   limit = 4,
 ): Promise<CustomerAllocationRow[]> {
@@ -323,7 +324,7 @@ export async function getLedgerForUser(
   return getRecentLedger(userId, limit);
 }
 
-export async function getDepositsForUser(userId: string): Promise<Deposit[]> {
+async function getDepositsForUserUncached(userId: string): Promise<Deposit[]> {
   const db = await getDb();
   const result = await db.query<Deposit>(
     `select id, user_id as "userId", provider,
@@ -519,3 +520,13 @@ export async function getReferralDashboard(userId: string) {
     },
   };
 }
+
+
+// React request-level caching. These functions are called by both a layout and
+// its page; caching removes duplicate database round-trips in the same render.
+export const getWalletSummary = cache(getWalletSummaryUncached);
+export const getDashboardCounts = cache(getDashboardCountsUncached);
+export const getRecentLedger = cache(getRecentLedgerUncached);
+export const getActivitySeries = cache(getActivitySeriesUncached);
+export const getActiveAllocations = cache(getActiveAllocationsUncached);
+export const getDepositsForUser = cache(getDepositsForUserUncached);

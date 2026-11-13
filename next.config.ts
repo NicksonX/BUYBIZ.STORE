@@ -51,7 +51,7 @@ const nextConfig: NextConfig = {
   devIndicators: false,
   reactStrictMode: true,
   experimental: {
-    optimizePackageImports: ["lucide-react", "recharts"],
+    optimizePackageImports: ["lucide-react"],
   },
   serverExternalPackages: ["@electric-sql/pglite", "pg"],
   turbopack: {

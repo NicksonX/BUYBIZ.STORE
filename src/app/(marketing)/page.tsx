@@ -30,7 +30,6 @@ import { Alert } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
 import type { PlanAvailability } from "@/lib/db/types";
 import { getPlanAvailability } from "@/server/data/products";
-import { getCurrentUser } from "@/server/auth/session";
 
 export const dynamic = "force-dynamic";
 
@@ -175,10 +174,6 @@ export default async function HomePage() {
     cookieStore.get("buybiz_marketing_theme")?.value === "dark" ? "dark" : "light";
   let plans: PlanAvailability[] = [];
   let plansError = false;
-  const user = await getCurrentUser().catch((error) => {
-    console.error("[buybiz/home] session read failed", error);
-    return null;
-  });
   try {
     plans = await getPlanAvailability();
   } catch (error) {
@@ -234,14 +229,14 @@ export default async function HomePage() {
 
               <div className="mt-7 flex flex-col gap-2 sm:flex-row sm:items-center">
                 <Link
-                  href={user ? "/dashboard" : "/register"}
+                  href="/register"
                   className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-[#0A0B0D] px-5 text-[12px] font-semibold text-white shadow-[0_18px_35px_-24px_rgba(0,0,0,0.8)] transition-colors hover:bg-[#202226] sm:h-12 sm:px-6"
                 >
-                  {user ? "Open dashboard" : "Get started"}
+                  Get started
                   <ArrowRight className="h-4 w-4" />
                 </Link>
                 <Link
-                  href={user ? "/dashboard/marketplace" : "/marketplace"}
+                  href="/marketplace"
                   className="inline-flex h-11 items-center justify-center gap-2 rounded-full border border-black/[0.12] bg-white/60 px-5 text-[12px] font-medium text-[#0A0B0D]/70 backdrop-blur transition-colors hover:bg-white hover:text-[#0A0B0D] sm:h-12 sm:px-6"
                 >
                   Explore products

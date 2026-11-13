@@ -9,14 +9,16 @@ Set these only in Render (never in browser code):
 ```dotenv
 EMAIL_PROVIDER=resend
 EMAIL_API_KEY=re_...
-EMAIL_FROM=hello@your-verified-domain.com
-EMAIL_SUPPORT_EMAIL=support@your-verified-domain.com
+EMAIL_FROM=noreply@contactsupport.buybiz.store
+EMAIL_SUPPORT_EMAIL=support@contactsupport.buybiz.store
 EMAIL_OTP_SECRET=a-long-random-secret
 NEXT_PUBLIC_APP_URL=https://buybiz.store
 CRON_SECRET=a-long-random-secret
 ```
 
-`EMAIL_FROM` must be a verified sender/domain at the email provider. The current adapter uses the Resend HTTPS API at `https://api.resend.com/emails`. No SMTP configuration is used.
+`EMAIL_FROM` must be on a verified Resend domain. BUYBIZ uses the verified `contactsupport.buybiz.store` domain. The current adapter uses the Resend HTTPS API at `https://api.resend.com/emails`. No SMTP configuration is used.
+
+The verified domain alone is not enough: a Resend API key must be present as `EMAIL_API_KEY` (or `RESEND_API_KEY`) in the runtime environment. Never put it in a `NEXT_PUBLIC_*` variable or in the browser.
 
 The sender name, sender email and support email can also be stored from **Admin → Email management**. The API key and OTP secret are environment-only.
 

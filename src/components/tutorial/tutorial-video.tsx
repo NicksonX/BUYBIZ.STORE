@@ -1,7 +1,16 @@
 "use client";
 
-import { useState } from "react";
-import { Clock3, Play, Sparkles } from "lucide-react";
+import { useRef, useState } from "react";
+import {
+  Clock3,
+  Maximize2,
+  Minimize2,
+  Pause,
+  Play,
+  Sparkles,
+  Volume2,
+  VolumeX,
+} from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -24,6 +33,57 @@ export function TutorialVideo({
   title = "How to use BUYBIZ",
 }: TutorialVideoProps) {
   const [open, setOpen] = useState(false);
+  const [playing, setPlaying] = useState(false);
+  const [duration, setDuration] = useState(0);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [muted, setMuted] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  function togglePlay() {
+    const video = videoRef.current;
+    if (!video) return;
+    if (video.paused || video.ended) {
+      if (video.ended) video.currentTime = 0;
+      void video.play().catch(() => undefined);
+    } else {
+      video.pause();
+    }
+  }
+
+  function seek(value: number) {
+    const video = videoRef.current;
+    if (!video) return;
+    video.currentTime = value;
+    setCurrentTime(value);
+  }
+
+  function toggleMute() {
+    const video = videoRef.current;
+    if (!video) return;
+    video.muted = !video.muted;
+    setMuted(video.muted);
+  }
+
+  async function toggleFullscreen() {
+    const video = videoRef.current;
+    if (!video) return;
+    if (document.fullscreenElement) {
+      await document.exitFullscreen().catch(() => undefined);
+      return;
+    }
+    if (video.requestFullscreen) {
+      await video.requestFullscreen().catch(() => undefined);
+      return;
+    }
+    (video as HTMLVideoElement & { webkitEnterFullscreen?: () => void }).webkitEnterFullscreen?.();
+  }
+
+  function timeLabel(value: number) {
+    if (!Number.isFinite(value) || value < 0) return "0:00";
+    const minutes = Math.floor(value / 60);
+    const seconds = Math.floor(value % 60);
+    return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+  }
 
   return (
     <>
@@ -61,12 +121,11 @@ export function TutorialVideo({
                   </p>
                 </div>
                 <span className="inline-flex shrink-0 items-center gap-1 text-[9px] text-white/35">
-                  <Clock3 className="h-3 w-3" /> 2 min
+                  <Clock3 className="h-3 w-3" /> 1.5 min
                 </span>
               </div>
-              <p className="relative mt-3 text-[10px] leading-4 text-white/40">
-                A short walkthrough of accounts, wallet funding and buying your
-                first proxy.
+              <p className="relative mt-3 text-[10px] leading-4 text-white/55">
+                Account, OTP, wallet, proxy access, referrals and Ambassador rewards.
               </p>
             </button>
           )}
@@ -76,24 +135,74 @@ export function TutorialVideo({
           <DialogHeader className="sr-only">
             <DialogTitle>{title}</DialogTitle>
             <DialogDescription>
-              A short voiceover tutorial for new BUYBIZ customers.
+              A 90-second voiceover walkthrough of accounts, wallet funding, proxy access, referrals and Ambassador rewards.
             </DialogDescription>
           </DialogHeader>
           {open ? (
-            <video
-              className="aspect-video w-full bg-black"
-              controls
-              autoPlay
-              playsInline
-              preload="metadata"
-              poster="/tutorial/poster.jpg"
-            >
-              <source src="/tutorial/buybiz-getting-started.mp4" type="video/mp4" />
-              Your browser does not support the tutorial video.
-            </video>
+            <div className="bg-black">
+              <video
+                ref={videoRef}
+                className="aspect-video w-full cursor-pointer bg-black"
+                autoPlay
+                playsInline
+                preload="metadata"
+                poster="/tutorial/poster.jpg?v=5"
+                onClick={togglePlay}
+                onLoadedMetadata={(event) => {
+                  setDuration(event.currentTarget.duration);
+                  setCurrentTime(event.currentTarget.currentTime);
+                }}
+                onTimeUpdate={(event) => setCurrentTime(event.currentTarget.currentTime)}
+                onPlay={() => setPlaying(true)}
+                onPause={() => setPlaying(false)}
+                onEnded={() => setPlaying(false)}
+              >
+                <source src="/tutorial/buybiz-getting-started.mp4?v=5" type="video/mp4" />
+                Your browser does not support the tutorial video.
+              </video>
+              <div className="flex items-center gap-3 border-t border-white/10 bg-[#0A0B0D] px-3 py-2.5 sm:px-4">
+                <button
+                  type="button"
+                  onClick={togglePlay}
+                  aria-label={playing ? "Pause tutorial" : "Play tutorial"}
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-[#0A0B0D] transition-transform hover:scale-105"
+                >
+                  {playing ? <Pause className="h-3.5 w-3.5" fill="currentColor" /> : <Play className="ml-0.5 h-3.5 w-3.5" fill="currentColor" />}
+                </button>
+                <span className="tabular shrink-0 text-[10px] text-white/70">
+                  {timeLabel(currentTime)} / {timeLabel(duration)}
+                </span>
+                <input
+                  type="range"
+                  min={0}
+                  max={duration || 0}
+                  step={0.1}
+                  value={Math.min(currentTime, duration || 0)}
+                  onChange={(event) => seek(Number(event.target.value))}
+                  aria-label="Seek tutorial video"
+                  className="h-1.5 min-w-0 flex-1 cursor-pointer accent-white"
+                />
+                <button
+                  type="button"
+                  onClick={toggleMute}
+                  aria-label={muted ? "Unmute tutorial" : "Mute tutorial"}
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-white/65 hover:bg-white/10 hover:text-white"
+                >
+                  {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void toggleFullscreen()}
+                  aria-label="Toggle fullscreen"
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-white/65 hover:bg-white/10 hover:text-white"
+                >
+                  {typeof document !== "undefined" && document.fullscreenElement ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
           ) : null}
           <div className="flex items-center gap-2 border-t border-white/10 px-4 py-2.5 text-[9px] text-white/40">
-            <Sparkles className="h-3 w-3" /> BUYBIZ product walkthrough
+            <Sparkles className="h-3 w-3" /> BUYBIZ product walkthrough · captions on
           </div>
         </DialogContent>
       </Dialog>

@@ -51,15 +51,14 @@ const resourceLinks = [
 ];
 
 export function SiteHeader({
-  isAuthenticated = false,
   marketingTheme = "light",
 }: {
-  isAuthenticated?: boolean;
   marketingTheme?: "light" | "dark";
 }) {
   const pathname = usePathname();
   const isHome = pathname === "/";
   const [theme, setTheme] = useState<"light" | "dark">(marketingTheme);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const router = useRouter();
 
   function toggleMarketingTheme() {
@@ -77,6 +76,21 @@ export function SiteHeader({
   }
   const [mobileOpen, setMobileOpen] = useState(false);
   const closeRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/auth/session", { cache: "no-store" })
+      .then((response) => (response.ok ? response.json() : { authenticated: false }))
+      .then((data: { authenticated?: boolean }) => {
+        if (!cancelled) setIsAuthenticated(Boolean(data.authenticated));
+      })
+      .catch(() => {
+        if (!cancelled) setIsAuthenticated(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (!mobileOpen) return;
