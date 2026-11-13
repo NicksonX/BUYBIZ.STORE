@@ -51,7 +51,7 @@ export default async function AmbassadorPayoutsPage() {
       <section className="surface-card rounded-[13px] p-4">
         <h2 className="text-[12px] font-semibold">Programme settings</h2>
         <p className="mt-0.5 text-[9px] text-muted-foreground">
-          Change the qualifying task without code. The $10 payout floor cannot be lowered.
+          Change the qualifying task without code. The $10 payout floor cannot be lowered. Commissions are uncapped per Ambassador; the referral count is only the unlock threshold.
         </p>
         <div className="mt-3">
           <AdminActionForm action={updateAmbassadorSettingsAction} submitLabel="Save programme settings" pendingLabel="Saving…">

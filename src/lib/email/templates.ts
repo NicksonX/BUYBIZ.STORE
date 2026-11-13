@@ -346,7 +346,7 @@ export function renderEmail(input: {
         ["Commission", data.commissionLabel ?? "$3 per qualifying referral"],
         ["Payout minimum", data.thresholdLabel ?? "$10 USDT"],
       ])}
-      <p style="margin:0 0 8px;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.7;color:${BRAND.muted};">Your ambassador earnings are tracked in USD, separately from your naira wallet credits.</p>
+      <p style="margin:0 0 8px;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.7;color:${BRAND.muted};">There is no cap on qualified referrals. Your ambassador earnings are tracked in USD, separately from your naira wallet credits.</p>
       ${button("Open your ambassador dashboard", `${input.websiteUrl}/dashboard/referrals`)}`;
       break;
     case "ambassador_commission":

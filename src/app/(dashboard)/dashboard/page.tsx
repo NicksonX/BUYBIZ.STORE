@@ -68,7 +68,7 @@ export default async function DashboardOverviewPage() {
             {lagosGreeting()}, {name}.
           </h1>
           <p className="mt-1 text-[12px] text-muted-foreground">
-            Here's what's going on with your account.
+            Your wallet, active proxies and recent activity.
           </p>
         </div>
         <div className="hidden items-center gap-2 sm:flex">
@@ -121,9 +121,6 @@ export default async function DashboardOverviewPage() {
               Buy a proxy
             </Link>
           </div>
-          <p className="relative mt-3 text-[9.5px] text-white/30">
-            Wallet credit can only be spent on BUYBIZ.
-          </p>
         </div>
 
         <div className="grid grid-cols-4 gap-2">
@@ -213,7 +210,7 @@ export default async function DashboardOverviewPage() {
         <TutorialVideo variant="compact" />
       </section>
 
-      <div className="grid gap-3 lg:grid-cols-[1.65fr_1fr]">
+      <div className="grid min-w-0 grid-cols-1 gap-3 lg:grid-cols-[1.65fr_1fr]">
         <ActivityChart data={activity} totalSpendMinor={totalSpend} />
 
         <section className="surface-card flex flex-col rounded-[16px] p-4">

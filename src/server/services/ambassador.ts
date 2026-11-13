@@ -532,3 +532,27 @@ export async function verifyAmbassadorAddress(
     metadata: { userId: row.userId, address: row.address },
   });
 }
+
+/** Small read model for the persistent dashboard campaign. */
+export async function getAmbassadorCampaign(userId: string) {
+  const db = await getDb();
+  const config = await getAmbassadorConfig();
+  const result = await db.query<{
+    isAmbassador: boolean;
+    qualified: number;
+    available: unknown;
+  }>(
+    `select
+       exists(select 1 from ambassador_profiles where user_id=$1) as "isAmbassador",
+       (select count(*)::int from referrals
+         where referrer_id=$1 and ambassador_qualified_at is not null) as qualified,
+       coalesce((select sum(amount_usd_cents) from ambassador_ledger where user_id=$1),0)::int as available`,
+    [userId],
+  );
+  return {
+    config,
+    isAmbassador: Boolean(result.rows[0]?.isAmbassador),
+    qualified: Number(result.rows[0]?.qualified ?? 0),
+    availableCents: Number(result.rows[0]?.available ?? 0),
+  };
+}

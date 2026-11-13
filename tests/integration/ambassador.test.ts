@@ -194,3 +194,30 @@ describe("ambassador USDT payouts", () => {
     expect(mail.rows[0].count).toBe(1);
   });
 });
+
+describe("uncapped ambassador rewards", () => {
+  it("continues paying $3 for referrals after the unlock threshold", async () => {
+    const referrer = await createTestUser("ambuncapped");
+    const db = await getDb();
+    for (let index = 0; index < 12; index += 1) {
+      const referee = await createTestUser(`uncap${index}`);
+      await insertReferral(referrer.id, referee.id);
+      await db.transaction((tx) =>
+        qualifyReferralForAmbassador(tx, {
+          refereeId: referee.id,
+          eventType: "deposit",
+          eventRef: randomUUID(),
+          amountMinor: 300_000,
+        }),
+      );
+    }
+    const result = await db.query<{ count: number; total: number }>(
+      `select count(*)::int as count, coalesce(sum(amount_usd_cents),0)::int as total
+         from ambassador_commissions where ambassador_id=$1`,
+      [referrer.id],
+    );
+    expect(result.rows[0]).toEqual({ count: 12, total: 3600 });
+    const dashboard = await getAmbassadorDashboard(referrer.id);
+    expect(dashboard.availableCents).toBe(3600);
+  });
+});

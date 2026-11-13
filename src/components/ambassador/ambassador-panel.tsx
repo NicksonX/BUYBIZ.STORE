@@ -77,7 +77,7 @@ export function AmbassadorPanel({
     availableCents >= minWithdrawalCents;
 
   return (
-    <section className="mt-4 overflow-hidden rounded-[16px] border border-border bg-surface">
+    <section id="ambassador-panel" className="mt-4 scroll-mt-24 overflow-hidden rounded-[16px] border border-border bg-surface">
       <div className="border-b border-border bg-[#0A0B0D] px-5 py-4 text-white">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
@@ -89,8 +89,8 @@ export function AmbassadorPanel({
             </h2>
             <p className="mt-1 max-w-[620px] text-[10px] leading-4 text-white/45">
               {isAmbassador
-                ? `You earn $${(commissionCents / 100).toFixed(2)} for every referral that completes the qualifying task. USD earnings stay separate from your naira wallet.`
-                : `Refer ${required} friends who complete the qualifying task to unlock Ambassador status and USD commissions.`}
+                ? `You earn $${(commissionCents / 100).toFixed(2)} for every referral that completes the qualifying task, with no cap. USD earnings stay separate from your naira wallet.`
+                : `Refer ${required} friends who complete the qualifying task to unlock Ambassador status and uncapped USD commissions.`}
             </p>
           </div>
           <span className="rounded-full border border-white/20 bg-white/[0.04] px-2.5 py-1 text-[9px] font-medium text-white/70">

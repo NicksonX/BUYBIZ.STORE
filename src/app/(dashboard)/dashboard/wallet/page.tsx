@@ -104,9 +104,6 @@ export default async function WalletPage() {
                   <p className="text-[10px] font-medium text-white/45">
                     Available balance
                   </p>
-                  <p className="mt-0.5 text-[9px] text-white/25">
-                    BUYBIZ internal credit
-                  </p>
                 </div>
               </div>
               <div className="flex flex-wrap items-center justify-end gap-1.5">
@@ -118,9 +115,6 @@ export default async function WalletPage() {
             </div>
 
             <WalletBalanceAmount amountMinor={wallet.balanceMinor} />
-            <p className="mt-1.5 text-[10px] text-white/35">
-              Available to spend on BUYBIZ. No cash withdrawal.
-            </p>
 
             <div className="mt-4 grid grid-cols-2 gap-2 sm:hidden">
               <FundWalletButton {...funding} variant="light" className="w-full" />

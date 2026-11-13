@@ -69,7 +69,7 @@ export function ActivityChart({
   const hasData = chartData.some((point) => point.value > 0);
 
   return (
-    <section className="relative overflow-hidden rounded-[16px] border border-[#22252a] bg-[#0A0B0D] text-white shadow-[0_30px_60px_-45px_rgba(0,0,0,0.8)]">
+    <section className="relative min-w-0 max-w-full overflow-hidden rounded-[16px] border border-[#22252a] bg-[#0A0B0D] text-white shadow-[0_30px_60px_-45px_rgba(0,0,0,0.8)]">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(90%_70%_at_80%_0%,rgba(255,255,255,0.08),transparent_50%)]" />
       <div className="relative flex flex-col justify-between gap-3 px-5 pt-5 sm:flex-row sm:items-start">
         <div>

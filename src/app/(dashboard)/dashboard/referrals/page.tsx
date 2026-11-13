@@ -8,6 +8,7 @@ import { requireUserPage } from "@/server/auth/guards";
 import { getReferralDashboard } from "@/server/data/customer";
 import { getAmbassadorDashboard } from "@/server/services/ambassador";
 import { AmbassadorPanel } from "@/components/ambassador/ambassador-panel";
+import { AmbassadorCampaign } from "@/components/ambassador/ambassador-campaign";
 import { getAppUrl } from "@/lib/config";
 import { formatDate, formatNaira } from "@/lib/utils";
 
@@ -26,8 +27,20 @@ export default async function ReferralsPage() {
       <PageHeader
         eyebrow="Referrals"
         title="Invite someone. Earn ₦1,000 and unlock Ambassador."
-        description="When a new customer makes a qualifying deposit of at least ₦3,000, you get 1,000 BUYBIZ credits. After 10 qualified referrals you become an Ambassador and earn USD commissions, separate from your naira wallet."
+        description="When a new customer makes a qualifying deposit of at least ₦3,000, you get 1,000 BUYBIZ credits. After 10 qualified referrals you become an Ambassador and earn uncapped USD commissions, separate from your naira wallet."
       />
+
+      {ambassador.config.enabled ? (
+        <AmbassadorCampaign
+          variant="referral"
+          isAmbassador={ambassador.isAmbassador}
+          qualified={ambassador.qualified}
+          required={ambassador.config.referralsRequired}
+          commissionCents={ambassador.config.commissionCents}
+          availableCents={ambassador.availableCents}
+          minWithdrawalCents={ambassador.config.withdrawalMinCents}
+        />
+      ) : null}
 
       <div className="mt-4 grid gap-3 lg:grid-cols-[1.1fr_0.9fr]">
         <section className="relative overflow-hidden rounded-[16px] bg-[#0A0B0D] p-5 text-white">
@@ -48,10 +61,9 @@ export default async function ReferralsPage() {
             </p>
             <CopyButton value={link} label="Copy link" />
           </div>
-          <p className="mt-4 text-[9.5px] leading-4 text-white/35">
-            Rewards are internal wallet credit for BUYBIZ purchases. They are not
-            cash withdrawals. Referral credit from another user never counts
-            toward the ₦3,000 deposit requirement.
+          <p className="mt-4 text-[9.5px] leading-4 text-white/55">
+            Wallet rewards are credited to your BUYBIZ balance. Referral credit
+            does not count toward the ₦3,000 deposit requirement.
           </p>
         </section>
 
@@ -143,7 +155,7 @@ export default async function ReferralsPage() {
 
       <div className="mt-3 grid gap-2 text-[10px] leading-5 text-muted-foreground sm:grid-cols-3">
         <p className="rounded-[9px] border border-border bg-surface-subtle p-3">
-          One referral per new customer, and one reward per referred account.
+          One referral per new customer. There is no per-user cap on qualified referrals or rewards.
         </p>
         <p className="rounded-[9px] border border-border bg-surface-subtle p-3">
           The qualifying deposit must be a single verified Paystack deposit of
