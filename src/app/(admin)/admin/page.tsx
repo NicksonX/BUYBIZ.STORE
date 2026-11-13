@@ -54,8 +54,8 @@ export default async function AdminOverviewPage() {
     <div className="space-y-4">
       <PageHeader
         eyebrow="Admin"
-        title="Dashboard"
-        description="Live numbers from the BUYBIZ database. Deposits are recorded as liabilities until customers spend them."
+        title="Operations overview"
+        description="Live sales, wallet liability, inventory and support activity across BUYBIZ."
         actions={
           <div className="flex items-center gap-2">
             <Link

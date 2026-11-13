@@ -39,7 +39,7 @@ export function AmbassadorFloat({
     const initial =
       Number.isFinite(stored) && stored > 0
         ? stored
-        : Math.round(window.innerHeight * 0.6);
+        : Math.round(window.innerHeight - 170);
     // Restoring a device-local drag position is external-store synchronization,
     // not derived render state.
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -63,7 +63,7 @@ export function AmbassadorFloat({
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  if (pathname === "/dashboard/referrals") return null;
+  if (pathname !== "/dashboard") return null;
 
   const progress = Math.min(100, Math.round((qualified / Math.max(required, 1)) * 100));
   const reward = usd(commissionCents);
@@ -75,7 +75,7 @@ export function AmbassadorFloat({
       active: true,
       moved: false,
       startY: event.clientY,
-      offsetY: event.clientY - (y ?? window.innerHeight * 0.6),
+      offsetY: event.clientY - (y ?? window.innerHeight - 170),
     };
   }
 
@@ -110,7 +110,7 @@ export function AmbassadorFloat({
         <div
           id="ambassador-float-panel"
           className="absolute bottom-[calc(100%+10px)] right-0 w-[min(290px,calc(100vw-24px))] overflow-hidden rounded-[14px] border border-[#ff5a36]/35 bg-[#210705] p-4 text-white shadow-[0_24px_70px_-30px_rgba(0,0,0,0.85)]"
-          role="dialog"
+          role="region"
           aria-label="Ambassador rewards"
         >
           <div className="pointer-events-none absolute -right-8 -top-10 h-28 w-28 rounded-full bg-[#ff4d22]/25 blur-2xl" />
@@ -195,6 +195,6 @@ export function AmbassadorFloat({
 function clampY(value: number) {
   if (typeof window === "undefined") return value;
   const min = 330;
-  const max = Math.max(min, window.innerHeight - 150);
+  const max = Math.max(min, window.innerHeight - 120);
   return Math.min(Math.max(value, min), max);
 }

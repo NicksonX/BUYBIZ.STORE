@@ -30,3 +30,21 @@ export function DashboardSkeleton() {
     </div>
   );
 }
+
+
+export function AdminSkeleton() {
+  return (
+    <div className="space-y-5">
+      <div className="h-14 w-64 animate-pulse rounded-[10px] bg-surface-subtle" />
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className="h-[112px] animate-pulse rounded-[12px] border border-border bg-surface" />
+        ))}
+      </div>
+      <div className="grid gap-3 xl:grid-cols-[1.7fr_1fr]">
+        <div className="h-[320px] animate-pulse rounded-[12px] border border-border bg-surface" />
+        <div className="h-[320px] animate-pulse rounded-[12px] border border-border bg-surface" />
+      </div>
+    </div>
+  );
+}

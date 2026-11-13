@@ -10,7 +10,6 @@ import {
   submitAmbassadorAddress,
   verifyAmbassadorAddress,
 } from "@/server/services/ambassador";
-import { processEmailQueue } from "@/server/services/email";
 import { createTestUser } from "../helpers";
 
 beforeAll(async () => {

@@ -44,7 +44,6 @@ export default async function ReferralsPage() {
 
       <div className="mt-4 grid gap-3 lg:grid-cols-[1.1fr_0.9fr]">
         <section className="relative overflow-hidden rounded-[16px] bg-[#0A0B0D] p-5 text-white">
-          <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full border border-white/10" />
           <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-white/40">
             Your referral code
           </p>
@@ -87,20 +86,22 @@ export default async function ReferralsPage() {
         </div>
       </div>
 
-      <AmbassadorPanel
-        isAmbassador={ambassador.isAmbassador}
-        qualified={ambassador.qualified}
-        required={ambassador.config.referralsRequired}
-        total={ambassador.total}
-        availableCents={ambassador.availableCents}
-        earnedCents={ambassador.earnedCents}
-        minWithdrawalCents={ambassador.config.withdrawalMinCents}
-        commissionCents={ambassador.config.commissionCents}
-        address={ambassador.address}
-        openWithdrawal={ambassador.openWithdrawal}
-        withdrawals={ambassador.withdrawals}
-        promotedAt={ambassador.promotedAt}
-      />
+      {ambassador.isAmbassador ? (
+        <AmbassadorPanel
+          isAmbassador
+          qualified={ambassador.qualified}
+          required={ambassador.config.referralsRequired}
+          total={ambassador.total}
+          availableCents={ambassador.availableCents}
+          earnedCents={ambassador.earnedCents}
+          minWithdrawalCents={ambassador.config.withdrawalMinCents}
+          commissionCents={ambassador.config.commissionCents}
+          address={ambassador.address}
+          openWithdrawal={ambassador.openWithdrawal}
+          withdrawals={ambassador.withdrawals}
+          promotedAt={ambassador.promotedAt}
+        />
+      ) : null}
 
       <section className="surface-card mt-3 overflow-hidden rounded-[14px]">
         <div className="flex items-start justify-between gap-3 border-b border-border px-4 py-3">

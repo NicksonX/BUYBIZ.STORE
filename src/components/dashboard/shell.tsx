@@ -27,7 +27,7 @@ export function DashboardShell({
 
   return (
     <div data-app-shell className="min-h-dvh bg-background text-foreground">
-      <DashboardSidebar user={user} balanceMinor={balanceMinor} />
+      <DashboardSidebar user={user} />
       <div className="dashboard-main">
         <DashboardTopbar user={user} unread={unread} />
         <main

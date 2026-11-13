@@ -6,7 +6,6 @@ import {
   Clock3,
   Info,
   LifeBuoy,
-  Network,
   ReceiptText,
   ShieldCheck,
   Wallet,
@@ -40,10 +39,6 @@ function depositHref(deposit: Deposit) {
   return `/dashboard/wallet/payment/${state}?reference=${encodeURIComponent(deposit.providerReference)}`;
 }
 
-function quickActionClass() {
-  return "flex min-h-[74px] flex-col items-center justify-center gap-1.5 rounded-[11px] border border-border bg-surface-subtle p-3 text-center transition-colors hover:border-border-strong hover:bg-accent";
-}
-
 export default async function WalletPage() {
   const user = await requireUserPage();
   const [wallet, deposits, settings] = await Promise.all([
@@ -68,8 +63,8 @@ export default async function WalletPage() {
     <div>
       <PageHeader
         eyebrow="Wallet"
-        title="Wallet"
-        description="Manage your balance, funding and wallet activity."
+        title="Your wallet balance."
+        description="Fund your account, review verified deposits and follow every credit."
         actions={
           <div className="hidden items-center gap-2 sm:flex">
             <FundWalletButton {...funding} />
@@ -90,10 +85,8 @@ export default async function WalletPage() {
         </Alert>
       ) : null}
 
-      <div className="mt-5 grid items-stretch gap-3 lg:grid-cols-[1.35fr_0.65fr]">
+      <div className="mt-5 grid items-stretch gap-3">
         <section className="relative overflow-hidden rounded-[18px] border border-[#22252a] bg-[#0A0B0D] p-4 text-white shadow-[0_40px_80px_-50px_rgba(0,0,0,0.9)] sm:p-5">
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(110%_80%_at_85%_-10%,rgba(255,255,255,0.16),transparent_52%)]" />
-          <div className="pointer-events-none absolute -bottom-24 -left-16 h-56 w-56 rounded-full border border-white/[0.06]" />
           <div className="relative">
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-center gap-2">
@@ -128,13 +121,13 @@ export default async function WalletPage() {
 
             <div className="mt-4 hidden grid-cols-3 gap-3 border-t border-white/[0.08] pt-3.5 sm:grid">
               <div>
-                <p className="text-[9.5px] text-white/35">Deposited</p>
+                <p className="text-[9.5px] text-white/60">Deposited</p>
                 <p className="tabular mt-1.5 text-[12px] font-medium">
                   {formatNaira(wallet.totalDepositedMinor, { exact: true })}
                 </p>
               </div>
               <div>
-                <p className="text-[9.5px] text-white/35">Net spend</p>
+                <p className="text-[9.5px] text-white/60">Net spend</p>
                 <p className="tabular mt-1.5 text-[12px] font-medium">
                   {formatNaira(
                     Math.max(0, wallet.totalSpentMinor - wallet.totalRefundedMinor),
@@ -143,7 +136,7 @@ export default async function WalletPage() {
                 </p>
               </div>
               <div>
-                <p className="text-[9.5px] text-white/35">Refunded</p>
+                <p className="text-[9.5px] text-white/60">Refunded</p>
                 <p className="tabular mt-1.5 text-[12px] font-medium text-[#8EE7B8]">
                   {formatNaira(wallet.totalRefundedMinor, { exact: true })}
                 </p>
@@ -152,34 +145,7 @@ export default async function WalletPage() {
           </div>
         </section>
 
-        <aside className="surface-card hidden flex-col rounded-[18px] p-4 lg:flex">
-          <div className="flex items-center justify-between">
-            <h2 className="text-[13px] font-semibold">Quick actions</h2>
-            <span className="text-[9px] uppercase tracking-[0.12em] text-muted-foreground">
-              Wallet
-            </span>
-          </div>
-          <div className="mt-3 grid flex-1 auto-rows-fr grid-cols-2 gap-2">
-            <FundWalletButton
-              {...funding}
-              variant="outline"
-              className="!min-h-[74px] w-full flex-col !items-center !justify-center !gap-1.5 !rounded-[11px] !bg-surface-subtle !px-3 !text-center !text-[10px]"
-            />
-            <Link href="/dashboard/marketplace" className={quickActionClass()}>
-              <Network className="h-4 w-4 text-muted-foreground" />
-              <span className="text-[10.5px] font-medium">Marketplace</span>
-            </Link>
-            <Link href="/dashboard/transactions" className={quickActionClass()}>
-              <ReceiptText className="h-4 w-4 text-muted-foreground" />
-              <span className="text-[10.5px] font-medium">Full ledger</span>
-            </Link>
-            <Link href="/dashboard/support" className={quickActionClass()}>
-              <LifeBuoy className="h-4 w-4 text-muted-foreground" />
-              <span className="text-[10.5px] font-medium">Support</span>
-            </Link>
-          </div>
-        </aside>
-      </div>
+            </div>
 
       <div className="mt-2 flex items-center justify-between px-1 text-[9px] text-muted-foreground sm:hidden">
         <span>
@@ -369,7 +335,6 @@ export default async function WalletPage() {
                 icon={ReceiptText}
                 title="No wallet activity yet"
                 description="Your deposits and wallet credits will appear here after your first verified payment."
-                action={<FundWalletButton {...funding} variant="outline" />}
               />
             </div>
           )}
@@ -399,12 +364,11 @@ export default async function WalletPage() {
 
         <div className="space-y-3">
           <section className="relative overflow-hidden rounded-[16px] border border-[#22252a] bg-[#0A0B0D] p-5 text-white">
-            <div className="pointer-events-none absolute -right-10 -top-14 h-36 w-36 rounded-full border border-white/[0.08]" />
-            <ShieldCheck className="h-5 w-5 text-white/55" />
+            <ShieldCheck className="h-5 w-5 text-white/65" />
             <h2 className="mt-4 text-[13px] font-semibold">
               Secure, verified deposits
             </h2>
-            <p className="mt-1.5 text-[10px] leading-5 text-white/40">
+            <p className="mt-1.5 text-[10px] leading-5 text-white/65">
               Paystack confirms every payment on our server before your wallet is
               credited. Duplicate callbacks cannot credit twice.
             </p>
@@ -426,9 +390,6 @@ export default async function WalletPage() {
             </p>
             <p className="mt-2 flex items-center gap-1.5 text-[9px] text-muted-foreground">
               <Clock3 className="h-3 w-3" /> Pending can take a few moments to settle.
-            </p>
-            <p className="mt-2 text-[9px] text-warning">
-              No cash withdrawal is available.
             </p>
           </section>
 

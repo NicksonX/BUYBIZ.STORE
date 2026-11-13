@@ -69,7 +69,7 @@ export default async function MarketplacePage({
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <nav
             aria-label="Marketplace categories"
-            className="flex flex-wrap gap-1.5 pb-1"
+            className="flex gap-1.5 overflow-x-auto overscroll-x-contain pb-1 sm:flex-wrap sm:overflow-visible"
           >
             {filters.map((filter) => (
               <Link
@@ -87,11 +87,6 @@ export default async function MarketplacePage({
                     : "border-border bg-surface text-muted-foreground hover:text-foreground",
                 )}
               >
-                {filter.key === "proxy" ? (
-                  <Network className="h-3 w-3" />
-                ) : (
-                  <Layers3 className="h-3 w-3" />
-                )}
                 {filter.label}
                 <span
                   className={cn(
@@ -175,7 +170,6 @@ export default async function MarketplacePage({
                     }
                     className="group surface-card relative overflow-hidden rounded-[16px] p-5 transition-colors hover:border-border-strong"
                   >
-                    <div className="absolute -right-10 -top-12 h-32 w-32 rounded-full border border-border" />
                     <div className="flex items-start justify-between">
                       <span className="flex h-10 w-10 items-center justify-center rounded-[10px] border border-border bg-surface-subtle">
                         <Icon className="h-4 w-4" />

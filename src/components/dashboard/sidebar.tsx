@@ -7,8 +7,6 @@ import {
   ChevronDown,
   PanelLeftClose,
   PanelLeftOpen,
-  Plus,
-  ShieldCheck,
 } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
 import { Avatar } from "@/components/ui/avatar";
@@ -21,20 +19,12 @@ import {
   DropdownTrigger,
 } from "@/components/ui/dropdown";
 import { customerNav, isNavActive } from "@/components/dashboard/nav-config";
-import { buttonVariants } from "@/components/ui/button";
 import { logoutAction } from "@/server/actions/auth";
-import { cn, formatNaira } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import type { Profile } from "@/lib/db/types";
 
-export function DashboardSidebar({
-  user,
-  balanceMinor,
-}: {
-  user: Profile;
-  balanceMinor: number;
-}) {
+export function DashboardSidebar({ user }: { user: Profile }) {
   const pathname = usePathname();
-  const isMarketplace = pathname.startsWith("/dashboard/marketplace");
   const [collapsed, setCollapsed] = useState(false);
 
   useEffect(() => {
@@ -80,7 +70,7 @@ export function DashboardSidebar({
             onClick={toggleSidebar}
             aria-label="Collapse sidebar"
             title="Collapse sidebar"
-            className="flex h-8 w-8 items-center justify-center rounded-[7px] text-white/35 transition-colors hover:bg-white/[0.06] hover:text-white/75"
+            className="flex h-8 w-8 items-center justify-center rounded-[7px] text-white/55 transition-colors hover:bg-white/[0.06] hover:text-white/80"
           >
             <PanelLeftClose className="h-4 w-4" />
           </button>
@@ -93,7 +83,7 @@ export function DashboardSidebar({
           onClick={toggleSidebar}
           aria-label="Expand sidebar"
           title="Expand sidebar"
-          className="mx-auto mt-4 flex h-9 w-9 items-center justify-center rounded-[7px] text-white/35 transition-colors hover:bg-white/[0.06] hover:text-white/75"
+          className="mx-auto mt-4 flex h-9 w-9 items-center justify-center rounded-[7px] text-white/55 transition-colors hover:bg-white/[0.06] hover:text-white/80"
         >
           <PanelLeftOpen className="h-4 w-4" />
         </button>
@@ -117,13 +107,13 @@ export function DashboardSidebar({
                 collapsed ? "justify-center px-2" : "gap-2.5 px-2.5",
                 active
                   ? "border-white/[0.07] bg-white/[0.075] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
-                  : "text-white/45 hover:bg-white/[0.04] hover:text-white/80",
+                  : "text-white/60 hover:bg-white/[0.04] hover:text-white/85",
               )}
             >
               <item.icon
                 className={cn(
                   "h-[15px] w-[15px]",
-                  active ? "text-white" : "text-white/40 group-hover:text-white/70",
+                  active ? "text-white" : "text-white/55 group-hover:text-white/80",
                 )}
                 strokeWidth={1.7}
               />
@@ -134,33 +124,6 @@ export function DashboardSidebar({
       </nav>
 
       <div className="mt-4 space-y-3">
-        {!collapsed && !isMarketplace ? (
-        <div className="relative overflow-hidden rounded-[12px] border border-white/[0.09] bg-white/[0.035] p-3.5">
-          <div className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-white/[0.07] blur-2xl" />
-          <div className="flex items-center justify-between">
-            <p className="text-[10px] font-medium text-white/40">
-              Wallet balance
-            </p>
-            <ShieldCheck className="h-3 w-3 text-white/25" />
-          </div>
-          <p className="tabular mt-2 text-[18px] font-semibold leading-none tracking-[-0.04em]">
-            {formatNaira(balanceMinor, { exact: true })}
-          </p>
-          <Link
-            href="/dashboard/wallet"
-            className={cn(
-              buttonVariants({ variant: "inverse", size: "sm" }),
-              "mt-3 h-8 w-full rounded-full text-[10.5px] font-semibold",
-            )}
-          >
-            <Plus className="h-3 w-3" /> Add funds
-          </Link>
-          <p className="mt-2 text-center text-[8px] text-white/25">
-            Not cash-withdrawable
-          </p>
-        </div>
-        ) : null}
-
         <div className="border-t border-white/[0.07]" />
 
         <Dropdown>
@@ -177,12 +140,12 @@ export function DashboardSidebar({
               <span className="block truncate text-[11.5px] font-medium text-white/90">
                 {user.displayName || capitalize(user.username)}
               </span>
-              <span className="block truncate text-[9.5px] text-white/35">
+              <span className="block truncate text-[9.5px] text-white/55">
                 @{user.username}
               </span>
             </span>
             ) : null}
-            {!collapsed ? <ChevronDown className="h-3 w-3 text-white/30" /> : null}
+            {!collapsed ? <ChevronDown className="h-3 w-3 text-white/50" /> : null}
           </DropdownTrigger>
           <DropdownContent
             align={collapsed ? "center" : "start"}

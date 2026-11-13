@@ -881,6 +881,28 @@ html:has([data-theme="light"]) {
 }
 
 
+/* The admin console is dense by design, but its smallest type floor should
+   still be readable on a 1440px operations screen. */
+.admin-shell .text-\[7px\],
+.admin-shell .text-\[7\.5px\],
+.admin-shell .text-\[8px\],
+.admin-shell .text-\[8\.5px\] {
+  font-size: 9.5px;
+  line-height: 1.45;
+}
+
+.admin-shell .text-\[9px\],
+.admin-shell .text-\[9\.5px\] {
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.admin-shell .text-\[10px\],
+.admin-shell .text-\[10\.5px\] {
+  font-size: 10.5px;
+  line-height: 1.45;
+}
+
 /* Next.js dev overlay is useful in the terminal, but it should not cover the
    product UI during visual review. Errors still appear in the dev server log. */
 nextjs-portal {

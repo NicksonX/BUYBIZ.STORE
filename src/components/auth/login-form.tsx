@@ -128,16 +128,16 @@ export function LoginForm({
         </Link>
       </p>
 
-      <p className="mt-5 text-center text-[10.5px] leading-4 text-[#0A0B0D]/35">
+      <p className="mt-5 text-center text-[10.5px] leading-4 text-[#0A0B0D]/45">
         By continuing you agree to the draft{" "}
-        <Link href="/terms" className="underline hover:text-[#0A0B0D]/60">
+        <Link href="/terms" className="underline hover:text-[#0A0B0D]/70">
           Terms
         </Link>{" "}
         and{" "}
-        <Link href="/privacy" className="underline hover:text-[#0A0B0D]/60">
+        <Link href="/privacy" className="underline hover:text-[#0A0B0D]/70">
           Privacy Notice
         </Link>
-        . Wallet credit is for BUYBIZ purchases and is not cash-withdrawable.
+        .
       </p>
     </div>
   );

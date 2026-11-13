@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowUpRight, Check, Clock3, Network, UserRound, Users } from "lucide-react";
+import { ArrowUpRight, Check } from "lucide-react";
 import type { PlanAvailability, Product } from "@/lib/db/types";
 import { Badge } from "@/components/ui/badge";
 import { cn, formatDuration, formatNaira } from "@/lib/utils";
@@ -42,46 +42,22 @@ export function PlanCard({
         className,
       )}
     >
-      {featured ? (
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_80%_at_80%_-20%,rgba(255,255,255,0.14),transparent_50%)]" />
-      ) : null}
-
-      <div className="relative flex items-start justify-between gap-3">
-        <span
-          className={cn(
-            "flex h-10 w-10 items-center justify-center rounded-[11px] border",
-            featured
-              ? "border-white/10 bg-white/[0.06] text-white"
-              : "border-border bg-surface-subtle text-foreground",
-          )}
+      <div className="relative flex items-center justify-end">
+        <Badge
+          tone={featured ? "onDark" : available ? "success" : "warning"}
+          className={featured ? "border-white/15 bg-white/[0.06] text-white/80" : ""}
         >
-          <Network className="h-[18px] w-[18px]" strokeWidth={1.7} />
-        </span>
-        <div className="flex flex-col items-end gap-1.5">
-          <Badge
-            tone={featured ? "onDark" : available ? "success" : "warning"}
-            className={featured ? "border-white/15 bg-white/[0.06] text-white/75" : ""}
-          >
-            <span
-              className={cn(
-                "h-1.5 w-1.5 rounded-full",
-                available ? "bg-current" : "bg-current opacity-70",
-              )}
-            />
-            {available ? "Available now" : "Unavailable"}
-          </Badge>
           <span
             className={cn(
-              "text-[10px] font-medium",
-              featured ? "text-white/40" : "text-muted-foreground",
+              "h-1.5 w-1.5 rounded-full",
+              available ? "bg-current" : "bg-current opacity-70",
             )}
-          >
-            {duration}
-          </span>
-        </div>
+          />
+          {available ? "Available now" : "Unavailable"}
+        </Badge>
       </div>
 
-      <div className="relative mt-5">
+      <div className="relative mt-3">
         <h3
           className={cn(
             "text-[18px] font-semibold tracking-[-0.03em]",
@@ -93,7 +69,7 @@ export function PlanCard({
         <p
           className={cn(
             "mt-1.5 line-clamp-3 text-[12.5px] leading-5 sm:line-clamp-none sm:min-h-[40px] sm:text-[12px]",
-            featured ? "text-white/45" : "text-muted-foreground",
+            featured ? "text-white/65" : "text-muted-foreground",
           )}
         >
           {product.description}
@@ -107,7 +83,7 @@ export function PlanCard({
         <span
           className={cn(
             "pb-0.5 text-[11px]",
-            featured ? "text-white/35" : "text-muted-foreground",
+            featured ? "text-white/55" : "text-muted-foreground",
           )}
         >
           / {duration}
@@ -121,7 +97,7 @@ export function PlanCard({
               key={feature}
               className={cn(
                 "flex items-start gap-2 text-[12.5px] leading-5 sm:text-[11.5px]",
-                featured ? "text-white/55" : "text-muted-foreground",
+                featured ? "text-white/70" : "text-muted-foreground",
               )}
             >
               <Check
@@ -162,28 +138,6 @@ export function PlanCard({
             No eligible proxy right now
           </div>
         )}
-        <div
-          className={cn(
-            "mt-3 flex items-center justify-center gap-3 text-[10.5px] sm:text-[9.5px]",
-            featured ? "text-white/30" : "text-muted-foreground/80",
-          )}
-        >
-          <span className="inline-flex items-center gap-1">
-            {product.accessType === "single" ? (
-              <>
-                <UserRound className="h-3 w-3" /> One customer
-              </>
-            ) : (
-              <>
-                <Users className="h-3 w-3" /> Shared proxy
-              </>
-            )}
-          </span>
-          <span className="h-2.5 w-px bg-current opacity-30" />
-          <span className="inline-flex items-center gap-1">
-            <Clock3 className="h-3 w-3" /> Fixed expiry
-          </span>
-        </div>
       </div>
     </article>
   );

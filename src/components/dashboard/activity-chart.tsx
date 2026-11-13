@@ -70,26 +70,25 @@ export function ActivityChart({
 
   return (
     <section className="relative min-w-0 max-w-full overflow-hidden rounded-[16px] border border-[#22252a] bg-[#0A0B0D] text-white shadow-[0_30px_60px_-45px_rgba(0,0,0,0.8)]">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(90%_70%_at_80%_0%,rgba(255,255,255,0.08),transparent_50%)]" />
       <div className="relative flex flex-col justify-between gap-3 px-5 pt-5 sm:flex-row sm:items-start">
         <div>
           <h2 className="text-[14px] font-semibold tracking-[-0.02em]">
             Wallet activity
           </h2>
-          <p className="mt-1 text-[10.5px] text-white/35">
+          <p className="mt-1 text-[10.5px] text-white/60">
             {useCredits ? "Money in" : "Money out"} over the last 30 days
           </p>
         </div>
         <div className="flex items-center gap-3">
           <div className="text-right">
-            <p className="text-[9px] uppercase tracking-[0.12em] text-white/30">
+            <p className="text-[9px] uppercase tracking-[0.12em] text-white/55">
               {useCredits ? "Credited" : "Spent"}
             </p>
             <p className="tabular mt-1 text-[15px] font-semibold tracking-[-0.03em]">
               {formatNaira(total, { exact: true })}
             </p>
           </div>
-          <span className="rounded-full border border-white/10 bg-white/[0.05] px-2.5 py-1.5 text-[9px] font-medium text-white/50">
+          <span className="rounded-full border border-white/10 bg-white/[0.05] px-2.5 py-1.5 text-[9px] font-medium text-white/65">
             Last 30 days
           </span>
         </div>
@@ -110,7 +109,7 @@ export function ActivityChart({
               <XAxis
                 dataKey="date"
                 tickFormatter={dateLabel}
-                tick={{ fill: "rgba(255,255,255,0.35)", fontSize: 9 }}
+                tick={{ fill: "rgba(255,255,255,0.58)", fontSize: 9 }}
                 axisLine={false}
                 tickLine={false}
                 interval="preserveStartEnd"
@@ -119,7 +118,7 @@ export function ActivityChart({
               />
               <YAxis
                 tickFormatter={compactNaira}
-                tick={{ fill: "rgba(255,255,255,0.3)", fontSize: 9 }}
+                tick={{ fill: "rgba(255,255,255,0.5)", fontSize: 9 }}
                 axisLine={false}
                 tickLine={false}
                 width={44}
@@ -151,7 +150,7 @@ export function ActivityChart({
             <p className="text-[12px] font-medium text-white/65">
               Your activity will appear here.
             </p>
-            <p className="max-w-[300px] text-[10px] leading-4 text-white/30">
+            <p className="max-w-[300px] text-[10px] leading-4 text-white/55">
               Add funds or purchase a proxy to start building a real wallet
               history. We never invent chart data.
             </p>
