@@ -8,6 +8,7 @@ import { writeAuditLog } from "@/server/services/audit";
 import { notifyUser } from "@/server/services/notifications";
 import { recordCustomerActivity } from "@/server/services/activity";
 import { notifyAdmin } from "@/server/services/admin-notifications";
+import { qualifyReferralForAmbassador } from "@/server/services/ambassador";
 
 export type PurchaseOutcome =
   | {
@@ -475,6 +476,11 @@ export async function purchaseProxy(input: {
         [selectedInventoryId],
       );
 
+      await qualifyReferralForAmbassador(tx, {
+        refereeId: input.userId,
+        eventType: "purchase",
+        eventRef: orderId,
+      });
       await notifyUser(tx, {
         userId: input.userId,
         type: "allocation",

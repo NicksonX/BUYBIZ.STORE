@@ -6,6 +6,8 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { CopyButton } from "@/components/ui/copy-button";
 import { requireUserPage } from "@/server/auth/guards";
 import { getReferralDashboard } from "@/server/data/customer";
+import { getAmbassadorDashboard } from "@/server/services/ambassador";
+import { AmbassadorPanel } from "@/components/ambassador/ambassador-panel";
 import { getAppUrl } from "@/lib/config";
 import { formatDate, formatNaira } from "@/lib/utils";
 
@@ -13,15 +15,18 @@ export const dynamic = "force-dynamic";
 
 export default async function ReferralsPage() {
   const user = await requireUserPage();
-  const data = await getReferralDashboard(user.id);
+  const [data, ambassador] = await Promise.all([
+    getReferralDashboard(user.id),
+    getAmbassadorDashboard(user.id),
+  ]);
   const link = `${getAppUrl()}/register?ref=${encodeURIComponent(data.code)}`;
 
   return (
     <div>
       <PageHeader
         eyebrow="Referrals"
-        title="Invite someone. Earn ₦1,000."
-        description="Share your code. When a new customer makes a qualifying deposit of at least ₦3,000, you get ₦1,000 in BUYBIZ wallet credit. One reward per referred customer."
+        title="Invite someone. Earn ₦1,000 and unlock Ambassador."
+        description="When a new customer makes a qualifying deposit of at least ₦3,000, you get 1,000 BUYBIZ credits. After 10 qualified referrals you become an Ambassador and earn USD commissions, separate from your naira wallet."
       />
 
       <div className="mt-4 grid gap-3 lg:grid-cols-[1.1fr_0.9fr]">
@@ -70,6 +75,21 @@ export default async function ReferralsPage() {
         </div>
       </div>
 
+      <AmbassadorPanel
+        isAmbassador={ambassador.isAmbassador}
+        qualified={ambassador.qualified}
+        required={ambassador.config.referralsRequired}
+        total={ambassador.total}
+        availableCents={ambassador.availableCents}
+        earnedCents={ambassador.earnedCents}
+        minWithdrawalCents={ambassador.config.withdrawalMinCents}
+        commissionCents={ambassador.config.commissionCents}
+        address={ambassador.address}
+        openWithdrawal={ambassador.openWithdrawal}
+        withdrawals={ambassador.withdrawals}
+        promotedAt={ambassador.promotedAt}
+      />
+
       <section className="surface-card mt-3 overflow-hidden rounded-[14px]">
         <div className="flex items-start justify-between gap-3 border-b border-border px-4 py-3">
           <div>
@@ -101,10 +121,13 @@ export default async function ReferralsPage() {
                 <div className="text-right">
                   {referral.status === "rewarded" ? (
                     <>
-                      <Badge tone="success">₦1,000 earned</Badge>
+                      <Badge tone="success">1,000 credits earned</Badge>
                       <p className="mt-1 text-[8.5px] text-muted-foreground">
                         {referral.rewardedAt ? formatDate(referral.rewardedAt) : ""}
                       </p>
+                      {referral.ambassadorQualifiedAt ? (
+                        <p className="mt-1 text-[8px] text-success">Ambassador task complete</p>
+                      ) : null}
                     </>
                   ) : referral.status === "pending" ? (
                     <Badge tone="warning">Waiting for ₦3,000 deposit</Badge>

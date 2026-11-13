@@ -4,6 +4,7 @@ import type { SqlTransaction } from "@/lib/db/driver";
 import { AppError } from "@/lib/errors";
 import { writeAuditLog } from "@/server/services/audit";
 import { notifyUser } from "@/server/services/notifications";
+import { queueEmail } from "@/server/services/email";
 
 type ReferralRow = {
   id: string;
@@ -60,7 +61,35 @@ export async function attachReferralForSignup(
      returning id`,
     [referrerId, refereeId, code],
   );
-  return inserted.rows[0]?.id ?? null;
+  const referralId = inserted.rows[0]?.id;
+  if (!referralId) return null;
+
+  const people = await tx.query<{
+    referrerEmail: string;
+    referrerName: string;
+    refereeName: string;
+  }>(
+    `select referrer.email as "referrerEmail",
+            coalesce(referrer.display_name, referrer.username) as "referrerName",
+            referee.username as "refereeName"
+       from profiles referrer, profiles referee
+      where referrer.id=$1 and referee.id=$2`,
+    [referrerId, refereeId],
+  );
+  const person = people.rows[0];
+  if (person) {
+    await queueEmail(tx, {
+      type: "referral_joined",
+      userId: referrerId,
+      recipient: person.referrerEmail,
+      data: {
+        name: person.referrerName,
+        referralName: person.refereeName,
+      },
+      dedupeKey: `referral_joined:${referralId}`,
+    });
+  }
+  return referralId;
 }
 
 /**
@@ -112,8 +141,10 @@ export async function qualifyReferralForDeposit(
      on conflict (user_id) do nothing`,
     [referral.referrerId],
   );
-  const wallet = await tx.query<{ id: string }>(
-    `select id from wallet_accounts where user_id = $1 for update`,
+  const wallet = await tx.query<{ id: string; email: string; name: string }>(
+    `select w.id, p.email, coalesce(p.display_name,p.username) as name
+       from wallet_accounts w join profiles p on p.id=w.user_id
+      where w.user_id = $1 for update of w`,
     [referral.referrerId],
   );
   if (!wallet.rows[0]) throw new AppError("UNKNOWN", "Referrer wallet not found.");
@@ -154,12 +185,47 @@ export async function qualifyReferralForDeposit(
     ],
   );
 
+  const amountLabel = new Intl.NumberFormat("en-NG", {
+    style: "currency",
+    currency: "NGN",
+    minimumFractionDigits: 0,
+  }).format(reward / 100);
   await notifyUser(tx, {
     userId: referral.referrerId,
     type: "system",
     title: "Referral reward credited",
-    body: `A friend made a qualifying deposit. ${new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", minimumFractionDigits: 0 }).format(reward / 100)} was added to your BUYBIZ wallet.`,
+    body: `A friend made a qualifying deposit. ${amountLabel} was added to your BUYBIZ wallet.`,
     href: "/dashboard/referrals",
+  });
+  const referee = await tx.query<{ username: string }>(
+    `select username from profiles where id=$1 limit 1`,
+    [referral.refereeId],
+  );
+  await queueEmail(tx, {
+    type: "referral_qualified",
+    userId: referral.referrerId,
+    recipient: wallet.rows[0].email,
+    data: {
+      name: wallet.rows[0].name,
+      referralName: referee.rows[0]?.username ?? "Your friend",
+      amountLabel,
+    },
+    dedupeKey: `referral_qualified:${referral.id}`,
+  });
+  await queueEmail(tx, {
+    type: "referral_reward",
+    userId: referral.referrerId,
+    recipient: wallet.rows[0].email,
+    data: {
+      name: wallet.rows[0].name,
+      amountLabel,
+      balanceLabel: new Intl.NumberFormat("en-NG", {
+        style: "currency",
+        currency: "NGN",
+        minimumFractionDigits: 2,
+      }).format((balance + reward) / 100),
+    },
+    dedupeKey: `referral_reward:${referral.id}`,
   });
 
   await writeAuditLog(tx, {

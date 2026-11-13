@@ -34,3 +34,14 @@ In-app administrator reminders and inactivity checks are run by server-side Post
 - Existing lifecycle processing expires entitlements and reconciles capacity.
 
 Email, SMS and voice reminders remain disabled until an approved external provider is configured.
+
+## Email and Render notes
+
+BUYBIZ sends email through an HTTPS API (Resend adapter), not SMTP. On Render's free web service, schedule the email worker endpoint with a free external HTTPS cron:
+
+```text
+GET https://buybiz.store/api/cron/emails
+Authorization: Bearer <CRON_SECRET>
+```
+
+The worker processes the durable email queue and deposit follow-ups. It is safe to call repeatedly. No paid Render cron service or SMTP port is required. The email API key, sender address and OTP secret must be set only in Render environment variables.

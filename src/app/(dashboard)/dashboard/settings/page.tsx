@@ -14,14 +14,17 @@ import { Badge } from "@/components/ui/badge";
 import { ProfileForm } from "@/components/settings/profile-form";
 import { PasswordForm } from "@/components/settings/password-form";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { EmailPreferencesForm } from "@/components/email/email-preferences-form";
 import { logoutAction } from "@/server/actions/auth";
 import { requireUserPage } from "@/server/auth/guards";
+import { getEmailPreferences } from "@/server/services/email";
 import { formatDate, truncateMiddle } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
 export default async function SettingsPage() {
   const user = await requireUserPage();
+  const emailPreferences = await getEmailPreferences(user.id);
 
   return (
     <div>
@@ -67,6 +70,27 @@ export default async function SettingsPage() {
             </div>
             <div className="mt-4">
               <PasswordForm />
+            </div>
+          </section>
+
+          <section className="surface-card rounded-[15px] p-5">
+            <div className="flex items-center gap-2">
+              <span className="flex h-8 w-8 items-center justify-center rounded-[8px] border border-border bg-surface-subtle">
+                <Mail className="h-4 w-4" />
+              </span>
+              <div>
+                <h2 className="text-[13px] font-semibold">Email preferences</h2>
+                <p className="text-[9.5px] text-muted-foreground">
+                  Optional marketing is separate from essential account email.
+                </p>
+              </div>
+            </div>
+            <div className="mt-4">
+              <EmailPreferencesForm
+                email={user.email}
+                marketingOptIn={emailPreferences.marketingOptIn}
+                depositRemindersOptIn={emailPreferences.depositRemindersOptIn}
+              />
             </div>
           </section>
 

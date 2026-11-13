@@ -44,6 +44,7 @@ import {
 import { getTicketForUser } from "@/server/data/customer";
 import { getAppSettings } from "@/server/data/settings";
 import { writeAuditLog } from "@/server/services/audit";
+import { flushEmailQueue } from "@/server/services/email";
 
 export async function purchaseAction(
   _previous: ActionState,
@@ -83,6 +84,7 @@ export async function purchaseAction(
       userAgent: meta.userAgent,
     });
     if (outcome.outcome === "allocated") {
+      await flushEmailQueue(10);
       destination = `/dashboard/proxies/${outcome.allocationId}?new=1`;
     } else {
       destination = `/dashboard/orders/${outcome.orderId}?refunded=1`;

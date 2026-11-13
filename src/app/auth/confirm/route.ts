@@ -3,6 +3,8 @@ import type { EmailOtpType } from "@supabase/supabase-js";
 import { getTrustedOrigin } from "@/lib/http";
 import { createSupabaseCallbackClient } from "@/lib/supabase/route-client";
 import { safeNextPath } from "@/lib/utils";
+import { queueWelcomeEmail, flushEmailQueue } from "@/server/services/email";
+import { getDb } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
@@ -38,10 +40,24 @@ export async function GET(request: NextRequest) {
   }
 
   if (tokenHash && type) {
-    const { error } = await callback.client.auth.verifyOtp({
+    const { data, error } = await callback.client.auth.verifyOtp({
       type,
       token_hash: tokenHash,
     });
+    if (!error && data.user && type === "signup") {
+      try {
+        const db = await getDb();
+        await db.query(
+          `update profiles set email_verified=true, updated_at=now()
+            where id=$1 and email_verified=false`,
+          [data.user.id],
+        );
+        await queueWelcomeEmail(data.user.id);
+        await flushEmailQueue(5);
+      } catch (welcomeError) {
+        console.error("[buybiz/auth] welcome email failed", welcomeError);
+      }
+    }
     if (error) {
       return callback.apply(
         NextResponse.redirect(new URL("/login?error=link_invalid", origin)),

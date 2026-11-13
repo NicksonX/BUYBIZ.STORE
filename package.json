@@ -12,7 +12,8 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "check": "npm run typecheck && npm run lint",
-    "lifecycle": "tsx --conditions=react-server scripts/lifecycle.ts"
+    "lifecycle": "tsx --conditions=react-server scripts/lifecycle.ts",
+    "email-worker": "tsx --conditions=react-server scripts/email-worker.ts"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.16",

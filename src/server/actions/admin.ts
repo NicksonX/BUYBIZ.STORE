@@ -36,6 +36,7 @@ import { writeAuditLog } from "@/server/services/audit";
 import { notifyUser } from "@/server/services/notifications";
 import { replyAsStaff, updateTicketStatus } from "@/server/services/support";
 import { verifyAndCreditDeposit } from "@/server/services/deposits";
+import { queueEmail, flushEmailQueue } from "@/server/services/email";
 
 export type CredentialsState = ActionState & {
   credentials?: { username: string | null; password: string | null };
@@ -1439,5 +1440,395 @@ export async function runAdminJobsAction(
   } catch (error) {
     console.error("[buybiz/admin] admin jobs failed", error);
     return formError("The scheduled admin jobs failed. Check server logs.");
+  }
+}
+
+async function ambassadorPayoutContext(id: string) {
+  const db = await getDb();
+  return db.query<{
+    id: string;
+    userId: string;
+    amountCents: number;
+    status: string;
+    address: string;
+    email: string;
+    username: string;
+    displayName: string | null;
+  }>(
+    `select w.id, w.user_id as "userId", w.amount_usd_cents as "amountCents",
+            w.status, w.wallet_address as address, p.email, p.username,
+            p.display_name as "displayName"
+       from ambassador_withdrawals w join profiles p on p.id=w.user_id
+      where w.id=$1 limit 1`,
+    [id],
+  );
+}
+
+function usdLabel(cents: number) {
+  return `$${(cents / 100).toFixed(2)}`;
+}
+
+export async function approveAmbassadorPayoutAction(
+  _previous: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const actor = await adminActor();
+  if (!actor.ok) return actor.state;
+  const id = String(formData.get("payoutId") ?? "");
+  if (!id) return formError("Missing payout.");
+  const db = await getDb();
+  try {
+    const result = await db.transaction(async (tx) => {
+      const current = await tx.query<{
+        userId: string;
+        amountCents: number;
+        status: string;
+      }>(
+        `select user_id as "userId", amount_usd_cents as "amountCents", status
+           from ambassador_withdrawals where id=$1 limit 1 for update`,
+        [id],
+      );
+      const payout = current.rows[0];
+      if (!payout) throw new AppError("NOT_FOUND", "Payout not found.");
+      if (payout.status !== "pending") {
+        throw new AppError("CONFLICT", "Only a pending payout can be approved.");
+      }
+      await tx.query(
+        `update ambassador_withdrawals
+            set status='processing', approved_at=now(), processed_by=$2, updated_at=now()
+          where id=$1`,
+        [id, actor.admin.id],
+      );
+      const person = await tx.query<{ email: string; name: string }>(
+        `select email, coalesce(display_name,username) as name from profiles where id=$1`,
+        [payout.userId],
+      );
+      if (person.rows[0]) {
+        await queueEmail(tx, {
+          type: "payout_approved",
+          userId: payout.userId,
+          recipient: person.rows[0].email,
+          data: {
+            name: person.rows[0].name,
+            amountLabel: usdLabel(payout.amountCents),
+          },
+          dedupeKey: `payout_approved:${id}`,
+        });
+      }
+      await notifyUser(tx, {
+        userId: payout.userId,
+        type: "system",
+        title: "Payout approved",
+        body: `Your ${usdLabel(payout.amountCents)} USDT payout is approved and being processed. It can take up to 3 days.`,
+        href: "/dashboard/referrals",
+      });
+      await writeAuditLog(tx, {
+        actorUserId: actor.admin.id,
+        actorRole: actor.admin.role,
+        action: "ambassador.payout_approved",
+        entityType: "ambassador_withdrawal",
+        entityId: id,
+        metadata: { amountCents: payout.amountCents },
+      });
+      return payout;
+    });
+    revalidatePath("/admin/ambassador-payouts");
+    revalidatePath("/dashboard/referrals");
+    await flushEmailQueue(5);
+    return formSuccess(`Payout ${usdLabel(result.amountCents)} approved for processing.`);
+  } catch (error) {
+    if (error instanceof AppError) return formError(error.userMessage);
+    console.error("[buybiz/admin] approve payout failed", error);
+    return formError("The payout could not be approved.");
+  }
+}
+
+export async function rejectAmbassadorPayoutAction(
+  _previous: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const actor = await adminActor();
+  if (!actor.ok) return actor.state;
+  const id = String(formData.get("payoutId") ?? "");
+  const reason = String(formData.get("reason") ?? "").trim();
+  if (!id) return formError("Missing payout.");
+  if (reason.length < 5) return formError("Add a short reason for the rejection.");
+  const db = await getDb();
+  try {
+    const result = await db.transaction(async (tx) => {
+      const current = await tx.query<{
+        userId: string;
+        amountCents: number;
+        status: string;
+        address: string;
+      }>(
+        `select user_id as "userId", amount_usd_cents as "amountCents",
+                status, wallet_address as address
+           from ambassador_withdrawals where id=$1 limit 1 for update`,
+        [id],
+      );
+      const payout = current.rows[0];
+      if (!payout) throw new AppError("NOT_FOUND", "Payout not found.");
+      if (!["pending", "processing"].includes(payout.status)) {
+        throw new AppError("CONFLICT", "This payout can no longer be rejected.");
+      }
+      await tx.query(
+        `update ambassador_withdrawals
+            set status='rejected', rejected_at=now(), rejection_reason=$2,
+                processed_by=$3, updated_at=now()
+          where id=$1`,
+        [id, reason, actor.admin.id],
+      );
+      await tx.query(
+        `insert into ambassador_ledger
+           (user_id, entry_type, amount_usd_cents, reference, withdrawal_id, description)
+         values ($1,'withdrawal_release',$2,$3,$4,$5)
+         on conflict (reference) do nothing`,
+        [
+          payout.userId,
+          payout.amountCents,
+          `withdrawal:release:${id}`,
+          id,
+          "Rejected ambassador payout released",
+        ],
+      );
+      const person = await tx.query<{ email: string; name: string }>(
+        `select email, coalesce(display_name,username) as name from profiles where id=$1`,
+        [payout.userId],
+      );
+      if (person.rows[0]) {
+        await queueEmail(tx, {
+          type: "payout_rejected",
+          userId: payout.userId,
+          recipient: person.rows[0].email,
+          data: {
+            name: person.rows[0].name,
+            amountLabel: usdLabel(payout.amountCents),
+            reason,
+          },
+          dedupeKey: `payout_rejected:${id}`,
+        });
+      }
+      await notifyUser(tx, {
+        userId: payout.userId,
+        type: "system",
+        title: "Payout request rejected",
+        body: `Your ${usdLabel(payout.amountCents)} payout was rejected. The reserved amount is available again. Reason: ${reason}`,
+        href: "/dashboard/referrals",
+      });
+      await writeAuditLog(tx, {
+        actorUserId: actor.admin.id,
+        actorRole: actor.admin.role,
+        action: "ambassador.payout_rejected",
+        entityType: "ambassador_withdrawal",
+        entityId: id,
+        metadata: { amountCents: payout.amountCents, reason },
+      });
+      return payout;
+    });
+    revalidatePath("/admin/ambassador-payouts");
+    revalidatePath("/dashboard/referrals");
+    await flushEmailQueue(5);
+    return formSuccess(`Payout rejected. ${usdLabel(result.amountCents)} is available again.`);
+  } catch (error) {
+    if (error instanceof AppError) return formError(error.userMessage);
+    console.error("[buybiz/admin] reject payout failed", error);
+    return formError("The payout could not be rejected.");
+  }
+}
+
+export async function markAmbassadorPayoutPaidAction(
+  _previous: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const actor = await adminActor();
+  if (!actor.ok) return actor.state;
+  const id = String(formData.get("payoutId") ?? "");
+  const txHash = String(formData.get("transactionHash") ?? "").trim();
+  if (!id) return formError("Missing payout.");
+  if (!/^0x[0-9a-fA-F]{64}$/.test(txHash)) {
+    return formError("Enter a valid BEP20 transaction hash (0x plus 64 hex characters).");
+  }
+  const db = await getDb();
+  try {
+    const result = await db.transaction(async (tx) => {
+      const current = await tx.query<{
+        userId: string;
+        amountCents: number;
+        status: string;
+        address: string;
+      }>(
+        `select user_id as "userId", amount_usd_cents as "amountCents",
+                status, wallet_address as address
+           from ambassador_withdrawals where id=$1 limit 1 for update`,
+        [id],
+      );
+      const payout = current.rows[0];
+      if (!payout) throw new AppError("NOT_FOUND", "Payout not found.");
+      if (payout.status !== "processing") {
+        throw new AppError(
+          "CONFLICT",
+          "Approve the payout and confirm the transfer before marking it paid.",
+        );
+      }
+      await tx.query(
+        `update ambassador_withdrawals
+            set status='paid', paid_at=now(), transaction_hash=$2,
+                processed_by=$3, updated_at=now()
+          where id=$1`,
+        [id, txHash, actor.admin.id],
+      );
+      const person = await tx.query<{ email: string; name: string }>(
+        `select email, coalesce(display_name,username) as name from profiles where id=$1`,
+        [payout.userId],
+      );
+      if (person.rows[0]) {
+        await queueEmail(tx, {
+          type: "payout_paid",
+          userId: payout.userId,
+          recipient: person.rows[0].email,
+          data: {
+            name: person.rows[0].name,
+            amountLabel: usdLabel(payout.amountCents),
+            txHash,
+            address: payout.address,
+          },
+          dedupeKey: `payout_paid:${id}`,
+        });
+      }
+      await notifyUser(tx, {
+        userId: payout.userId,
+        type: "system",
+        title: "Payout completed",
+        body: `Your ${usdLabel(payout.amountCents)} USDT payout has been marked paid. The transaction hash is available in your payout history.`,
+        href: "/dashboard/referrals",
+      });
+      await writeAuditLog(tx, {
+        actorUserId: actor.admin.id,
+        actorRole: actor.admin.role,
+        action: "ambassador.payout_paid",
+        entityType: "ambassador_withdrawal",
+        entityId: id,
+        metadata: { amountCents: payout.amountCents, transactionHash: txHash },
+      });
+      return payout;
+    });
+    revalidatePath("/admin/ambassador-payouts");
+    revalidatePath("/dashboard/referrals");
+    await flushEmailQueue(5);
+    return formSuccess(`Payout marked paid. Transaction hash recorded for ${usdLabel(result.amountCents)}.`);
+  } catch (error) {
+    if (error instanceof AppError) return formError(error.userMessage);
+    console.error("[buybiz/admin] mark payout paid failed", error);
+    return formError("The payout could not be marked paid.");
+  }
+}
+
+export async function verifyAmbassadorAddressAction(
+  _previous: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const actor = await adminActor();
+  if (!actor.ok) return actor.state;
+  const addressId = String(formData.get("addressId") ?? "");
+  const approve = String(formData.get("decision") ?? "") === "verify";
+  const reason = String(formData.get("reason") ?? "").trim();
+  if (!addressId) return formError("Missing payout address.");
+  if (!approve && reason.length < 5) {
+    return formError("Add a short reason for rejecting the address.");
+  }
+  const db = await getDb();
+  try {
+    await db.transaction(async (tx) => {
+      const verify = await import("@/server/services/ambassador");
+      await verify.verifyAmbassadorAddress(tx, {
+        addressId,
+        adminId: actor.admin.id,
+        adminRole: actor.admin.role,
+        approve,
+        reason,
+      });
+    });
+    revalidatePath("/admin/ambassador-payouts");
+    revalidatePath("/dashboard/referrals");
+    return formSuccess(approve ? "USDT BEP20 address verified." : "Address rejected.");
+  } catch (error) {
+    if (error instanceof AppError) return formError(error.userMessage);
+    console.error("[buybiz/admin] verify ambassador address failed", error);
+    return formError("The address could not be updated.");
+  }
+}
+
+export async function updateAmbassadorSettingsAction(
+  _previous: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const actor = await adminActor();
+  if (!actor.ok) return actor.state;
+  const enabled = formData.get("enabled") === "on";
+  const required = Number(formData.get("referralsRequired") ?? 10);
+  const commission = Number(formData.get("commissionUsd") ?? 3);
+  const minimum = Number(formData.get("minimumUsd") ?? 10);
+  const task = String(formData.get("qualifyingTask") ?? "referral_deposit");
+  const qualifyingDeposit = Number(formData.get("qualifyingDepositNgn") ?? 3000);
+  if (!Number.isInteger(required) || required < 1 || required > 100) {
+    return formError("Qualified referrals must be a whole number from 1 to 100.");
+  }
+  if (!Number.isFinite(commission) || commission <= 0 || commission > 1000) {
+    return formError("Enter a commission between $0.01 and $1,000.");
+  }
+  if (!Number.isFinite(minimum) || minimum < 10 || minimum > 100000) {
+    return formError("The minimum payout must be at least $10.");
+  }
+  if (!["referral_deposit", "referral_first_purchase"].includes(task)) {
+    return formError("Choose a valid qualifying task.");
+  }
+  if (!Number.isFinite(qualifyingDeposit) || qualifyingDeposit < 0) {
+    return formError("Enter a valid qualifying deposit.");
+  }
+  const db = await getDb();
+  const meta = await getRequestMeta();
+  try {
+    await db.transaction(async (tx) => {
+      const entries: Array<[string, unknown]> = [
+        ["ambassador_enabled", enabled],
+        ["ambassador_referrals_required", required],
+        ["ambassador_commission_usd_cents", Math.round(commission * 100)],
+        ["ambassador_withdrawal_min_usd_cents", Math.round(minimum * 100)],
+        ["ambassador_qualifying_task", task],
+        ["ambassador_qualifying_deposit_minor", Math.round(qualifyingDeposit * 100)],
+      ];
+      for (const [key, value] of entries) {
+        await tx.query(
+          `insert into app_settings (key,value,description)
+           values ($1,$2::jsonb,'Ambassador Programme setting')
+           on conflict (key) do update set value=excluded.value, updated_at=now()`,
+          [key, JSON.stringify(value)],
+        );
+      }
+      await writeAuditLog(tx, {
+        actorUserId: actor.admin.id,
+        actorRole: actor.admin.role,
+        action: "ambassador.settings_updated",
+        entityType: "system",
+        entityId: null,
+        metadata: {
+          enabled,
+          required,
+          commissionCents: Math.round(commission * 100),
+          minimumCents: Math.round(minimum * 100),
+          task,
+          qualifyingDepositMinor: Math.round(qualifyingDeposit * 100),
+        },
+        ip: meta.ip,
+        userAgent: meta.userAgent,
+      });
+    });
+    revalidatePath("/admin/ambassador-payouts");
+    revalidatePath("/dashboard/referrals");
+    return formSuccess("Ambassador Programme settings saved.");
+  } catch (error) {
+    console.error("[buybiz/admin] ambassador settings failed", error);
+    return formError("The Ambassador settings could not be saved.");
   }
 }

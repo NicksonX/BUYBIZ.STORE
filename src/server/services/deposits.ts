@@ -26,6 +26,8 @@ import { writeAuditLog } from "@/server/services/audit";
 import { qualifyReferralForDeposit } from "@/server/services/referrals";
 import { notifyUser } from "@/server/services/notifications";
 import { recordCustomerActivity } from "@/server/services/activity";
+import { qualifyReferralForAmbassador } from "@/server/services/ambassador";
+import { queueEmail, flushEmailQueue } from "@/server/services/email";
 
 export type DepositVerificationResult = {
   status: DepositStatus;
@@ -198,6 +200,39 @@ async function creditVerifiedDeposit(
     provider: deposit.provider,
     status: "credited",
   });
+  await qualifyReferralForAmbassador(tx, {
+    refereeId: deposit.userId,
+    eventType: "deposit",
+    eventRef: deposit.id,
+    amountMinor: Number(deposit.amountMinor),
+  });
+
+  const depositor = await tx.query<{
+    email: string;
+    name: string;
+  }>(
+    `select email, coalesce(display_name, username) as name
+       from profiles where id=$1 limit 1`,
+    [deposit.userId],
+  );
+  if (depositor.rows[0]) {
+    const money = new Intl.NumberFormat("en-NG", {
+      style: "currency",
+      currency: "NGN",
+      minimumFractionDigits: 2,
+    });
+    await queueEmail(tx, {
+      type: "deposit_confirmation",
+      userId: deposit.userId,
+      recipient: depositor.rows[0].email,
+      data: {
+        name: depositor.rows[0].name,
+        amountLabel: money.format(Number(deposit.amountMinor) / 100),
+        balanceLabel: money.format(nextBalance / 100),
+      },
+      dedupeKey: `deposit_confirmation:${deposit.id}`,
+    });
+  }
 
   await notifyUser(tx, {
     userId: deposit.userId,
@@ -457,7 +492,7 @@ export async function creditDepositFromVerification(input: {
   userAgent?: string | null;
 }): Promise<DepositVerificationResult> {
   const db = await getDb();
-  return db.transaction(async (tx) => {
+  const result: DepositVerificationResult = await db.transaction(async (tx) => {
     const deposit = await loadDepositForUpdate(tx, input.depositId);
     if (!deposit) {
       throw new AppError("NOT_FOUND", "That deposit could not be found.");
@@ -515,6 +550,8 @@ export async function creditDepositFromVerification(input: {
       message: "Payment confirmed. Your BUYBIZ wallet has been credited.",
     };
   });
+  if (result.status === "credited") await flushEmailQueue(10);
+  return result;
 }
 
 export async function verifyAndCreditDeposit(input: {

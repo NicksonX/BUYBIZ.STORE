@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { isDemoMode } from "@/lib/config";
 import { getDb } from "@/lib/db";
 import { reconcilePendingDeposits } from "@/server/services/deposits";
+import { processEmailQueue } from "@/server/services/email";
+import { runDepositFollowupJobs } from "@/server/services/email-followups";
 
 export const dynamic = "force-dynamic";
 
@@ -33,8 +35,10 @@ export async function GET(request: Request) {
       `select run_lifecycle_jobs() as lifecycle`,
     );
     const deposits = await reconcilePendingDeposits();
+    const followups = await runDepositFollowupJobs();
+    const emails = await processEmailQueue({ limit: 20 });
     return NextResponse.json(
-      { ok: true, lifecycle: result.rows[0]?.lifecycle, deposits },
+      { ok: true, lifecycle: result.rows[0]?.lifecycle, deposits, followups, emails },
       { headers: { "Cache-Control": "no-store" } },
     );
   } catch (error) {

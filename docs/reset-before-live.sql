@@ -46,6 +46,15 @@ delete from public.audit_logs;
 alter table public.audit_logs enable trigger audit_logs_no_delete;
 
 -- Referral and proxy lifecycle records depend on financial records
+delete from public.email_deliveries;
+delete from public.email_otps;
+delete from public.email_preferences;
+delete from public.email_campaigns;
+delete from public.ambassador_ledger;
+delete from public.ambassador_withdrawals;
+delete from public.ambassador_commissions;
+delete from public.ambassador_wallet_addresses;
+delete from public.ambassador_profiles;
 delete from public.referrals;
 delete from public.proxy_renewals;
 delete from public.proxy_terminations;
@@ -105,6 +114,13 @@ union all select 'proxy_rotations', count(*)::int from public.proxy_rotations
 union all select 'admin_notifications', count(*)::int from public.admin_notifications
 union all select 'account_reactivations', count(*)::int from public.account_reactivations
 union all select 'account_freezes', count(*)::int from public.account_freezes
+union all select 'ambassador_profiles', count(*)::int from public.ambassador_profiles
+union all select 'ambassador_commissions', count(*)::int from public.ambassador_commissions
+union all select 'ambassador_withdrawals', count(*)::int from public.ambassador_withdrawals
+union all select 'ambassador_ledger', count(*)::int from public.ambassador_ledger
+union all select 'email_deliveries', count(*)::int from public.email_deliveries
+union all select 'email_otps', count(*)::int from public.email_otps
+union all select 'email_campaigns', count(*)::int from public.email_campaigns
 union all select 'support_tickets', count(*)::int from public.support_tickets
 union all select 'notifications', count(*)::int from public.notifications
 union all select 'audit_logs', count(*)::int from public.audit_logs

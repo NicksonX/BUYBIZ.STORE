@@ -404,3 +404,19 @@ The wallet minimum is 3,000 credits (₦3,000), at 1 credit = ₦1. Credits neve
 Customer accounts freeze after the configurable inactivity period, defaulting to 60 days. Frozen balances and history are preserved. A customer can reactivate by paying the configured ₦1,000 wallet fee when their preserved credit is sufficient, or an administrator can unfreeze the account manually. Expired proxy subscriptions are not restored by reactivation.
 
 Daily and weekly proxy inventory is package-specific and uses manual upstream rotation. See [proxy limitations](docs/proxy-limitations.md) for what BUYBIZ can and cannot enforce upstream. In-app admin reminders are in the notification centre; external email, SMS and voice delivery are intentionally disabled until a provider is configured.
+
+
+## Referral, Ambassador and email operations
+
+Referral rewards remain internal NGN wallet credits. Ambassador commissions are tracked separately in USD cents and paid manually as USDT BEP20 after an administrator verifies the address and approves the payout.
+
+Email delivery uses an HTTPS API adapter and a durable outbox. Provider credentials are server-only Render environment variables. Admin email management shows whether the provider is configured and never reports a skipped message as sent. For free Render hosting, schedule `GET /api/cron/emails` with `Authorization: Bearer CRON_SECRET` from a free HTTPS scheduler; no SMTP and no paid Render cron are required.
+
+Signup OTPs are application-level 6-digit codes hashed in the database. If the email provider is not configured, the existing Supabase verification path remains available and the admin dashboard shows the missing provider status. For a fully branded OTP-only signup, configure the provider and disable Supabase's duplicate confirmation email in the Supabase Auth email settings.
+
+
+## Ambassador programme and email
+
+Qualified referral rewards remain 1,000 BUYBIZ wallet credits. Ambassadors are promoted automatically after the configured number of qualified referrals and earn USD commissions in a separate ledger from the naira wallet. USDT BEP20 payouts are reviewed and sent manually by an administrator; no payout is marked paid automatically.
+
+Email is delivered through a durable HTTPS queue. Configure the provider environment in Render as described in [email setup](docs/email-setup.md). For free Render hosting, schedule `/api/cron/emails` with a free HTTPS scheduler. Admin email management exposes provider setup status, templates, opt-in marketing campaigns, delivery logs and safe retries without exposing OTPs or API keys.

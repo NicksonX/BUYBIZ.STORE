@@ -4,6 +4,8 @@ import { BadgeCheck, MailCheck, ShieldAlert } from "lucide-react";
 import { ResendVerificationForm } from "@/components/auth/resend-verification-form";
 import { verifyEmailDemoAction } from "@/server/actions/auth";
 import { isDemoMode } from "@/lib/config";
+import { isEmailConfigured } from "@/lib/email/config";
+import { OtpForm } from "@/components/auth/otp-form";
 import { safeNextPath } from "@/lib/utils";
 import { getCurrentUser } from "@/server/auth/session";
 import { homeForProfile } from "@/server/auth/landing";
@@ -23,6 +25,7 @@ export default async function VerifyEmailPage({
   const params = await searchParams;
   const user = await getCurrentUser();
   const demo = isDemoMode();
+  const emailConfigured = isEmailConfigured();
   const email = first(params.email) || user?.email;
   const next = safeNextPath(first(params.next), user ? homeForProfile(user) : "/dashboard");
   const verified = Boolean(user?.emailVerified);
@@ -51,9 +54,11 @@ export default async function VerifyEmailPage({
       <p className="mt-3 text-[12.5px] leading-6 text-[#0A0B0D]/50">
         {verified
           ? "Your email address is confirmed. Purchases, deposits and support are now available."
-          : user
-            ? `Confirm ${email ?? "your email address"} to make purchases and wallet deposits. You can still explore the marketplace while unverified.`
-            : `If ${email ?? "that email"} is registered, a verification link is on its way. Verify it, then sign in to continue.`}
+          : emailConfigured
+            ? `Enter the 6-digit code sent to ${email ?? "your email address"}. It expires after 10 minutes. Verifying unlocks purchases and wallet deposits.`
+            : user
+              ? `Confirm ${email ?? "your email address"} to make purchases and wallet deposits. You can still explore the marketplace while unverified.`
+              : `If ${email ?? "that email"} is registered, a verification link is on its way. Verify it, then sign in to continue.`}
       </p>
 
       <div className="mt-6 space-y-3">
@@ -74,6 +79,15 @@ export default async function VerifyEmailPage({
               Verify email (demo)
             </button>
           </form>
+        ) : null}
+
+        {!verified && emailConfigured && email ? (
+          <div className="rounded-[11px] border border-[#0A0B0D]/[0.08] bg-white p-4">
+            <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.13em] text-[#0A0B0D]/35">
+              Verify with your code
+            </p>
+            <OtpForm email={email} next={next} />
+          </div>
         ) : null}
 
         {!verified ? (
@@ -99,7 +113,7 @@ export default async function VerifyEmailPage({
 
       <p className="mt-5 text-[9.5px] leading-4 text-[#0A0B0D]/35">
         Email verification is required before purchasing proxy access or funding
-        a wallet. Verification links expire; request a new one if needed.
+        a wallet. Codes and links expire; request a new one if needed.
       </p>
     </div>
   );

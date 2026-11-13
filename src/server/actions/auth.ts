@@ -2,12 +2,19 @@
 
 import { createHash, randomBytes } from "node:crypto";
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { getDb } from "@/lib/db";
 import type { Profile } from "@/lib/db/types";
 import { AppError, toUserMessage } from "@/lib/errors";
 import { getAppUrl, isDemoMode, isSupabaseAuthConfigured } from "@/lib/config";
 import { hashPassword, verifyPassword } from "@/lib/security/password";
 import { getRequestMeta, rateLimitByIp } from "@/lib/security/rate-limit";
+import { isEmailConfigured } from "@/lib/email/config";
+import {
+  createAndSendSignupOtp,
+  verifySignupOtp,
+} from "@/server/services/email-otp";
+import { flushEmailQueue } from "@/server/services/email";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { safeNextPath } from "@/lib/utils";
 import {
@@ -265,9 +272,25 @@ export async function signupAction(
             console.error("[buybiz/auth] referral attach failed", referralError);
           }
         }
-        if (data.session) destination = "/onboarding";
-        else
+        if (isEmailConfigured()) {
+          try {
+            const otp = await createAndSendSignupOtp({
+              userId: data.user.id,
+              email: parsed.data.email,
+              name: parsed.data.username,
+            });
+            if (!otp.sent) {
+              console.warn("[buybiz/auth] OTP email not sent", otp.reason);
+            }
+          } catch (otpError) {
+            console.error("[buybiz/auth] OTP setup failed", otpError);
+          }
+          destination = `/verify-email?email=${encodeURIComponent(parsed.data.email)}&next=/onboarding`;
+        } else if (data.session) {
+          destination = "/onboarding";
+        } else {
           destination = `/verify-email?email=${encodeURIComponent(parsed.data.email)}`;
+        }
       }
     }
   } catch (error) {
@@ -282,6 +305,7 @@ export async function signupAction(
   }
 
   if (providerError) return providerError;
+  if (isEmailConfigured()) await flushEmailQueue(5);
   if (destination) redirect(destination);
   return formError("We could not create your account. Please try again.");
 }
@@ -428,6 +452,36 @@ export async function verifyEmailDemoAction(formData: FormData) {
   redirect(next);
 }
 
+export async function verifyOtpAction(
+  _previous: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const limit = await rateLimitByIp("auth:verify-otp", 12, 600);
+  if (!limit.allowed) return tooMany(limit.retryAfterSeconds);
+  const email = String(formData.get("email") ?? "").trim();
+  const code = String(formData.get("code") ?? "").trim();
+  const next = safeNextPath(String(formData.get("next") ?? "/onboarding"));
+  if (!email || !code) return formError("Enter your email and the 6-digit code.");
+  let destination: string;
+  try {
+    const profile = await verifySignupOtp({ email, code });
+    const current = await getCurrentUser();
+    if (current && current.id !== profile.id) {
+      return formError("Sign out before verifying a different account.");
+    }
+    revalidatePath("/dashboard");
+    revalidatePath("/dashboard/settings");
+    destination = current
+      ? next
+      : `/login?verified=1&email=${encodeURIComponent(email)}`;
+  } catch (error) {
+    if (error instanceof AppError) return formError(error.userMessage);
+    console.error("[buybiz/auth] OTP verification failed", error);
+    return formError("The code could not be verified. Request a new code.");
+  }
+  redirect(destination);
+}
+
 export async function resendVerificationAction(
   _previous: ActionState,
   formData: FormData,
@@ -447,6 +501,30 @@ export async function resendVerificationAction(
 
   const email = String(formData.get("email") ?? "").trim();
   if (!email) return formError("Enter the email you signed up with.");
+  if (isEmailConfigured()) {
+    const profile = await getDb().then((db) =>
+      db.query<{ id: string; username: string; emailVerified: boolean }>(
+        `select id, username, email_verified as "emailVerified"
+           from profiles where lower(email)=lower($1) limit 1`,
+        [email],
+      ),
+    );
+    const row = profile.rows[0];
+    if (!row) {
+      return formError("No account was found for that email.");
+    }
+    if (row.emailVerified) {
+      return formSuccess("That email is already verified. You can sign in.");
+    }
+    const otp = await createAndSendSignupOtp({
+      userId: row.id,
+      email,
+      name: row.username,
+    });
+    return otp.sent
+      ? formSuccess("A new 6-digit verification code is on its way.")
+      : formError(otp.reason ?? "The verification email could not be sent.");
+  }
   if (!isSupabaseAuthConfigured()) {
     return formError("Authentication is not configured.");
   }

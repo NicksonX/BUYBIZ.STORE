@@ -491,9 +491,11 @@ export async function getReferralDashboard(userId: string) {
     createdAt: Date;
     rewardedAt: Date | null;
     refereeUsername: string;
+    ambassadorQualifiedAt: Date | null;
   }>(
     `select r.id, r.status, r.reward_amount_minor::bigint as "rewardMinor",
             r.created_at as "createdAt", r.rewarded_at as "rewardedAt",
+            r.ambassador_qualified_at as "ambassadorQualifiedAt",
             p.username as "refereeUsername"
        from referrals r
        join profiles p on p.id = r.referee_id

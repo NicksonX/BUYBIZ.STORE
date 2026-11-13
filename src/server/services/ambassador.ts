@@ -1,0 +1,534 @@
+import "server-only";
+import { getDb } from "@/lib/db";
+import type { SqlTransaction } from "@/lib/db/driver";
+import { AppError } from "@/lib/errors";
+import { writeAuditLog } from "@/server/services/audit";
+import { notifyUser } from "@/server/services/notifications";
+import { queueEmail } from "@/server/services/email";
+
+export type AmbassadorConfig = {
+  enabled: boolean;
+  referralsRequired: number;
+  commissionCents: number;
+  withdrawalMinCents: number;
+  qualifyingTask: "referral_deposit" | "referral_first_purchase";
+  qualifyingDepositMinor: number;
+};
+
+export async function getAmbassadorConfig(tx?: SqlTransaction): Promise<AmbassadorConfig> {
+  const db = tx ?? (await getDb());
+  const result = await db.query<{ key: string; value: unknown }>(
+    `select key, value from app_settings
+      where key in (
+        'ambassador_enabled','ambassador_referrals_required',
+        'ambassador_commission_usd_cents','ambassador_withdrawal_min_usd_cents',
+        'ambassador_qualifying_task','ambassador_qualifying_deposit_minor'
+      )`,
+  );
+  const map = new Map(result.rows.map((row) => [row.key, row.value]));
+  const task = String(map.get("ambassador_qualifying_task") ?? "referral_deposit");
+  return {
+    enabled: map.get("ambassador_enabled") !== false,
+    referralsRequired: Math.max(1, Math.min(Number(map.get("ambassador_referrals_required") ?? 10), 100)),
+    commissionCents: Math.max(1, Number(map.get("ambassador_commission_usd_cents") ?? 300)),
+    withdrawalMinCents: Math.max(1000, Number(map.get("ambassador_withdrawal_min_usd_cents") ?? 1000)),
+    qualifyingTask:
+      task === "referral_first_purchase" ? "referral_first_purchase" : "referral_deposit",
+    qualifyingDepositMinor: Math.max(0, Number(map.get("ambassador_qualifying_deposit_minor") ?? 300_000)),
+  };
+}
+
+function usd(cents: number) {
+  return `$${(cents / 100).toFixed(2)}`;
+}
+
+export async function getAmbassadorWalletBalance(
+  tx: SqlTransaction,
+  userId: string,
+) {
+  const result = await tx.query<{ available: unknown; earned: unknown }>(
+    `select
+       coalesce((select sum(amount_usd_cents) from ambassador_ledger where user_id=$1),0)::int as available,
+       coalesce((select sum(amount_usd_cents) from ambassador_ledger where user_id=$1 and entry_type='commission'),0)::int as earned`,
+    [userId],
+  );
+  return {
+    availableCents: Number(result.rows[0]?.available ?? 0),
+    earnedCents: Number(result.rows[0]?.earned ?? 0),
+  };
+}
+
+async function awardCommission(
+  tx: SqlTransaction,
+  input: {
+    ambassadorId: string;
+    referralId: string;
+    commissionCents: number;
+    referralName: string;
+    ambassadorName: string;
+    ambassadorEmail: string;
+  },
+) {
+  const inserted = await tx.query<{ id: string }>(
+    `insert into ambassador_commissions
+       (ambassador_id, referral_id, amount_usd_cents, status, description)
+     values ($1,$2,$3,'available','Ambassador referral commission')
+     on conflict (referral_id) do nothing
+     returning id`,
+    [input.ambassadorId, input.referralId, input.commissionCents],
+  );
+  const commissionId = inserted.rows[0]?.id;
+  if (!commissionId) return null;
+
+  const balance = await getAmbassadorWalletBalance(tx, input.ambassadorId);
+  await tx.query(
+    `insert into ambassador_ledger
+       (user_id, entry_type, amount_usd_cents, reference, referral_id, description)
+     values ($1,'commission',$2,$3,$4,'Ambassador referral commission')`,
+    [
+      input.ambassadorId,
+      input.commissionCents,
+      `commission:${input.referralId}`,
+      input.referralId,
+    ],
+  );
+  await queueEmail(tx, {
+    type: "ambassador_commission",
+    userId: input.ambassadorId,
+    recipient: input.ambassadorEmail,
+    data: {
+      name: input.ambassadorName,
+      referralName: input.referralName,
+      commissionLabel: usd(input.commissionCents),
+      availableLabel: usd(balance.availableCents + input.commissionCents),
+    },
+    dedupeKey: `ambassador_commission:${commissionId}`,
+  });
+  await notifyUser(tx, {
+    userId: input.ambassadorId,
+    type: "system",
+    title: "Ambassador commission earned",
+    body: `${usd(input.commissionCents)} was added to your separate ambassador USD balance for a qualifying referral.`,
+    href: "/dashboard/referrals",
+  });
+  await writeAuditLog(tx, {
+    actorUserId: null,
+    actorRole: "system",
+    action: "ambassador.commission_awarded",
+    entityType: "ambassador_commission",
+    entityId: commissionId,
+    metadata: {
+      ambassadorId: input.ambassadorId,
+      referralId: input.referralId,
+      amountUsdCents: input.commissionCents,
+    },
+  });
+  return commissionId;
+}
+
+/**
+ * Called from completed deposit / first-purchase flows. It never trusts a
+ * client-submitted status or amount. It only evaluates referrals already
+ * recorded in the database.
+ */
+export async function qualifyReferralForAmbassador(
+  tx: SqlTransaction,
+  input: {
+    refereeId: string;
+    eventType: "deposit" | "purchase";
+    eventRef: string;
+    amountMinor?: number;
+  },
+) {
+  const config = await getAmbassadorConfig(tx);
+  if (!config.enabled) return null;
+  if (config.qualifyingTask === "referral_deposit") {
+    if (input.eventType !== "deposit") return null;
+    if (Number(input.amountMinor ?? 0) < config.qualifyingDepositMinor) return null;
+  } else if (input.eventType !== "purchase") {
+    return null;
+  }
+
+  const referralResult = await tx.query<{
+    id: string;
+    referrerId: string;
+    referrerEmail: string;
+    referrerName: string;
+    refereeName: string;
+  }>(
+    `select r.id, r.referrer_id as "referrerId",
+            p.email as "referrerEmail",
+            coalesce(p.display_name, p.username) as "referrerName",
+            referee.username as "refereeName"
+       from referrals r
+       join profiles p on p.id = r.referrer_id
+       join profiles referee on referee.id = r.referee_id
+      where r.referee_id = $1 and r.ambassador_qualified_at is null
+      limit 1 for update of r`,
+    [input.refereeId],
+  );
+  const referral = referralResult.rows[0];
+  if (!referral) return null;
+
+  const updated = await tx.query(
+    `update referrals
+        set ambassador_qualified_at=now(), ambassador_event_type=$2,
+            ambassador_event_ref=$3, updated_at=now()
+      where id=$1 and ambassador_qualified_at is null
+      returning id`,
+    [referral.id, input.eventType, input.eventRef],
+  );
+  if (!updated.rows[0]) return null;
+
+  const countResult = await tx.query<{ count: number }>(
+    `select count(*)::int as count from referrals
+      where referrer_id=$1 and ambassador_qualified_at is not null`,
+    [referral.referrerId],
+  );
+  const qualifiedCount = Number(countResult.rows[0]?.count ?? 0);
+
+  let ambassador = await tx.query<{ userId: string }>(
+    `select user_id as "userId" from ambassador_profiles where user_id=$1 limit 1`,
+    [referral.referrerId],
+  );
+  let promoted = false;
+  if (!ambassador.rows[0] && qualifiedCount >= config.referralsRequired) {
+    const inserted = await tx.query<{ userId: string }>(
+      `insert into ambassador_profiles
+         (user_id, promoted_at, qualified_referrals_at_promotion)
+       values ($1,now(),$2)
+       on conflict (user_id) do nothing
+       returning user_id as "userId"`,
+      [referral.referrerId, qualifiedCount],
+    );
+    if (inserted.rows[0]) {
+      promoted = true;
+      ambassador = inserted;
+      await queueEmail(tx, {
+        type: "ambassador_promotion",
+        userId: referral.referrerId,
+        recipient: referral.referrerEmail,
+        data: {
+          name: referral.referrerName,
+          progress: `${qualifiedCount}/${config.referralsRequired}`,
+          commissionLabel: `${usd(config.commissionCents)} per qualifying referral`,
+          thresholdLabel: `${usd(config.withdrawalMinCents)} minimum USDT payout`,
+        },
+        dedupeKey: `ambassador_promotion:${referral.referrerId}`,
+      });
+      await notifyUser(tx, {
+        userId: referral.referrerId,
+        type: "system",
+        title: "You are now a BUYBIZ Ambassador",
+        body: `You qualified with ${qualifiedCount} successful referrals. Your USD ambassador balance is now active.`,
+        href: "/dashboard/referrals",
+      });
+      await writeAuditLog(tx, {
+        actorUserId: null,
+        actorRole: "system",
+        action: "ambassador.promoted",
+        entityType: "profile",
+        entityId: referral.referrerId,
+        metadata: { qualifiedCount, required: config.referralsRequired },
+      });
+    }
+  }
+
+  if (!ambassador.rows[0]) return { promoted: false, qualifiedCount, commissions: 0 };
+
+  // Once someone is an Ambassador, every qualified referral gets exactly one
+  // commission. At promotion, earlier qualified referrals are included too.
+  const qualified = await tx.query<{
+    id: string;
+    refereeName: string;
+  }>(
+    `select r.id, p.username as "refereeName"
+       from referrals r
+       join profiles p on p.id=r.referee_id
+      where r.referrer_id=$1 and r.ambassador_qualified_at is not null
+      order by r.ambassador_qualified_at asc`,
+    [referral.referrerId],
+  );
+  let commissions = 0;
+  for (const row of qualified.rows) {
+    const id = await awardCommission(tx, {
+      ambassadorId: referral.referrerId,
+      referralId: row.id,
+      commissionCents: config.commissionCents,
+      referralName: row.refereeName,
+      ambassadorName: referral.referrerName,
+      ambassadorEmail: referral.referrerEmail,
+    });
+    if (id) commissions += 1;
+  }
+  return { promoted, qualifiedCount, commissions };
+}
+
+export async function getAmbassadorDashboard(userId: string) {
+  const db = await getDb();
+  const config = await getAmbassadorConfig();
+  const profile = await db.query<{
+    isAmbassador: boolean;
+    promotedAt: Date | null;
+  }>(
+    `select exists(select 1 from ambassador_profiles where user_id=$1) as "isAmbassador",
+            (select promoted_at from ambassador_profiles where user_id=$1) as "promotedAt"`,
+    [userId],
+  );
+  const counts = await db.query<{ qualified: number; total: number }>(
+    `select
+       count(*) filter (where ambassador_qualified_at is not null)::int as qualified,
+       count(*)::int as total
+     from referrals where referrer_id=$1`,
+    [userId],
+  );
+  const balance = await db.query<{ available: unknown; earned: unknown }>(
+    `select
+       coalesce((select sum(amount_usd_cents) from ambassador_ledger where user_id=$1),0)::int as available,
+       coalesce((select sum(amount_usd_cents) from ambassador_ledger where user_id=$1 and entry_type='commission'),0)::int as earned`,
+    [userId],
+  );
+  const withdrawals = await db.query<{
+    id: string;
+    amountCents: number;
+    status: string;
+    walletAddress: string;
+    transactionHash: string | null;
+    requestedAt: Date;
+    paidAt: Date | null;
+    rejectionReason: string | null;
+  }>(
+    `select id, amount_usd_cents as "amountCents", status,
+            wallet_address as "walletAddress", transaction_hash as "transactionHash",
+            requested_at as "requestedAt", paid_at as "paidAt",
+            rejection_reason as "rejectionReason"
+       from ambassador_withdrawals where user_id=$1
+      order by requested_at desc limit 50`,
+    [userId],
+  );
+  const address = await db.query<{
+    id: string;
+    address: string;
+    status: string;
+    rejectionReason: string | null;
+    createdAt: Date;
+  }>(
+    `select id, address, status, rejection_reason as "rejectionReason",
+            created_at as "createdAt"
+       from ambassador_wallet_addresses where user_id=$1
+      order by created_at desc limit 1`,
+    [userId],
+  );
+  const commissions = await db.query<{
+    id: string;
+    amountCents: number;
+    status: string;
+    createdAt: Date;
+    referralUsername: string;
+  }>(
+    `select c.id, c.amount_usd_cents as "amountCents", c.status,
+            c.created_at as "createdAt", p.username as "referralUsername"
+       from ambassador_commissions c
+       join referrals r on r.id=c.referral_id
+       join profiles p on p.id=r.referee_id
+      where c.ambassador_id=$1 order by c.created_at desc limit 30`,
+    [userId],
+  );
+  const open = withdrawals.rows.find((row) =>
+    ["pending", "processing"].includes(row.status),
+  );
+  const verifiedAddress = address.rows[0]?.status === "verified" ? address.rows[0] : null;
+  return {
+    config,
+    isAmbassador: Boolean(profile.rows[0]?.isAmbassador),
+    promotedAt: profile.rows[0]?.promotedAt ?? null,
+    qualified: Number(counts.rows[0]?.qualified ?? 0),
+    total: Number(counts.rows[0]?.total ?? 0),
+    availableCents: Number(balance.rows[0]?.available ?? 0),
+    earnedCents: Number(balance.rows[0]?.earned ?? 0),
+    withdrawals: withdrawals.rows,
+    address: address.rows[0] ?? null,
+    verifiedAddress,
+    openWithdrawal: open ?? null,
+    commissions: commissions.rows,
+  };
+}
+
+export async function submitAmbassadorAddress(userId: string, rawAddress: string) {
+  const address = rawAddress.trim();
+  if (!/^0x[0-9a-fA-F]{40}$/.test(address)) {
+    throw new AppError(
+      "VALIDATION",
+      "Enter a valid USDT BEP20 address. It must start with 0x and contain 40 hexadecimal characters.",
+    );
+  }
+  const db = await getDb();
+  return db.transaction(async (tx) => {
+    const ambassador = await tx.query(
+      `select 1 from ambassador_profiles where user_id=$1 limit 1`,
+      [userId],
+    );
+    if (!ambassador.rows[0]) {
+      throw new AppError("FORBIDDEN", "Only Ambassadors can add a payout address.");
+    }
+    await tx.query(
+      `update ambassador_wallet_addresses
+          set status='rejected', rejection_reason='Replaced by a new address request.',
+              updated_at=now()
+        where user_id=$1 and status in ('pending','verified')`,
+      [userId],
+    );
+    const inserted = await tx.query<{ id: string }>(
+      `insert into ambassador_wallet_addresses (user_id, address, network, status)
+       values ($1,$2,'BEP20','pending') returning id`,
+      [userId, address],
+    );
+    return inserted.rows[0].id;
+  });
+}
+
+export async function requestAmbassadorWithdrawal(userId: string, amountCents: number) {
+  if (!Number.isSafeInteger(amountCents) || amountCents <= 0) {
+    throw new AppError("VALIDATION", "Enter a valid USD payout amount.");
+  }
+  const db = await getDb();
+  return db.transaction(async (tx) => {
+    const config = await getAmbassadorConfig(tx);
+    if (!config.enabled) throw new AppError("CONFLICT", "The Ambassador Programme is paused.");
+    const ambassador = await tx.query(
+      `select 1 from ambassador_profiles where user_id=$1 limit 1 for update`,
+      [userId],
+    );
+    if (!ambassador.rows[0]) {
+      throw new AppError("FORBIDDEN", "Only Ambassadors can request payouts.");
+    }
+    const open = await tx.query(
+      `select 1 from ambassador_withdrawals
+        where user_id=$1 and status in ('pending','processing') limit 1`,
+      [userId],
+    );
+    if (open.rows[0]) {
+      throw new AppError(
+        "CONFLICT",
+        "You already have a payout in progress. Please wait for it to finish.",
+      );
+    }
+    if (amountCents < config.withdrawalMinCents) {
+      throw new AppError(
+        "VALIDATION",
+        `The minimum payout is ${usd(config.withdrawalMinCents)}.`,
+      );
+    }
+    const address = await tx.query<{ address: string }>(
+      `select address from ambassador_wallet_addresses
+        where user_id=$1 and status='verified'
+        order by verified_at desc nulls last limit 1`,
+      [userId],
+    );
+    if (!address.rows[0]) {
+      throw new AppError(
+        "VALIDATION",
+        "Add and verify a USDT BEP20 wallet address before requesting a payout.",
+      );
+    }
+    const balance = await getAmbassadorWalletBalance(tx, userId);
+    if (amountCents > balance.availableCents) {
+      throw new AppError(
+        "INSUFFICIENT_BALANCE",
+        `You can withdraw up to ${usd(balance.availableCents)} from your available ambassador balance.`,
+      );
+    }
+    const profile = await tx.query<{ email: string; username: string; displayName: string | null }>(
+      `select email, username, display_name as "displayName" from profiles where id=$1 limit 1`,
+      [userId],
+    );
+    const row = profile.rows[0];
+    if (!row) throw new AppError("NOT_FOUND", "Your profile could not be found.");
+    const inserted = await tx.query<{ id: string }>(
+      `insert into ambassador_withdrawals
+         (user_id, amount_usd_cents, status, wallet_address, network, requested_at)
+       values ($1,$2,'pending',$3,'BEP20',now())
+       returning id`,
+      [userId, amountCents, address.rows[0].address],
+    );
+    const withdrawalId = inserted.rows[0].id;
+    await tx.query(
+      `insert into ambassador_ledger
+         (user_id, entry_type, amount_usd_cents, reference, withdrawal_id, description)
+       values ($1,'withdrawal_reserve',$2,$3,$4,'Ambassador payout reserved')`,
+      [userId, -amountCents, `withdrawal:reserve:${withdrawalId}`, withdrawalId],
+    );
+    await queueEmail(tx, {
+      type: "payout_requested",
+      userId,
+      recipient: row.email,
+      data: {
+        name: row.displayName || row.username,
+        amountLabel: usd(amountCents),
+        address: address.rows[0].address,
+        requestedAt: new Date().toISOString(),
+      },
+      dedupeKey: `payout_requested:${withdrawalId}`,
+    });
+    await notifyUser(tx, {
+      userId,
+      type: "system",
+      title: "Payout request received",
+      body: `Your ${usd(amountCents)} USDT payout request is pending review. Processing can take up to 3 days.`,
+      href: "/dashboard/referrals",
+    });
+    await writeAuditLog(tx, {
+      actorUserId: userId,
+      actorRole: "customer",
+      action: "ambassador.payout_requested",
+      entityType: "ambassador_withdrawal",
+      entityId: withdrawalId,
+      metadata: { amountCents, address: address.rows[0].address, network: "BEP20" },
+    });
+    return { id: withdrawalId, amountCents };
+  });
+}
+
+export async function verifyAmbassadorAddress(
+  tx: SqlTransaction,
+  input: { addressId: string; adminId: string; adminRole: string; approve: boolean; reason?: string },
+) {
+  const target = await tx.query<{ userId: string; address: string; status: string }>(
+    `select user_id as "userId", address, status from ambassador_wallet_addresses
+      where id=$1 limit 1 for update`,
+    [input.addressId],
+  );
+  const row = target.rows[0];
+  if (!row) throw new AppError("NOT_FOUND", "That payout address was not found.");
+  if (input.approve) {
+    await tx.query(
+      `update ambassador_wallet_addresses set status='rejected',
+              rejection_reason='Replaced by a verified address.', updated_at=now()
+        where user_id=$1 and id<>$2 and status in ('pending','verified')`,
+      [row.userId, input.addressId],
+    );
+    await tx.query(
+      `update ambassador_wallet_addresses
+          set status='verified', verified_by=$2, verified_at=now(),
+              rejection_reason=null, updated_at=now()
+        where id=$1`,
+      [input.addressId, input.adminId],
+    );
+  } else {
+    await tx.query(
+      `update ambassador_wallet_addresses
+          set status='rejected', rejection_reason=$2, verified_by=$3,
+              verified_at=now(), updated_at=now()
+        where id=$1`,
+      [input.addressId, input.reason?.trim() || "Address could not be verified.", input.adminId],
+    );
+  }
+  await writeAuditLog(tx, {
+    actorUserId: input.adminId,
+    actorRole: input.adminRole,
+    action: input.approve ? "ambassador.address_verified" : "ambassador.address_rejected",
+    entityType: "ambassador_wallet_address",
+    entityId: input.addressId,
+    metadata: { userId: row.userId, address: row.address },
+  });
+}
