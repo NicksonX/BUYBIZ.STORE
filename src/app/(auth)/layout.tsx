@@ -7,7 +7,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
   return (
     <div className="min-h-dvh bg-[#F4F4F5] text-[#0A0B0D]">
       <div className="grid min-h-dvh lg:grid-cols-[1.02fr_0.98fr]">
-        <div className="flex min-h-dvh flex-col px-5 py-6 sm:px-10 lg:px-16">
+        <div className="safe-page-y flex min-h-dvh flex-col px-5 sm:px-10 lg:px-16">
           <div className="flex items-center justify-between">
             <Link href="/" aria-label="BUYBIZ home">
               <Logo tone="onLight" size="md" />

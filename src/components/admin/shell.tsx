@@ -16,7 +16,7 @@ export function AdminShell({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-dvh bg-background text-foreground">
+    <div data-app-shell className="min-h-dvh bg-background text-foreground">
       <AdminSidebar user={user} />
       <div className="lg:pl-[244px]">
         <AdminTopbar

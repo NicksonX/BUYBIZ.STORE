@@ -20,7 +20,7 @@ export function TableContainer({
   className,
   ...props
 }: React.ComponentProps<"div">) {
-  return <div className={cn("w-full overflow-x-auto", className)} {...props} />;
+  return <div className={cn("w-full overflow-x-auto overscroll-x-contain", className)} {...props} />;
 }
 
 export function Table({ className, ...props }: React.ComponentProps<"table">) {

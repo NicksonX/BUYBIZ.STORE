@@ -4,6 +4,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
@@ -33,14 +34,29 @@ export function ThemeScope({
 }) {
   const [theme, setThemeState] = useState<Theme>(defaultTheme);
 
+  const syncThemeColor = useCallback((next: Theme) => {
+    const color = next === "dark" ? "#08090B" : "#F4F4F5";
+    document
+      .querySelectorAll('meta[name="theme-color"]')
+      .forEach((meta) => {
+        meta.removeAttribute("media");
+        meta.setAttribute("content", color);
+      });
+  }, []);
+
   const setTheme = useCallback(
     (next: Theme) => {
       setThemeState(next);
       document.cookie = `${cookieName}=${next}; path=/; max-age=31536000; samesite=lax`;
       document.documentElement.style.colorScheme = next;
+      syncThemeColor(next);
     },
-    [cookieName],
+    [cookieName, syncThemeColor],
   );
+
+  useEffect(() => {
+    syncThemeColor(theme);
+  }, [syncThemeColor, theme]);
 
   const value = useMemo<ThemeContextValue>(
     () => ({
@@ -56,7 +72,7 @@ export function ThemeScope({
       <div
         data-theme={theme}
         className={cn(
-          "min-h-screen bg-background text-foreground",
+          "min-h-dvh bg-background text-foreground",
           theme === "dark" && "dark",
           className,
         )}

@@ -52,7 +52,7 @@ export function AdminTopbar({
 
   return (
     <>
-      <header className="sticky top-0 z-30 flex h-[62px] items-center gap-3 border-b border-border bg-background/85 px-4 backdrop-blur-xl sm:px-6 lg:px-8">
+      <header className="safe-top sticky top-0 z-30 flex h-[62px] items-center gap-3 border-b border-border bg-background/85 px-4 backdrop-blur-xl sm:px-6 lg:px-8">
         <button
           type="button"
           onClick={() => setMenuOpen(true)}
@@ -170,7 +170,7 @@ export function AdminTopbar({
             role="dialog"
             aria-modal="true"
             aria-label="Admin navigation"
-            className="absolute inset-y-0 left-0 w-[290px] overflow-y-auto bg-[#08090B] px-3 py-4 text-white shadow-2xl"
+            className="absolute inset-y-0 left-0 w-[290px] overflow-y-auto overscroll-contain bg-[#08090B] px-3 pt-[calc(1rem+env(safe-area-inset-top,0px))] pb-[calc(1rem+env(safe-area-inset-bottom,0px))] text-white shadow-2xl"
           >
             <div className="flex items-center justify-between px-2">
               <Logo tone="onDark" size="sm" />

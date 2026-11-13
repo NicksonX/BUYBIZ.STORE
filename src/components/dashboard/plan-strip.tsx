@@ -6,7 +6,7 @@ import { formatDuration, formatNaira } from "@/lib/utils";
 export function PlanStrip({ plans }: { plans: PlanAvailability[] }) {
   if (plans.length === 0) return null;
   return (
-    <div className="flex snap-x snap-mandatory gap-2.5 overflow-x-auto pb-1 sm:grid sm:grid-cols-3 sm:overflow-visible">
+    <div className="flex snap-x snap-mandatory gap-2.5 overflow-x-auto overscroll-x-contain pb-1 sm:grid sm:grid-cols-3 sm:overflow-visible">
       {plans.map((plan) => (
         <div
           key={plan.product.id}

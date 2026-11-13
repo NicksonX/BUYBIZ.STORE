@@ -23,7 +23,7 @@ export function DashboardShell({
   const testPayments = !demo && getPaystackMode() === "test";
 
   return (
-    <div className="min-h-dvh bg-background text-foreground">
+    <div data-app-shell className="min-h-dvh bg-background text-foreground">
       <DashboardSidebar user={user} balanceMinor={balanceMinor} />
       <div className="dashboard-main">
         <DashboardTopbar user={user} unread={unread} />

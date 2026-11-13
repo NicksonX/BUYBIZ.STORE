@@ -9,7 +9,7 @@ export default function GlobalError({
   return (
     <html lang="en">
       <body style={{ margin: 0, background: "#08090B", color: "#fff", fontFamily: "system-ui, sans-serif" }}>
-        <main style={{ minHeight: "100vh", display: "grid", placeItems: "center", padding: 24 }}>
+        <main style={{ minHeight: "100dvh", display: "grid", placeItems: "center", padding: 24 }}>
           <div style={{ maxWidth: 420, textAlign: "center" }}>
             <p style={{ fontSize: 11, letterSpacing: "0.12em", opacity: 0.45 }}>BUYBIZ</p>
             <h1 style={{ fontSize: 26, margin: "12px 0 8px" }}>Something went wrong.</h1>

@@ -67,6 +67,12 @@ export function SiteHeader({
     setTheme(next);
     document.cookie = `buybiz_marketing_theme=${next}; path=/; max-age=31536000; samesite=lax`;
     document.documentElement.style.colorScheme = next;
+    document
+      .querySelectorAll('meta[name="theme-color"]')
+      .forEach((meta) => {
+        meta.removeAttribute("media");
+        meta.setAttribute("content", next === "dark" ? "#08090B" : "#F4F4F5");
+      });
     router.refresh();
   }
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -181,7 +187,7 @@ export function SiteHeader({
           onClick={(event) => {
             if ((event.target as HTMLElement).closest("a")) setMobileOpen(false);
           }}
-          className="mobile-site-menu fixed inset-x-0 z-50 overflow-y-auto border-t border-white/[0.06] bg-[#08090B] px-5 pb-10 pt-5 lg:hidden"
+          className="mobile-site-menu fixed inset-x-0 z-50 overflow-y-auto overscroll-contain border-t border-white/[0.06] bg-[#08090B] px-5 pb-10 pt-5 lg:hidden"
         >
           <div className="mx-auto max-w-[560px] space-y-6">
             <MobileGroup title="Buy a proxy">
