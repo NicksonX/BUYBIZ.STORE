@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { LogoMark } from "@/components/brand/logo";
 import {
   ArrowRight,
@@ -169,6 +170,9 @@ const faqs = [
 ];
 
 export default async function HomePage() {
+  const cookieStore = await cookies();
+  const marketingTheme =
+    cookieStore.get("buybiz_marketing_theme")?.value === "dark" ? "dark" : "light";
   let plans: PlanAvailability[] = [];
   let plansError = false;
   const user = await getCurrentUser().catch((error) => {
@@ -183,8 +187,8 @@ export default async function HomePage() {
   }
 
   return (
-    <>
-      <section className="relative overflow-hidden bg-[#F4F4F5] text-[#0A0B0D]">
+    <div className={cn("marketing-home", marketingTheme === "dark" && "dark")}>
+      <section className="marketing-light-section relative overflow-hidden bg-[#F4F4F5] text-[#0A0B0D] dark:bg-[#08090B]">
         <div className="pointer-events-none absolute inset-y-0 right-0 hidden w-[54%] lg:block">
           <Image
             src="/marketing/hero-customer-v2.jpg"
@@ -194,8 +198,8 @@ export default async function HomePage() {
             sizes="55vw"
             className="object-cover object-[38%_42%] grayscale contrast-[1.04] [clip-path:polygon(12%_0,100%_0,100%_100%,0_100%)]"
           />
-          <div className="absolute inset-0 bg-[linear-gradient(90deg,#F4F4F5_0%,rgba(244,244,245,0.76)_8%,rgba(244,244,245,0.08)_34%,rgba(244,244,245,0)_62%)]" />
-          <div className="absolute inset-x-0 bottom-0 h-44 bg-[linear-gradient(0deg,#F4F4F5_0%,rgba(244,244,245,0)_100%)]" />
+          <div className="marketing-hero-fade-left absolute inset-0 bg-[linear-gradient(90deg,#F4F4F5_0%,rgba(244,244,245,0.76)_8%,rgba(244,244,245,0.08)_34%,rgba(244,244,245,0)_62%)]" />
+          <div className="marketing-hero-fade-bottom absolute inset-x-0 bottom-0 h-44 bg-[linear-gradient(0deg,#F4F4F5_0%,rgba(244,244,245,0)_100%)]" />
           <div className="absolute bottom-6 right-[8%] z-10 inline-flex items-center gap-2.5 rounded-full border border-white/35 bg-[#0A0B0D]/55 px-3 py-2 shadow-[0_12px_30px_-18px_rgba(0,0,0,0.65)] backdrop-blur-md">
             <LogoMark tone="onDark" className="h-5 w-5 rounded-[6px]" />
             <span className="text-[9px] font-bold uppercase tracking-[0.16em] text-white/90">
@@ -219,7 +223,7 @@ export default async function HomePage() {
               <h1 className="mt-5 text-[48px] font-semibold leading-[0.92] tracking-[-0.07em] min-[360px]:text-[56px] sm:text-[72px] lg:text-[80px]">
                 Proxy access.
                 <br />
-                <span className="text-[#0A0B0D]/38">Connect. Grow.</span>
+                <span className="text-[#0A0B0D]/38">Pay in naira.</span>
               </h1>
 
               <p className="mt-5 max-w-[500px] text-[14px] leading-6 text-[#0A0B0D]/55 sm:mt-6 sm:text-[15px] sm:leading-7">
@@ -288,7 +292,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="relative z-20 -mt-1 bg-[#F4F4F5] pb-7">
+      <section className="marketing-light-section relative z-20 -mt-1 bg-[#F4F4F5] pb-7 dark:bg-[#08090B]">
         <div className="mx-auto w-full max-w-[1200px] px-5 sm:px-8">
           <div className="grid grid-cols-2 overflow-hidden rounded-[18px] border border-black/[0.06] bg-white shadow-[0_30px_70px_-55px_rgba(0,0,0,0.55)] sm:grid-cols-4 sm:divide-x sm:divide-black/[0.06]">
             {trustPoints.map((item) => (
@@ -306,7 +310,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="bg-white pb-12 pt-3 sm:pb-20 sm:pt-5">
+      <section className="marketing-light-section bg-white pb-12 pt-3 sm:pb-20 sm:pt-5 dark:bg-[#0B0C0F]">
         <div className="mx-auto w-full max-w-[1200px] px-5 sm:px-8">
           <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
             <div>
@@ -368,7 +372,7 @@ export default async function HomePage() {
       {/* ---------------------------------------------------------------- */}
       {/* Why BUYBIZ                                                       */}
       {/* ---------------------------------------------------------------- */}
-      <section className="bg-[#F4F4F5] pb-12 pt-12 sm:pb-24 sm:pt-24">
+      <section className="marketing-light-section bg-[#F4F4F5] pb-12 pt-12 sm:pb-24 sm:pt-24 dark:bg-[#08090B]">
         <div className="mx-auto w-full max-w-[1200px] px-5 sm:px-8">
           <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:gap-16">
             <div>
@@ -423,7 +427,7 @@ export default async function HomePage() {
       {/* ---------------------------------------------------------------- */}
       {/* How it works                                                     */}
       {/* ---------------------------------------------------------------- */}
-      <section className="bg-[#EEEEF0] py-12 sm:py-24">
+      <section className="marketing-light-section bg-[#EEEEF0] py-12 sm:py-24 dark:bg-[#0B0C0F]">
         <div className="mx-auto w-full max-w-[1200px] px-5 sm:px-8">
           <SectionHeading
             eyebrow="How it works"
@@ -469,7 +473,7 @@ export default async function HomePage() {
       {/* ---------------------------------------------------------------- */}
       {/* Plans                                                            */}
       {/* ---------------------------------------------------------------- */}
-      <section className="bg-white py-12 sm:py-24" id="plans">
+      <section className="marketing-light-section bg-white py-12 sm:py-24 dark:bg-[#0B0C0F]" id="plans">
         <div className="mx-auto w-full max-w-[1200px] px-5 sm:px-8">
           <SectionHeading
             eyebrow="Pricing"
@@ -603,7 +607,7 @@ export default async function HomePage() {
       {/* ---------------------------------------------------------------- */}
       {/* FAQ                                                              */}
       {/* ---------------------------------------------------------------- */}
-      <section className="bg-[#F4F4F5] py-12 sm:py-24">
+      <section className="marketing-light-section bg-[#F4F4F5] py-12 sm:py-24 dark:bg-[#08090B]">
         <div className="mx-auto w-full max-w-[1200px] px-5 sm:px-8">
           <div className="grid gap-10 lg:grid-cols-[0.8fr_1.2fr] lg:gap-16">
             <div>
@@ -645,7 +649,7 @@ export default async function HomePage() {
       {/* ---------------------------------------------------------------- */}
       {/* Support CTA                                                      */}
       {/* ---------------------------------------------------------------- */}
-      <section className="bg-white pb-12 pt-2 sm:pb-24 sm:pt-4">
+      <section className="bg-white pb-12 pt-2 dark:bg-[#08090B] sm:pb-24 sm:pt-4">
         <div className="mx-auto w-full max-w-[1200px] px-5 sm:px-8">
           <div className="relative overflow-hidden rounded-[20px] bg-[#0A0B0D] px-5 py-8 text-white sm:rounded-[24px] sm:px-10 sm:py-14">
             <div className="pointer-events-none absolute inset-0 grid-lines opacity-25" />
@@ -683,6 +687,6 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
-    </>
+    </div>
   );
 }

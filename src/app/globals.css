@@ -850,3 +850,61 @@ nextjs-portal {
     transition: padding-left 200ms ease;
   }
 }
+
+/* --------------------------------------------------------------------------
+   Marketing home theme
+   The theme cookie is applied only to the home wrapper. The rest of the
+   marketing pages keep their intentional light editorial treatment.
+   -------------------------------------------------------------------------- */
+.marketing-home.dark .marketing-light-section {
+  color: #f4f4f5;
+}
+.marketing-home.dark .marketing-hero-fade-left {
+  background: linear-gradient(
+    90deg,
+    #08090b 0%,
+    rgba(8, 9, 11, 0.76) 8%,
+    rgba(8, 9, 11, 0.08) 34%,
+    rgba(8, 9, 11, 0) 62%
+  );
+}
+.marketing-home.dark .marketing-hero-fade-bottom {
+  background: linear-gradient(0deg, #08090b 0%, rgba(8, 9, 11, 0) 100%);
+}
+.marketing-home.dark .marketing-light-section [class*="bg-[#F4F4F5]"],
+.marketing-home.dark .marketing-light-section [class*="bg-[#EEEEF0]"],
+.marketing-home.dark .marketing-light-section [class*="bg-[#FAFAFB]"],
+.marketing-home.dark .marketing-light-section [class*="bg-[#F7F7F8]"],
+.marketing-home.dark .marketing-light-section [class*="bg-[#F5F5F6]"],
+.marketing-home.dark .marketing-light-section [class*="bg-[#FBFBFC]"] {
+  background-color: #111216;
+}
+.marketing-home.dark .marketing-light-section [class*="bg-white"] {
+  background-color: #111216;
+}
+.marketing-home.dark .marketing-light-section [class*="text-[#0A0B0D]/"] {
+  color: rgb(244 244 245 / 0.56);
+}
+.marketing-home.dark .marketing-light-section [class~="text-[#0A0B0D]"] {
+  color: #f4f4f5;
+}
+.marketing-home.dark .marketing-light-section [class*="text-[#6E7178]"],
+.marketing-home.dark .marketing-light-section [class*="text-[#8C9097]"] {
+  color: rgb(244 244 245 / 0.52);
+}
+.marketing-home.dark .marketing-light-section [class*="border-black/"] {
+  border-color: rgb(255 255 255 / 0.1);
+}
+.marketing-home.dark
+  .marketing-light-section
+  [class*="bg-[#0A0B0D]"]:not([class*="bg-[#0A0B0D]/"]):not([class*="border-[#26282c]"]) {
+  background-color: #f4f4f5;
+  color: #0a0b0d;
+}
+.marketing-home.dark .marketing-light-section input::placeholder {
+  color: rgb(244 244 245 / 0.35);
+}
+.marketing-home.dark .marketing-light-section .surface-card {
+  background-color: #111216;
+  border-color: rgb(255 255 255 / 0.1);
+}

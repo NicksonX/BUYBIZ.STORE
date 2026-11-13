@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { ArrowUpRight, LayoutDashboard, Menu, X } from "lucide-react";
+import { ArrowUpRight, LayoutDashboard, Menu, Moon, Sun, X } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -52,10 +52,23 @@ const resourceLinks = [
 
 export function SiteHeader({
   isAuthenticated = false,
+  marketingTheme = "light",
 }: {
   isAuthenticated?: boolean;
+  marketingTheme?: "light" | "dark";
 }) {
   const pathname = usePathname();
+  const isHome = pathname === "/";
+  const [theme, setTheme] = useState<"light" | "dark">(marketingTheme);
+  const router = useRouter();
+
+  function toggleMarketingTheme() {
+    const next = theme === "dark" ? "light" : "dark";
+    setTheme(next);
+    document.cookie = `buybiz_marketing_theme=${next}; path=/; max-age=31536000; samesite=lax`;
+    document.documentElement.style.colorScheme = next;
+    router.refresh();
+  }
   const [mobileOpen, setMobileOpen] = useState(false);
   const closeRef = useRef<HTMLButtonElement>(null);
 
@@ -110,6 +123,9 @@ export function SiteHeader({
         </nav>
 
         <div className="hidden items-center gap-2 sm:flex">
+          {isHome ? (
+            <ThemeToggle theme={theme} onToggle={toggleMarketingTheme} />
+          ) : null}
           {isAuthenticated ? (
             <Link
               href="/dashboard"
@@ -193,6 +209,21 @@ export function SiteHeader({
                 <MobileLink key={link.href} {...link} />
               ))}
             </MobileGroup>
+            {isHome ? (
+              <button
+                type="button"
+                onClick={toggleMarketingTheme}
+                className="flex w-full items-center justify-between rounded-[12px] border border-white/[0.08] bg-white/[0.025] px-3.5 py-3 text-left"
+              >
+                <span className="flex items-center gap-2 text-[12px] font-medium text-white/75">
+                  {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                  {theme === "dark" ? "Light mode" : "Dark mode"}
+                </span>
+                <span className="text-[9px] uppercase tracking-[0.1em] text-white/30">
+                  Appearance
+                </span>
+              </button>
+            ) : null}
             <div className="flex items-center gap-2 border-t border-white/[0.08] pt-5">
               <Link
                 href={isAuthenticated ? "/dashboard" : "/login"}
@@ -266,5 +297,25 @@ function MobileLink({
         <ArrowUpRight className="h-3.5 w-3.5 text-white/30" />
       </span>
     </Link>
+  );
+}
+
+
+function ThemeToggle({
+  theme,
+  onToggle,
+}: {
+  theme: "light" | "dark";
+  onToggle: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+      className="inline-flex h-9 w-9 items-center justify-center rounded-full text-white/60 transition-colors hover:bg-white/[0.06] hover:text-white"
+    >
+      {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+    </button>
   );
 }
