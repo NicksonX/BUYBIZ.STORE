@@ -50,9 +50,10 @@ async function deposit(userId: string, amountMinor: number) {
   });
 }
 
-async function buyProxy(userId: string, days: 1 | 7) {
+async function buyProxy(userId: string, days: 1 | 7 | 30, status = "completed") {
   const db = await getDb();
-  const slug = days === 7 ? "proxy-7-days" : "proxy-24-hours";
+  const slug =
+    days === 30 ? "proxy-30-days" : days === 7 ? "proxy-7-days" : "proxy-24-hours";
   const product = await db.query<{ id: string; durationSeconds: number }>(
     `select id, duration_seconds as "durationSeconds" from products where slug=$1 limit 1`,
     [slug],
@@ -62,8 +63,8 @@ async function buyProxy(userId: string, days: 1 | 7) {
   const orderId = randomUUID();
   await db.query(
     `insert into orders (id,order_number,user_id,product_id,amount_minor,currency,status,idempotency_key,created_at,completed_at)
-     values ($1,$2,$3,$4,50000,'NGN','completed',$5,now(),now())`,
-    [orderId, `BZ-ELIG-${orderId.slice(0, 8)}`, userId, row.id, `elig-${orderId}`],
+     values ($1,$2,$3,$4,50000,'NGN',$6,$5,now(),now())`,
+    [orderId, `BZ-ELIG-${orderId.slice(0, 8)}`, userId, row.id, `elig-${orderId}`, status],
   );
   const result = await db.transaction((tx) =>
     qualifyReferralForPurchase(tx, { refereeId: userId, orderId }),
@@ -139,6 +140,32 @@ describe("referral rewards", () => {
       [referrer.id],
     );
     expect(rewards.rows[0].count).toBe(1);
+  });
+
+  it("qualifies a 30-day purchase and rejects a refunded 7-day order", async () => {
+    const referrer = await createTestUser("ref30");
+    const thirty = await createTestUser("ref30new");
+    await attach(referrer.id, thirty.id, await codeFor(referrer.id));
+    await deposit(thirty.id, 200_000);
+    await buyProxy(thirty.id, 30);
+    const db = await getDb();
+    const thirtyStatus = await db.query<{ status: string }>(
+      `select status from referrals where referee_id=$1`,
+      [thirty.id],
+    );
+    expect(thirtyStatus.rows[0].status).toBe("rewarded");
+
+    const refundReferrer = await createTestUser("refrefund");
+    const refunded = await createTestUser("refrefundnew");
+    await attach(refundReferrer.id, refunded.id, await codeFor(refundReferrer.id));
+    await deposit(refunded.id, 200_000);
+    const refundOrder = await buyProxy(refunded.id, 7, "refunded");
+    expect(refundOrder.result).toBeNull();
+    const refundStatus = await db.query<{ status: string }>(
+      `select status from referrals where referee_id=$1`,
+      [refunded.id],
+    );
+    expect(refundStatus.rows[0].status).toBe("pending");
   });
 
   it("ignores a referral without an external qualifying deposit", async () => {
