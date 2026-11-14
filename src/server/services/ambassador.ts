@@ -13,6 +13,7 @@ export type AmbassadorConfig = {
   withdrawalMinCents: number;
   qualifyingTask: "referral_deposit" | "referral_first_purchase";
   qualifyingDepositMinor: number;
+  nextPayoutAt: Date | null;
 };
 
 export async function getAmbassadorConfig(tx?: SqlTransaction): Promise<AmbassadorConfig> {
@@ -22,7 +23,8 @@ export async function getAmbassadorConfig(tx?: SqlTransaction): Promise<Ambassad
       where key in (
         'ambassador_enabled','ambassador_referrals_required',
         'ambassador_commission_usd_cents','ambassador_withdrawal_min_usd_cents',
-        'ambassador_qualifying_task','ambassador_qualifying_deposit_minor'
+        'ambassador_qualifying_task','ambassador_qualifying_deposit_minor',
+        'ambassador_next_payout_at'
       )`,
   );
   const map = new Map(result.rows.map((row) => [row.key, row.value]));
@@ -34,7 +36,13 @@ export async function getAmbassadorConfig(tx?: SqlTransaction): Promise<Ambassad
     withdrawalMinCents: Math.max(1000, Number(map.get("ambassador_withdrawal_min_usd_cents") ?? 1000)),
     qualifyingTask:
       task === "referral_first_purchase" ? "referral_first_purchase" : "referral_deposit",
-    qualifyingDepositMinor: Math.max(0, Number(map.get("ambassador_qualifying_deposit_minor") ?? 300_000)),
+    qualifyingDepositMinor: Math.max(0, Number(map.get("ambassador_qualifying_deposit_minor") ?? 200_000)),
+    nextPayoutAt: (() => {
+      const raw = map.get("ambassador_next_payout_at");
+      if (typeof raw !== "string" || !raw.trim()) return null;
+      const parsed = new Date(raw);
+      return Number.isNaN(parsed.getTime()) ? null : parsed;
+    })(),
   };
 }
 
@@ -364,13 +372,8 @@ export async function submitAmbassadorAddress(userId: string, rawAddress: string
   }
   const db = await getDb();
   return db.transaction(async (tx) => {
-    const ambassador = await tx.query(
-      `select 1 from ambassador_profiles where user_id=$1 limit 1`,
-      [userId],
-    );
-    if (!ambassador.rows[0]) {
-      throw new AppError("FORBIDDEN", "Only Ambassadors can add a payout address.");
-    }
+    // Campaign rewards and Ambassador commissions share the same verified
+    // USDT BEP20 payout address. Any active customer may submit one.
     await tx.query(
       `update ambassador_wallet_addresses
           set status='rejected', rejection_reason='Replaced by a new address request.',

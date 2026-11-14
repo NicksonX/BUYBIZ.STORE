@@ -1253,11 +1253,11 @@ export async function updateSettingsAction(
   if (
     minMinor === null ||
     maxMinor === null ||
-    minMinor < 300_000 ||
+    minMinor < 150_000 ||
     maxMinor < minMinor
   ) {
     return formError("Check the deposit limits.", {
-      depositMin: "The minimum deposit is ₦3,000 and cannot be lowered.",
+      depositMin: "The minimum deposit is ₦1,500 and cannot be lowered.",
       depositMax: "Maximum must be greater than the minimum.",
     });
   }
@@ -1770,7 +1770,9 @@ export async function updateAmbassadorSettingsAction(
   const commission = Number(formData.get("commissionUsd") ?? 3);
   const minimum = Number(formData.get("minimumUsd") ?? 10);
   const task = String(formData.get("qualifyingTask") ?? "referral_deposit");
-  const qualifyingDeposit = Number(formData.get("qualifyingDepositNgn") ?? 3000);
+  const qualifyingDeposit = Number(formData.get("qualifyingDepositNgn") ?? 2000);
+  const nextPayoutRaw = String(formData.get("nextPayoutAt") ?? "").trim();
+  const nextPayoutAt = nextPayoutRaw ? new Date(`${nextPayoutRaw}T00:00:00+01:00`) : null;
   if (!Number.isInteger(required) || required < 1 || required > 100) {
     return formError("Qualified referrals must be a whole number from 1 to 100.");
   }
@@ -1786,6 +1788,9 @@ export async function updateAmbassadorSettingsAction(
   if (!Number.isFinite(qualifyingDeposit) || qualifyingDeposit < 0) {
     return formError("Enter a valid qualifying deposit.");
   }
+  if (nextPayoutAt && Number.isNaN(nextPayoutAt.getTime())) {
+    return formError("Enter a valid next payout date.");
+  }
   const db = await getDb();
   const meta = await getRequestMeta();
   try {
@@ -1797,6 +1802,7 @@ export async function updateAmbassadorSettingsAction(
         ["ambassador_withdrawal_min_usd_cents", Math.round(minimum * 100)],
         ["ambassador_qualifying_task", task],
         ["ambassador_qualifying_deposit_minor", Math.round(qualifyingDeposit * 100)],
+        ["ambassador_next_payout_at", nextPayoutAt ? nextPayoutAt.toISOString() : ""],
       ];
       for (const [key, value] of entries) {
         await tx.query(
@@ -1819,6 +1825,7 @@ export async function updateAmbassadorSettingsAction(
           minimumCents: Math.round(minimum * 100),
           task,
           qualifyingDepositMinor: Math.round(qualifyingDeposit * 100),
+          nextPayoutAt: nextPayoutAt?.toISOString() ?? null,
         },
         ip: meta.ip,
         userAgent: meta.userAgent,

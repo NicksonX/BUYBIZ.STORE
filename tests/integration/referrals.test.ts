@@ -57,12 +57,12 @@ async function codeFor(userId: string) {
 }
 
 describe("referral rewards", () => {
-  it("credits ₦1,000 once after a single external deposit of ₦3,000", async () => {
+  it("credits ₦1,000 once after a single external deposit of ₦2,000", async () => {
     const referrer = await createTestUser("refowner");
     const referee = await createTestUser("refnew");
     await attach(referrer.id, referee.id, await codeFor(referrer.id));
 
-    const low = await deposit(referee.id, 299_999);
+    const low = await deposit(referee.id, 199_999);
     expect(low.status).toBe("credited");
 
     const db = await getDb();
@@ -77,7 +77,7 @@ describe("referral rewards", () => {
     );
     expect(Number(referrerBalance.rows[0].balance)).toBe(0);
 
-    await deposit(referee.id, 300_000);
+    await deposit(referee.id, 200_000);
     const rewarded = await db.query<{ status: string; reward: number }>(
       `select status, reward_amount_minor::bigint as reward from referrals where referee_id=$1`,
       [referee.id],
@@ -92,7 +92,7 @@ describe("referral rewards", () => {
     expect(Number(referrerBalance.rows[0].balance)).toBe(100_000);
 
     // A second qualifying deposit must not pay again.
-    await deposit(referee.id, 300_000);
+    await deposit(referee.id, 200_000);
     const rewards = await db.query<{ count: number }>(
       `select count(*)::int as count from wallet_ledger
         where user_id=$1 and entry_type='referral_credit'`,

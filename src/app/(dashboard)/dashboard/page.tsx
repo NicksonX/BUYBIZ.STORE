@@ -2,6 +2,7 @@ import Link from "next/link";
 import {
   ArrowUpRight,
   Clock3,
+  Bell,
   LifeBuoy,
   Network,
   Plus,
@@ -34,6 +35,7 @@ import {
   cn,
   firstName,
   formatDateTime,
+  formatDuration,
   formatNaira,
   lagosGreeting,
   longDateLagos,
@@ -93,70 +95,73 @@ export default async function DashboardOverviewPage() {
         </div>
       </div>
 
-      <section className="space-y-2.5 lg:hidden">
-        <div className="relative overflow-hidden rounded-[18px] border border-[#22252a] bg-[#0A0B0D] p-5 text-white shadow-[0_30px_60px_-45px_rgba(0,0,0,0.8)]">
-          <div className="pointer-events-none absolute -right-10 -top-14 h-40 w-40 rounded-full bg-white/[0.08] blur-3xl" />
+      <section className="space-y-3 lg:hidden">
+        <div className="relative overflow-hidden rounded-[20px] border border-[#22252a] bg-[#0A0B0D] p-5 text-white shadow-[0_30px_60px_-45px_rgba(0,0,0,0.8)]">
           <div className="relative flex items-start justify-between">
             <div>
-              <p className="text-[11px] text-white/45">Wallet balance</p>
-              <p className="tabular mt-2 text-[30px] font-semibold leading-none tracking-[-0.05em]">
-                {formatNaira(wallet.balanceMinor, { exact: true })}
-              </p>
+              <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-white/40">Available balance</p>
+              <p className="tabular mt-2 text-[32px] font-semibold leading-none tracking-[-0.055em]">{formatNaira(wallet.balanceMinor, { exact: true })}</p>
+              <p className="mt-1.5 text-[9.5px] text-white/45">BUYBIZ credits · 1 credit = ₦1</p>
             </div>
-            <span className="flex h-9 w-9 items-center justify-center rounded-[9px] border border-white/10 bg-white/[0.06]">
-              <Wallet className="h-4 w-4 text-white/70" />
-            </span>
+            <span className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/[0.06]"><Wallet className="h-4 w-4 text-white/70" /></span>
           </div>
-          <div className="relative mt-5 flex gap-2">
-            <Link
-              href="/dashboard/wallet"
-              className="flex h-10 flex-1 items-center justify-center gap-1.5 rounded-full bg-white text-[11.5px] font-semibold text-[#0A0B0D]"
-            >
-              <Plus className="h-3.5 w-3.5" /> Add funds
-            </Link>
-            <Link
-              href="/dashboard/marketplace"
-              className="flex h-10 flex-1 items-center justify-center gap-1.5 rounded-full border border-white/15 text-[11.5px] font-medium text-white/80"
-            >
-              Buy a proxy
-            </Link>
+          <div className="relative mt-5 grid grid-cols-2 gap-2">
+            <Link href="/dashboard/wallet" className="flex h-11 items-center justify-center gap-1.5 rounded-full bg-white text-[11.5px] font-semibold text-[#0A0B0D]"><Plus className="h-3.5 w-3.5" /> Deposit</Link>
+            <Link href="/dashboard/marketplace" className="flex h-11 items-center justify-center gap-1.5 rounded-full border border-white/15 text-[11.5px] font-medium text-white/85">Explore services</Link>
           </div>
         </div>
 
-        <div className="grid grid-cols-4 gap-2">
-          {[
-            { href: "/dashboard/marketplace", label: "Buy", icon: ShoppingBag },
-            { href: "/dashboard/proxies", label: "Proxies", icon: Network },
-            { href: "/dashboard/orders", label: "Orders", icon: ReceiptText },
-            { href: "/dashboard/support", label: "Support", icon: LifeBuoy },
-          ].map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="surface-card flex flex-col items-center gap-1.5 rounded-[12px] px-1 py-3 text-[10px] font-medium text-muted-foreground transition-colors hover:text-foreground"
-            >
-              <item.icon className="h-4 w-4 text-foreground" strokeWidth={1.7} />
-              {item.label}
-            </Link>
-          ))}
-        </div>
+        <section className="surface-card rounded-[15px] p-4">
+          <div className="flex items-end justify-between gap-3">
+            <div><h2 className="text-[13px] font-semibold tracking-[-0.02em]">Proxy services</h2><p className="mt-0.5 text-[9.5px] text-muted-foreground">Live plans and availability</p></div>
+            <Link href="/dashboard/marketplace" className="inline-flex items-center gap-1 text-[9.5px] font-medium text-muted-foreground">View all <ArrowUpRight className="h-3 w-3" /></Link>
+          </div>
+          <div className="mt-3">
+            {plans.some((plan) => plan.available) ? (
+              <div className="space-y-2">
+                {plans.filter((plan) => plan.available).slice(0, 3).map((plan) => (
+                  <Link key={plan.product.id} href={`/dashboard/checkout/${plan.product.slug}`} className="flex items-center justify-between gap-3 rounded-[10px] border border-border bg-surface-subtle px-3 py-2.5">
+                    <div className="min-w-0"><p className="text-[10.5px] font-semibold">{formatDuration(plan.product.durationSeconds)}</p><p className="mt-0.5 text-[9px] text-muted-foreground">{plan.product.accessType === "single" ? "Personal proxy" : "Shared access"}</p></div>
+                    <div className="flex items-center gap-2"><p className="tabular text-[11px] font-semibold">{formatNaira(plan.product.priceMinor)}</p><ArrowUpRight className="h-3.5 w-3.5 text-muted-foreground" /></div>
+                  </Link>
+                ))}
+              </div>
+            ) : <p className="rounded-[9px] border border-dashed border-border px-3 py-4 text-[9.5px] text-muted-foreground">No proxy plans are available right now. Check again shortly.</p>}
+          </div>
+        </section>
 
-        <div className="surface-card grid grid-cols-3 divide-x divide-border rounded-[12px]">
-          {[
-            { label: "Orders", value: counts.totalOrders },
-            { label: "Active", value: counts.activeProxies },
-            { label: "Tickets", value: counts.openTickets },
-          ].map((item) => (
-            <div key={item.label} className="px-3 py-3">
-              <p className="tabular text-[17px] font-semibold leading-none">
-                {item.value}
-              </p>
-              <p className="mt-1.5 text-[9.5px] text-muted-foreground">
-                {item.label}
-              </p>
+        <section className="surface-card rounded-[15px] p-4">
+          <div className="flex items-end justify-between gap-3">
+            <div><h2 className="text-[13px] font-semibold tracking-[-0.02em]">Active subscriptions</h2><p className="mt-0.5 text-[9.5px] text-muted-foreground">Your current access windows</p></div>
+            <Link href="/dashboard/proxies" className="inline-flex items-center gap-1 text-[9.5px] font-medium text-muted-foreground">Manage <ArrowUpRight className="h-3 w-3" /></Link>
+          </div>
+          {active.length > 0 ? (
+            <div className="mt-3 space-y-2">
+              {active.slice(0, 2).map((allocation) => (
+                <Link key={allocation.id} href={`/dashboard/proxies/${allocation.id}`} className="flex items-center gap-3 rounded-[10px] border border-border bg-surface-subtle p-3">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] border border-border bg-surface"><Network className="h-3.5 w-3.5" /></span>
+                  <div className="min-w-0 flex-1"><p className="truncate text-[11px] font-semibold">{allocation.productName}</p><p className="mt-0.5 text-[8.5px] text-muted-foreground">{allocation.region ?? "Shared"} · Expires {formatDateTime(allocation.expiresAt)}</p></div>
+                  <Countdown expiresAt={allocation.expiresAt} className="shrink-0 text-[9px] font-medium text-success" />
+                </Link>
+              ))}
             </div>
-          ))}
-        </div>
+          ) : (
+            <div className="mt-3 rounded-[10px] border border-dashed border-border px-3 py-4 text-[9.5px] text-muted-foreground">No active subscriptions yet. Explore a plan to get started.</div>
+          )}
+        </section>
+
+        <Link href="/dashboard/notifications" className="surface-card flex items-center gap-3 rounded-[15px] p-4">
+          <span className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border bg-surface-subtle"><Bell className="h-4 w-4" />{counts.unreadNotifications > 0 ? <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-foreground px-1 text-[8px] font-semibold text-background">{counts.unreadNotifications > 9 ? "9+" : counts.unreadNotifications}</span> : null}</span>
+          <div className="min-w-0 flex-1"><p className="text-[11px] font-semibold">Account updates</p><p className="mt-0.5 text-[9px] text-muted-foreground">{counts.unreadNotifications > 0 ? `${counts.unreadNotifications} unread notification${counts.unreadNotifications === 1 ? "" : "s"}` : "No unread notifications"}</p></div>
+          <ArrowUpRight className="h-3.5 w-3.5 text-muted-foreground" />
+        </Link>
+
+        <section className="surface-card rounded-[15px] p-4">
+          <div className="flex items-end justify-between gap-3"><div><h2 className="text-[13px] font-semibold tracking-[-0.02em]">Recent activity</h2><p className="mt-0.5 text-[9.5px] text-muted-foreground">Your latest wallet movements</p></div><Link href="/dashboard/transactions" className="inline-flex items-center gap-1 text-[9.5px] font-medium text-muted-foreground">History <ArrowUpRight className="h-3 w-3" /></Link></div>
+          <div className="mt-2 divide-y divide-border">
+            {recent.length > 0 ? recent.slice(0, 3).map((entry) => <TransactionRow key={entry.id} entry={entry} compact />) : <p className="py-4 text-[9.5px] text-muted-foreground">Your first deposit will appear here.</p>}
+          </div>
+        </section>
       </section>
 
       <div className="hidden grid-cols-4 gap-2.5 lg:grid">
@@ -195,7 +200,7 @@ export default async function DashboardOverviewPage() {
         />
       </div>
 
-      <section className="surface-card flex flex-col gap-3 rounded-[14px] px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between">
+      <section className="surface-card hidden gap-3 rounded-[14px] px-4 py-3.5 lg:flex lg:flex-row lg:items-center lg:justify-between">
         <div className="flex min-w-0 items-center gap-3">
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border bg-surface-subtle">
             <PlayCircle className="h-4 w-4 text-muted-foreground" />
@@ -210,7 +215,7 @@ export default async function DashboardOverviewPage() {
         <TutorialVideo variant="compact" />
       </section>
 
-      <div className="grid min-w-0 grid-cols-1 gap-3 lg:grid-cols-[1.65fr_1fr]">
+      <div className="hidden min-w-0 grid-cols-1 gap-3 lg:grid lg:grid-cols-[1.65fr_1fr]">
         <ActivityChart data={activity} totalSpendMinor={totalSpend} />
 
         <section className="surface-card flex flex-col rounded-[16px] p-4">
@@ -257,7 +262,7 @@ export default async function DashboardOverviewPage() {
         </section>
       </div>
 
-      <section>
+      <section className="hidden lg:block">
         <div className="mb-3 flex items-end justify-between gap-3">
           <div>
             <h2 className="text-[16px] font-semibold tracking-[-0.025em]">

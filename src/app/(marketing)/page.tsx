@@ -30,6 +30,8 @@ import { Alert } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
 import type { PlanAvailability } from "@/lib/db/types";
 import { getPlanAvailability } from "@/server/data/products";
+import { getFeaturedCampaign } from "@/server/services/campaigns";
+import { CampaignCard } from "@/components/campaigns/campaign-card";
 
 export const dynamic = "force-dynamic";
 
@@ -174,6 +176,7 @@ export default async function HomePage() {
     cookieStore.get("buybiz_marketing_theme")?.value === "dark" ? "dark" : "light";
   let plans: PlanAvailability[] = [];
   let plansError = false;
+  const campaign = await getFeaturedCampaign().catch(() => null);
   try {
     plans = await getPlanAvailability();
   } catch (error) {
@@ -304,6 +307,14 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+
+      {campaign ? (
+        <section className="marketing-light-section bg-white pb-10 pt-3 sm:pb-16 sm:pt-5 dark:bg-[#0B0C0F]">
+          <div className="mx-auto w-full max-w-[1200px] px-5 sm:px-8">
+            <CampaignCard campaign={campaign} compact />
+          </div>
+        </section>
+      ) : null}
 
       <section className="marketing-light-section bg-white pb-12 pt-3 sm:pb-20 sm:pt-5 dark:bg-[#0B0C0F]">
         <div className="mx-auto w-full max-w-[1200px] px-5 sm:px-8">

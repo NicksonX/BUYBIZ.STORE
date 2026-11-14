@@ -118,7 +118,7 @@ const DEFAULT_TEMPLATES: Record<
   deposit_followup: {
     subject: "Ready to try BUYBIZ?",
     preheader: "Your account is set up. Your first deposit is the next step.",
-    intro: "You are all set up. When you are ready, add at least ₦3,000 to your wallet and choose the proxy plan that fits your work.",
+    intro: "You are all set up. When you are ready, add at least ₦2,000 to your wallet and choose the proxy plan that fits your work.",
   },
   marketing: {
     subject: "A little something from BUYBIZ",
@@ -306,7 +306,7 @@ export function renderEmail(input: {
       content = `${button("Explore BUYBIZ", `${input.websiteUrl}/dashboard`)}
       ${details([
         ["What you can do", "Buy 24-hour, 7-day or 30-day proxy access"],
-        ["Wallet minimum", "₦3,000"],
+        ["Wallet minimum", "₦1,500"],
         ["Credit value", "1 BUYBIZ credit = ₦1"],
       ])}
       <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.7;color:${BRAND.muted};">If you need a hand choosing a plan, reply to this email. A real person will help.</p>`;
@@ -326,7 +326,7 @@ export function renderEmail(input: {
     case "referral_qualified":
       content = `${details([
         ["Referral", data.referralName ?? "Your friend"],
-        ["Qualifying deposit", data.amountLabel ?? "₦3,000"],
+        ["Qualifying deposit", data.amountLabel ?? "₦2,000"],
         ["Next step", "Your ₦1,000 wallet reward"],
       ])}
       ${button("See your referrals", `${input.websiteUrl}/dashboard/referrals`)}`;
@@ -398,7 +398,7 @@ export function renderEmail(input: {
     case "deposit_followup":
       content = `${button("Add funds to your wallet", `${input.websiteUrl}/dashboard/wallet`)}
       ${details([
-        ["Minimum deposit", "₦3,000"],
+        ["Minimum deposit", "₦1,500"],
         ["Credit value", "1 credit = ₦1"],
         ["Available plans", "From ₦500"],
       ])}

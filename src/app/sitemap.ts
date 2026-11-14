@@ -9,6 +9,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/marketplace",
     "/how-it-works",
     "/pricing",
+    "/campaigns/customer-referrer-10",
     "/faq",
     "/contact",
     "/coming-soon",

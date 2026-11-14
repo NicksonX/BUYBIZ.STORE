@@ -214,7 +214,7 @@ const sections: LegalSection[] = [
           Customers may share a referral code. A referral reward is internal
           BUYBIZ wallet credit, not cash. The standard reward is ₦1,000 and is
           credited after the referred customer makes one verified external
-          deposit of at least ₦3,000.
+          deposit of at least ₦2,000.
         </p>
         <p>
           Internal transfers between users, refunds, admin credits, adjustments

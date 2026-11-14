@@ -150,6 +150,7 @@ describe("ambassador USDT payouts", () => {
     }
     const config = await getAmbassadorConfig();
     expect(config.withdrawalMinCents).toBe(1000);
+    expect(config.nextPayoutAt?.toISOString()).toBe("2026-12-19T23:00:00.000Z");
 
     await expect(
       submitAmbassadorAddress(referrer.id, "not-a-wallet"),

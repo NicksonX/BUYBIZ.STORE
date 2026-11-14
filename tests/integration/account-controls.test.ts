@@ -21,9 +21,9 @@ beforeEach(async () => {
 });
 
 describe("wallet credit minimum", () => {
-  it("enforces ₦3,000 on the server and credits 1:1", async () => {
+  it("enforces ₦1,500 on the server and credits 1:1", async () => {
     const settings = await getAppSettings();
-    expect(settings.depositMinMinor).toBe(300_000);
+    expect(settings.depositMinMinor).toBe(150_000);
     const user = await createTestUser("creditmin");
     const profile: Profile = {
       ...user,
@@ -38,12 +38,12 @@ describe("wallet credit minimum", () => {
     };
 
     await expect(
-      createDeposit({ user: profile, amountMinor: 299_999, clientReference: `BZ-${randomUUID()}` }),
+      createDeposit({ user: profile, amountMinor: 149_999, clientReference: `BZ-${randomUUID()}` }),
     ).rejects.toMatchObject({ code: "VALIDATION" });
 
     const deposit = await createDeposit({
       user: profile,
-      amountMinor: 300_000,
+      amountMinor: 150_000,
       clientReference: `BZ-${randomUUID()}`,
     });
     await completeDemoDeposit({
@@ -56,7 +56,7 @@ describe("wallet credit minimum", () => {
          from wallet_ledger where user_id=$1`,
       [user.id],
     );
-    expect(Number(balance.rows[0].balance)).toBe(300_000);
+    expect(Number(balance.rows[0].balance)).toBe(150_000);
   });
 });
 

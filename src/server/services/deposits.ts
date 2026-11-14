@@ -27,6 +27,7 @@ import { qualifyReferralForDeposit } from "@/server/services/referrals";
 import { notifyUser } from "@/server/services/notifications";
 import { recordCustomerActivity } from "@/server/services/activity";
 import { qualifyReferralForAmbassador } from "@/server/services/ambassador";
+import { evaluateCampaignRewards } from "@/server/services/campaigns";
 import { queueEmail, flushEmailQueue } from "@/server/services/email";
 
 export type DepositVerificationResult = {
@@ -206,6 +207,7 @@ async function creditVerifiedDeposit(
     eventRef: deposit.id,
     amountMinor: Number(deposit.amountMinor),
   });
+  await evaluateCampaignRewards(tx, { customerId: deposit.userId });
 
   const depositor = await tx.query<{
     email: string;

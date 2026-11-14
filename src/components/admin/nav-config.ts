@@ -45,6 +45,7 @@ export const adminNav: AdminNavItem[] = [
   { href: "/admin/adjustments", label: "Refunds & credits", icon: BadgeDollarSign, group: "Finance" },
   { href: "/admin/expenses", label: "Expenses", icon: Landmark, group: "Finance" },
   { href: "/admin/referrals", label: "Referral rewards", icon: Gift, group: "Finance" },
+  { href: "/admin/campaigns", label: "Campaigns & USD rewards", icon: Gift, group: "Finance" },
   { href: "/admin/ambassador-payouts", label: "Ambassador payouts", icon: BadgeDollarSign, group: "Finance" },
   { href: "/admin/support", label: "Support", icon: LifeBuoy, group: "Support" },
   { href: "/admin/notifications", label: "Notifications", icon: Bell, group: "System" },

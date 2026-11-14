@@ -33,6 +33,11 @@ describe("HTTPS OTP email and verification", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
 
+    // Keep this test independent of older queued email fixtures from other
+    // integration files that share the in-memory database.
+    const db = await getDb();
+    await db.query(`delete from email_deliveries where status in ('queued', 'sending')`);
+
     const user = await createTestUser("otp", { verified: false });
     const sent = await createAndSendSignupOtp({
       userId: user.id,
@@ -44,7 +49,6 @@ describe("HTTPS OTP email and verification", () => {
     const code = otpHtml.match(/>(\d{6})</)?.[1];
     expect(code).toMatch(/^\d{6}$/);
 
-    const db = await getDb();
     const delivery = await db.query<{ payload: unknown; status: string }>(
       `select payload, status from email_deliveries
         where user_id=$1 and email_type='signup_verification'

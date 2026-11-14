@@ -7,7 +7,7 @@ const DEFAULTS: AppSettings = {
   inventoryDefaultMaxSeats: 10,
   allocationSafetyBufferSeconds: 3600,
   stockExpiryDefaultDays: 30,
-  depositMinMinor: 300_000,
+  depositMinMinor: 150_000,
   depositMaxMinor: 100_000_000,
   maintenanceMode: false,
   supportEmail: "",
@@ -62,7 +62,7 @@ export const getAppSettings = cache(async (): Promise<AppSettings> => {
         1,
         num("stock_expiry_default_days", DEFAULTS.stockExpiryDefaultDays),
       ),
-      depositMinMinor: Math.max(300_000, num("deposit_min_minor", DEFAULTS.depositMinMinor)),
+      depositMinMinor: Math.max(150_000, num("deposit_min_minor", DEFAULTS.depositMinMinor)),
       depositMaxMinor: Math.max(
         num("deposit_min_minor", DEFAULTS.depositMinMinor),
         num("deposit_max_minor", DEFAULTS.depositMaxMinor),

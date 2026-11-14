@@ -22,6 +22,13 @@ function usd(cents: number) {
   return `$${(cents / 100).toFixed(2)}`;
 }
 
+function lagosDateInput(date: Date | null) {
+  if (!date) return "";
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Africa/Lagos", year: "numeric", month: "2-digit", day: "2-digit",
+  }).format(date);
+}
+
 const payoutTone = {
   pending: "warning",
   processing: "info",
@@ -66,6 +73,7 @@ export default async function AmbassadorPayoutsPage() {
                 </Select>
               </AdminField>
               <AdminField label="Qualifying deposit (NGN)" htmlFor="amb-deposit"><Input id="amb-deposit" name="qualifyingDepositNgn" inputMode="decimal" defaultValue={(data.config.qualifyingDepositMinor / 100).toFixed(2)} /></AdminField>
+              <AdminField label="Next $3 payout batch" htmlFor="amb-payout-date"><Input id="amb-payout-date" name="nextPayoutAt" type="date" defaultValue={lagosDateInput(data.config.nextPayoutAt)} /></AdminField>
               <label className="mt-5 flex items-center gap-2 text-[9.5px] text-muted-foreground">
                 <input type="checkbox" name="enabled" defaultChecked={data.config.enabled} className="h-3.5 w-3.5 accent-foreground" />
                 Enable automatic promotion and commissions

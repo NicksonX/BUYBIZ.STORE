@@ -45,6 +45,7 @@ export function AmbassadorPanel({
   openWithdrawal,
   withdrawals,
   promotedAt,
+  nextPayoutAt,
 }: {
   isAmbassador: boolean;
   qualified: number;
@@ -58,6 +59,7 @@ export function AmbassadorPanel({
   openWithdrawal: PayoutRow | null;
   withdrawals: PayoutRow[];
   promotedAt: Date | null;
+  nextPayoutAt: Date | null;
 }) {
   const [addressState, addressAction, addressPending] = useActionState(
     submitAmbassadorAddressAction,
@@ -141,7 +143,7 @@ export function AmbassadorPanel({
                 <Send className="h-3.5 w-3.5" /> USDT BEP20 payout
               </h3>
               <p className="mt-1 text-[9px] leading-4 text-muted-foreground">
-                Minimum {minLabel}. Payout is sent in USDT on BNB Smart Chain (BEP20). Processing can take up to 3 days after the request.
+                Minimum {minLabel}. Payout is sent in USDT on BNB Smart Chain (BEP20). {nextPayoutAt ? `The next scheduled $3 payout batch is ${formatDate(nextPayoutAt)}.` : "Processing can take up to 3 days after the request."}
               </p>
               {addressState.message ? (
                 <Alert tone={addressState.status === "success" ? "success" : "danger"} className="mt-2 text-[9.5px]">

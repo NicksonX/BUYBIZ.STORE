@@ -18,7 +18,7 @@ export default async function AdminReferralsPage() {
       <PageHeader
         eyebrow="Finance"
         title="Referral rewards"
-        description="A reward is credited only after a referred customer makes one verified external deposit of at least ₦3,000. Internal transfers, refunds and admin credits never qualify."
+        description="A reward is credited only after a referred customer makes one verified external deposit of at least ₦2,000. Internal transfers, refunds and admin credits never qualify."
       />
 
       <div className="mt-4 grid grid-cols-2 gap-2.5 xl:grid-cols-4">

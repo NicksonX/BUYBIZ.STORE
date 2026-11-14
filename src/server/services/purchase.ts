@@ -9,6 +9,7 @@ import { notifyUser } from "@/server/services/notifications";
 import { recordCustomerActivity } from "@/server/services/activity";
 import { notifyAdmin } from "@/server/services/admin-notifications";
 import { qualifyReferralForAmbassador } from "@/server/services/ambassador";
+import { evaluateCampaignRewards } from "@/server/services/campaigns";
 
 export type PurchaseOutcome =
   | {
@@ -481,6 +482,7 @@ export async function purchaseProxy(input: {
         eventType: "purchase",
         eventRef: orderId,
       });
+      await evaluateCampaignRewards(tx, { customerId: input.userId });
       await notifyUser(tx, {
         userId: input.userId,
         type: "allocation",

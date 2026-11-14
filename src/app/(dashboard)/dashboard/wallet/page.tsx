@@ -118,6 +118,17 @@ export default async function WalletPage() {
                 History
               </Link>
             </div>
+            <div className="mt-3 grid grid-cols-2 gap-2 sm:hidden">
+              <div className="rounded-[9px] border border-white/10 bg-white/[0.04] px-2.5 py-2">
+                <p className="text-[8px] uppercase tracking-[0.08em] text-white/40">Minimum deposit</p>
+                <p className="tabular mt-1 text-[11px] font-medium text-white/80">{formatNaira(funding.minMinor, { exact: true })}</p>
+              </div>
+              <div className="rounded-[9px] border border-white/10 bg-white/[0.04] px-2.5 py-2">
+                <p className="text-[8px] uppercase tracking-[0.08em] text-white/40">Credit rate</p>
+                <p className="mt-1 text-[11px] font-medium text-white/80">₦1 = 1 credit</p>
+              </div>
+            </div>
+            <p className="mt-2 text-[8.5px] leading-4 text-white/45 sm:hidden">BUYBIZ credits can be used for BUYBIZ services only and cannot be withdrawn as cash.</p>
 
             <div className="mt-4 hidden grid-cols-3 gap-3 border-t border-white/[0.08] pt-3.5 sm:grid">
               <div>
@@ -205,7 +216,7 @@ export default async function WalletPage() {
           {deposits.length > 0 ? (
             <>
               <div className="divide-y divide-border sm:hidden">
-                {deposits.map((deposit) => {
+                {deposits.slice(0, 3).map((deposit) => {
                   const meta = depositStatusMeta(deposit.status);
                   const credited =
                     deposit.status === "credited" || deposit.status === "successful";
@@ -340,7 +351,7 @@ export default async function WalletPage() {
           )}
         </section>
 
-        <section className="surface-card rounded-[16px] p-4 sm:p-5">
+        <section className="surface-card hidden rounded-[16px] p-4 sm:block sm:p-5">
           <div className="flex items-start gap-3">
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border bg-surface-subtle">
               <LifeBuoy className="h-4 w-4 text-muted-foreground" />
@@ -362,7 +373,7 @@ export default async function WalletPage() {
         </section>
         </div>
 
-        <div className="space-y-3">
+        <div className="hidden space-y-3 lg:block">
           <section className="relative overflow-hidden rounded-[16px] border border-[#22252a] bg-[#0A0B0D] p-5 text-white">
             <ShieldCheck className="h-5 w-5 text-white/65" />
             <h2 className="mt-4 text-[13px] font-semibold">

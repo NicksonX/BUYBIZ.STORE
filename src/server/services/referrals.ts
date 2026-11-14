@@ -122,7 +122,7 @@ export async function qualifyReferralForDeposit(
   );
   const row = settings.rows[0];
   if (!row || row.enabled !== true) return null;
-  const minimum = Number(row.minimum ?? 300_000);
+  const minimum = Number(row.minimum ?? 200_000);
   const reward = Number(row.reward ?? 100_000);
   if (deposit.amountMinor < minimum) return null;
 
