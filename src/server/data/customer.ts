@@ -516,7 +516,8 @@ export async function getReferralDashboard(userId: string) {
   }));
   const duration = await db.query<{ seconds: unknown }>(
     `select coalesce(
-       (select value from app_settings where key='referral_qualifying_proxy_duration_seconds'),
+       (select (value #>> '{}')::int from app_settings
+         where key='referral_qualifying_proxy_duration_seconds'),
        604800
      ) as seconds`,
   );
