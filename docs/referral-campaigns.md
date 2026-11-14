@@ -34,4 +34,14 @@ The policy migration:
 - updates the seeded campaign;
 - sets the next Ambassador payout batch to **20 December 2026**.
 
+## Campaign email notifications
+
+Campaign rewards and campaign payouts send branded transactional emails through the same durable `email_deliveries` outbox:
+
+- customer reward: "You earned $10 — your BUYBIZ reward is in"
+- referrer reward: "You both win — your $10 referral reward is in"
+- payout requested / approved / paid / rejected
+
+The reward emails use an energetic dark campaign banner with dual reward chips, the payout date, one primary CTA and no fabricated participation numbers. Templates are seeded by `20261116000400_campaign_emails.sql` and polished by `20261116000500_email_polish.sql`.
+
 The onboarding video recorded before this policy change still mentions the old ₦3,000 qualification amount and must be re-recorded before publishing it.

@@ -14,6 +14,12 @@ export type EmailType =
   | "payout_rejected"
   | "payout_paid"
   | "deposit_followup"
+  | "campaign_customer_reward"
+  | "campaign_referrer_reward"
+  | "campaign_payout_requested"
+  | "campaign_payout_approved"
+  | "campaign_payout_paid"
+  | "campaign_payout_rejected"
   | "marketing";
 
 export type EmailTemplateData = {
@@ -35,6 +41,12 @@ export type EmailTemplateData = {
   campaignMessage?: string;
   unsubscribeUrl?: string;
   preferencesUrl?: string;
+  campaignName?: string;
+  rewardLabel?: string;
+  payoutDate?: string;
+  statusLabel?: string;
+  customerReward?: string;
+  windowLabel?: string;
 };
 
 export type EmailTemplateOverride = {
@@ -115,6 +127,36 @@ const DEFAULT_TEMPLATES: Record<
     preheader: "The transfer has been completed.",
     intro: "Your ambassador payout has been sent. The transaction hash is included below for your records.",
   },
+  campaign_customer_reward: {
+    subject: "You earned $10 — your BUYBIZ reward is in",
+    preheader: "Your qualifying deposit and purchase counted.",
+    intro: "Your qualifying deposit and eligible purchase earned a campaign reward. It sits in USD Rewards, separate from your BUYBIZ wallet balance.",
+  },
+  campaign_referrer_reward: {
+    subject: "You both win — your $10 referral reward is in",
+    preheader: "A referral completed both qualifying steps.",
+    intro: "Someone you referred completed the qualifying deposit and purchase during the campaign. Your separate referrer reward has been recorded, and they earned $10 too.",
+  },
+  campaign_payout_requested: {
+    subject: "Payout request received — pending review",
+    preheader: "We received your campaign payout request.",
+    intro: "Your campaign reward payout has been requested and is waiting for manual review. No crypto payment has been sent yet.",
+  },
+  campaign_payout_approved: {
+    subject: "Approved — your USDT payout is being processed",
+    preheader: "Your BEP20 payout is moving forward.",
+    intro: "Your campaign reward payout has been approved for manual processing. We will email you again when the transfer is complete.",
+  },
+  campaign_payout_paid: {
+    subject: "Paid — your USDT BEP20 transfer is complete",
+    preheader: "The BEP20 transfer is complete.",
+    intro: "Your campaign reward payout has been marked paid. Keep the transaction hash below for your records.",
+  },
+  campaign_payout_rejected: {
+    subject: "Your USD reward payout needs attention",
+    preheader: "Your campaign payout request was rejected.",
+    intro: "Your campaign payout request was not approved. The reserved reward has been released back to your available USD rewards.",
+  },
   deposit_followup: {
     subject: "Ready to try BUYBIZ?",
     preheader: "Your account is set up. Your first deposit is the next step.",
@@ -153,6 +195,57 @@ function button(label: string, href: string, tone: "dark" | "light" = "dark") {
     <tr><td style="border-radius:10px;background:${background};border:1px solid ${border};">
       <a href="${escapeHtml(href)}" style="display:inline-block;padding:13px 22px;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:700;line-height:1;color:${color};text-decoration:none;border-radius:10px;">${escapeHtml(label)}</a>
     </td></tr>
+  </table>`;
+}
+
+function rewardChip(label: string, value: string, accent: string) {
+  return `<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="width:100%;">
+    <tr><td style="border:1px solid rgba(255,255,255,0.14);border-radius:12px;padding:12px 16px;background:rgba(255,255,255,0.06);">
+      <span style="display:block;font-family:Arial,Helvetica,sans-serif;font-size:10px;letter-spacing:1.4px;text-transform:uppercase;color:rgba(255,255,255,0.55);">${escapeHtml(label)}</span>
+      <span style="display:block;margin-top:4px;font-family:Arial,Helvetica,sans-serif;font-size:22px;font-weight:800;letter-spacing:-0.6px;color:${accent};">${escapeHtml(value)}</span>
+    </td></tr>
+  </table>`;
+}
+
+function campaignBanner(input: {
+  eyebrow: string;
+  headline: string;
+  customerLabel: string;
+  customerValue: string;
+  referrerLabel: string;
+  referrerValue: string;
+  windowLabel: string;
+}) {
+  return `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin:20px 0 4px;background:#0A0B0D;background-image:linear-gradient(140deg,#0A0B0D 0%,#221109 100%);border-radius:16px;overflow:hidden;">
+    <tr><td style="padding:26px 24px;">
+      <span style="display:inline-block;padding:5px 10px;border:1px solid rgba(255,138,104,0.45);border-radius:999px;font-family:Arial,Helvetica,sans-serif;font-size:10px;font-weight:700;letter-spacing:1.6px;text-transform:uppercase;color:#FFB197;">${escapeHtml(input.eyebrow)}</span>
+      <p style="margin:14px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:26px;font-weight:800;line-height:1.1;letter-spacing:-1px;color:#FFFFFF;">${escapeHtml(input.headline)}</p>
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-top:18px;">
+        <tr>
+          <td width="48%" style="padding-right:4px;">${rewardChip(input.customerLabel, input.customerValue, "#8EE7B8")}</td>
+          <td width="4%"></td>
+          <td width="48%" style="padding-left:4px;">${rewardChip(input.referrerLabel, input.referrerValue, "#FFB197")}</td>
+        </tr>
+      </table>
+      <p style="margin:16px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:11px;letter-spacing:0.4px;color:rgba(255,255,255,0.6);">${escapeHtml(input.windowLabel)}</p>
+    </td></tr>
+  </table>`;
+}
+
+function campaignSteps(rows: Array<[string, string]>) {
+  return `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin:20px 0 4px;">
+    ${rows
+      .map(
+        ([number, text], index) => `<tr>
+          <td style="padding:${index === 0 ? "0 0 12px" : "12px 0"};">
+            <table role="presentation" cellspacing="0" cellpadding="0" border="0"><tr>
+              <td style="width:30px;height:30px;line-height:30px;text-align:center;border-radius:50%;background:#0A0B0D;color:#FFFFFF;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:800;">${escapeHtml(number)}</td>
+              <td style="padding-left:12px;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.5;color:#4E5157;">${escapeHtml(text)}</td>
+            </tr></table>
+          </td>
+        </tr>`,
+      )
+      .join("")}
   </table>`;
 }
 
@@ -303,13 +396,9 @@ export function renderEmail(input: {
       <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.7;color:${BRAND.muted};">If you did not create a BUYBIZ account, you can safely ignore this email. Never share this code with anyone.</p>`;
       break;
     case "welcome":
-      content = `${button("Explore BUYBIZ", `${input.websiteUrl}/dashboard`)}
-      ${details([
-        ["What you can do", "Buy 24-hour, 7-day or 30-day proxy access"],
-        ["Wallet minimum", "₦1,500"],
-        ["Credit value", "1 BUYBIZ credit = ₦1"],
-      ])}
-      <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.7;color:${BRAND.muted};">If you need a hand choosing a plan, reply to this email. A real person will help.</p>`;
+      content = `<p style="margin:16px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.75;color:#4E5157;">Your account is ready. Add funds from ₦1,500, choose a proxy plan, and your connection details will appear in My Proxies.</p>
+      ${button("Open your dashboard", `${input.websiteUrl}/dashboard`)}
+      <p style="margin:8px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.7;color:${BRAND.muted};">Not sure which plan fits? Reply to this email and a real person will help you choose.</p>`;
       break;
     case "deposit_confirmation":
       content = `${details([
@@ -404,9 +493,87 @@ export function renderEmail(input: {
       ])}
       <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.7;color:${BRAND.muted};">No pressure at all. Your account will be here whenever you are ready.</p>`;
       break;
+    case "campaign_customer_reward":
+      content = `${campaignBanner({
+        eyebrow: "Reward unlocked",
+        headline: "You just earned $10.",
+        customerLabel: "Your reward",
+        customerValue: data.rewardLabel ?? "$10.00",
+        referrerLabel: "Payout date",
+        referrerValue: data.payoutDate ?? "24 December 2026",
+        windowLabel: "USD rewards · USDT BEP20 · separate from your naira wallet",
+      })}
+      <p style="margin:16px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.7;color:#4E5157;">Your qualifying deposit and eligible purchase counted. Add and verify a BEP20 address in Rewards, and request your payout after ${escapeHtml(data.payoutDate ?? "the scheduled payout date")}.</p>
+      ${button("Open USD Rewards", `${input.websiteUrl}/dashboard/referrals?tab=rewards`)}`;
+      break;
+    case "campaign_referrer_reward":
+      content = `${campaignBanner({
+        eyebrow: "You both win",
+        headline: `${escapeHtml(data.referralName ?? "Your friend")} just unlocked your $10.`,
+        customerLabel: "Your reward",
+        customerValue: data.rewardLabel ?? "$10.00",
+        referrerLabel: "Payout date",
+        referrerValue: data.payoutDate ?? "24 December 2026",
+        windowLabel: "The qualifying customer received $10 too — both sides are rewarded.",
+      })}
+      <p style="margin:16px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.7;color:#4E5157;">Your link is still working. Every new qualifying referral during the campaign earns another $10.</p>
+      ${button("Share your invite link", `${input.websiteUrl}/dashboard/referrals?tab=referrals`)}
+      ${button("Open USD Rewards", `${input.websiteUrl}/dashboard/referrals?tab=rewards`, "light")}`;
+      break;
+    case "campaign_payout_requested":
+      content = `${details([
+        ["Amount requested", data.amountLabel ?? ""],
+        ["Status", "Pending Review"],
+        ["Network", "USDT · BNB Smart Chain (BEP20)"],
+        ["Wallet address", data.address ?? ""],
+      ])}
+      <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.7;color:${BRAND.muted};">No payment has been sent yet. An administrator will review the request and update the status in your Rewards section.</p>`;
+      break;
+    case "campaign_payout_approved":
+      content = `${details([
+        ["Amount", data.amountLabel ?? ""],
+        ["Status", "Approved · processing"],
+        ["Network", "USDT · BNB Smart Chain (BEP20)"],
+      ])}
+      <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.7;color:${BRAND.muted};">Your payout is approved for manual processing. You will receive another email when the transfer is complete and the transaction hash is recorded.</p>`;
+      break;
+    case "campaign_payout_paid":
+      content = `${details([
+        ["Amount", data.amountLabel ?? ""],
+        ["Status", "Paid"],
+        ["Network", "USDT · BNB Smart Chain (BEP20)"],
+        ["Transaction hash", data.txHash ?? ""],
+        ["Wallet address", data.address ?? ""],
+      ])}
+      <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.7;color:${BRAND.muted};">Keep this email for your records. You can verify the transfer with the transaction hash on BscScan.</p>`;
+      break;
+    case "campaign_payout_rejected":
+      content = `${details([
+        ["Amount", data.amountLabel ?? ""],
+        ["Status", "Rejected"],
+        ["Reason", data.reason ?? "Please contact support for details."],
+      ])}
+      <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.7;color:${BRAND.muted};">The reserved reward has been returned to your available USD rewards. You can review your balance and request a payout again when eligible.</p>
+      ${button("Review USD rewards", `${input.websiteUrl}/dashboard/referrals?tab=rewards`)}`;
+      break;
     case "marketing":
-      content = `${data.campaignMessage ? `<div style="font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.8;color:#4E5157;">${escapeHtml(data.campaignMessage).replace(/\n/g, "<br>")}</div>` : ""}
-      ${button("Visit BUYBIZ", `${input.websiteUrl}`)}`;
+      content = `${campaignBanner({
+        eyebrow: "Limited-time referral campaign",
+        headline: "Give $10. Get $10.",
+        customerLabel: "Your friend earns",
+        customerValue: data.customerReward ?? "$10.00",
+        referrerLabel: "You earn",
+        referrerValue: data.rewardLabel ?? "$10.00",
+        windowLabel: data.windowLabel ?? "20 November – 23 December 2026 · Payout 24 December 2026",
+      })}
+      ${campaignSteps([
+        ["1", "Send your referral link to a friend."],
+        ["2", "They deposit at least ₦2,000 and buy a proxy during the campaign."],
+        ["3", "You both earn $10 in separate USD rewards."],
+      ])}
+      <p style="margin:4px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:11px;line-height:1.7;color:${BRAND.muted};">One reward per qualifying customer. Failed, refunded or fraudulent activity never counts. No fake participation numbers — only real qualifying referrals.</p>
+      ${button("Share your invite link", `${input.websiteUrl}/dashboard/referrals?tab=referrals`)}
+      ${button("See campaign rules", `${input.websiteUrl}/campaigns/customer-referrer-10`, "light")}`;
       break;
   }
 

@@ -360,7 +360,7 @@ export default async function DashboardOverviewPage() {
         )}
       </section>
 
-      <section>
+      <section className="hidden lg:block">
         <div className="mb-3 flex items-end justify-between gap-3">
           <div>
             <h2 className="text-[16px] font-semibold tracking-[-0.025em]">

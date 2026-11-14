@@ -4,6 +4,7 @@ import type { SqlTransaction } from "@/lib/db/driver";
 import { AppError } from "@/lib/errors";
 import { writeAuditLog } from "@/server/services/audit";
 import { notifyUser } from "@/server/services/notifications";
+import { queueEmail } from "@/server/services/email";
 
 export type Campaign = {
   id: string;
@@ -132,10 +133,11 @@ export async function evaluateCampaignRewards(
     id: string;
     username: string;
     displayName: string | null;
+    email: string;
     createdAt: Date;
   }>(
     `select id, username, coalesce(display_name, username) as "displayName",
-            created_at as "createdAt"
+            email, created_at as "createdAt"
        from profiles where id = $1 and status = 'active' limit 1`,
     [input.customerId],
   );
@@ -218,6 +220,19 @@ export async function evaluateCampaignRewards(
         title: "You earned a $10 campaign reward",
         body: `Your qualifying deposit and purchase earned ${usd(campaign.customerRewardCents)} in USD rewards. It becomes available for payout on ${formatCampaignDate(campaign.payoutAt)}.`,
         href: "/dashboard/referrals?tab=rewards",
+      });
+      await queueEmail(tx, {
+        type: "campaign_customer_reward",
+        userId: input.customerId,
+        recipient: person.email,
+        data: {
+          name: person.displayName ?? person.username,
+          campaignName: campaign.name,
+          rewardLabel: usd(campaign.customerRewardCents),
+          payoutDate: formatCampaignDate(campaign.payoutAt),
+          statusLabel: "Pending payout date",
+        },
+        dedupeKey: `campaign_customer_reward:${campaign.id}:${input.customerId}`,
       });
     }
 
@@ -512,6 +527,10 @@ export async function requestCampaignPayout(userId: string) {
       [userId, amountCents, address.rows[0].address],
     );
     const payoutId = inserted.rows[0].id;
+    const profile = await tx.query<{ email: string; name: string }>(
+      `select email, coalesce(display_name, username) as name from profiles where id=$1 limit 1`,
+      [userId],
+    );
     for (const reward of rewards.rows) {
       await tx.query(
         `insert into reward_payout_items (payout_id, reward_id, amount_usd_cents)
@@ -532,6 +551,20 @@ export async function requestCampaignPayout(userId: string) {
       body: `${usd(amountCents)} is pending review. BUYBIZ will send USDT on BEP20 after manual approval.`,
       href: "/dashboard/referrals?tab=rewards",
     });
+    if (profile.rows[0]) {
+      await queueEmail(tx, {
+        type: "campaign_payout_requested",
+        userId,
+        recipient: profile.rows[0].email,
+        data: {
+          name: profile.rows[0].name,
+          amountLabel: usd(amountCents),
+          address: address.rows[0].address,
+          requestedAt: new Date().toISOString(),
+        },
+        dedupeKey: `campaign_payout_requested:${payoutId}`,
+      });
+    }
     await writeAuditLog(tx, {
       actorUserId: userId,
       actorRole: "customer",
@@ -695,6 +728,41 @@ export async function reviewCampaignPayout(input: {
           where id=$1`,
         [row.id, input.decision === "approve" ? "approved" : "processing", input.actorId],
       );
+    }
+    const profile = await tx.query<{ email: string; name: string }>(
+      `select email, coalesce(display_name, username) as name from profiles where id=$1 limit 1`,
+      [row.userId],
+    );
+    const person = profile.rows[0];
+    if (person && input.decision === "approve") {
+      await queueEmail(tx, {
+        type: "campaign_payout_approved",
+        userId: row.userId,
+        recipient: person.email,
+        data: { name: person.name, amountLabel: usd(row.amountCents) },
+        dedupeKey: `campaign_payout_approved:${row.id}`,
+      });
+    } else if (person && input.decision === "paid") {
+      await queueEmail(tx, {
+        type: "campaign_payout_paid",
+        userId: row.userId,
+        recipient: person.email,
+        data: {
+          name: person.name,
+          amountLabel: usd(row.amountCents),
+          txHash: input.transactionHash ?? "",
+          address: (await tx.query<{ address: string }>(`select wallet_address as address from reward_payouts where id=$1`, [row.id])).rows[0]?.address ?? "",
+        },
+        dedupeKey: `campaign_payout_paid:${row.id}`,
+      });
+    } else if (person && input.decision === "reject") {
+      await queueEmail(tx, {
+        type: "campaign_payout_rejected",
+        userId: row.userId,
+        recipient: person.email,
+        data: { name: person.name, amountLabel: usd(row.amountCents), reason: input.reason ?? "" },
+        dedupeKey: `campaign_payout_rejected:${row.id}`,
+      });
     }
     await notifyUser(tx, {
       userId: row.userId,
