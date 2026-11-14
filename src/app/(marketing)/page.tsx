@@ -211,14 +211,14 @@ export default async function HomePage() {
         </div>
 
         <div className="relative mx-auto w-full max-w-[1200px] px-5 pb-7 pt-8 sm:px-8 sm:pb-8 sm:pt-10 lg:pb-8 lg:pt-12">
-          <div className="grid items-center gap-8 lg:min-h-[500px] lg:grid-cols-[minmax(0,0.98fr)_minmax(0,1.02fr)]">
-            <div className="relative z-10 max-w-[620px]">
+          <div className="grid min-w-0 items-center gap-8 lg:min-h-[500px] lg:grid-cols-[minmax(0,0.98fr)_minmax(0,1.02fr)]">
+            <div className="relative z-10 min-w-0 max-w-full sm:max-w-[620px]">
               <div className="inline-flex items-center gap-2 rounded-full border border-black/[0.08] bg-white/70 px-3.5 py-1.5 text-[10px] font-medium text-[#0A0B0D]/55 shadow-[0_8px_20px_-18px_rgba(0,0,0,0.4)] backdrop-blur">
                 <span className="h-1.5 w-1.5 rounded-full bg-[#16794A] shadow-[0_0_0_4px_rgba(22,121,74,0.09)]" />
                 Live now: proxy access in naira
               </div>
 
-              <h1 className="mt-5 text-[48px] font-semibold leading-[0.92] tracking-[-0.07em] min-[360px]:text-[56px] sm:text-[72px] lg:text-[80px]">
+              <h1 className="mt-5 max-w-full text-[44px] font-semibold leading-[0.92] tracking-[-0.06em] min-[360px]:text-[48px] sm:text-[72px] lg:text-[80px]">
                 Proxy access.
                 <br />
                 <span className="text-[#0A0B0D]/38">Pay in naira.</span>
