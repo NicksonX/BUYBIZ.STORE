@@ -1,4 +1,4 @@
-# Pre-live reset procedure
+# Pre-live reset procedure — executed 2026-11-14 (full reset; both admins preserved)
 
 No reset has been executed. This document and `docs/reset-before-live.sql` are prepared for review.
 
