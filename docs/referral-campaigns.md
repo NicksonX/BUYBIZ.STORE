@@ -6,7 +6,8 @@
 - Wallet rewards stay in the immutable NGN `wallet_ledger`; they are not cash-withdrawable.
 - At **10 qualified referrals**, the referrer is automatically promoted to Ambassador.
 - Ambassadors earn **$3 USD** per qualified referral, uncapped, in the separate `ambassador_ledger`.
-- Ambassador payouts are USDT BEP20 from **$10**, after address verification and manual review. The next scheduled $3 payout batch is configured in `app_settings.ambassador_next_payout_at` (default **20 December 2026**, Africa/Lagos).
+- Ambassador payouts are USDT BEP20 from **$10**, after address verification and manual review.
+- The programme is **ongoing with no end date**; it stays active until an admin pauses it. The next scheduled $3 payout batch is configured in `app_settings.ambassador_next_payout_at` (currently **20 December 2026**, Africa/Lagos). That date is a payout-cycle date, never a campaign end date.
 - Existing ambassador payout request and admin approval flow is unchanged.
 
 ## $10 customer + $10 referrer campaign
@@ -19,6 +20,17 @@
 - Failed, reversed, refunded, or fraudulent activity does not qualify. Duplicate customer rewards are blocked by `(campaign_id, customer_id, role)` and idempotency keys. Duplicate referrer rewards are blocked by the referral/role unique index.
 - Campaign USD balances are separate from NGN wallet credits and from Ambassador commissions.
 - Payouts are USDT BEP20, manual, and require a verified address. A payout cannot be marked paid without a valid `0x` 32-byte transaction hash.
+
+## Mobile wallet and transaction history
+
+Mobile only:
+
+- The balance card shows only the available balance, Add Money and History.
+- No deposited/spent/refunded summary row and no minimum/credit-rate/cash-withdrawal text under the card.
+- Recent transactions show four fields: name, date, right-aligned amount and a subtle status.
+- Tapping a transaction opens a details sheet with the amount, status, method, reference (with copy) and support help when relevant.
+- Search, All/Deposits/Purchases/Refunds filters and load-more are available in the mobile transaction history.
+- Simulated/demo labels never appear in production transaction history; demo records exist only in demo mode.
 
 ## Operational requirement
 

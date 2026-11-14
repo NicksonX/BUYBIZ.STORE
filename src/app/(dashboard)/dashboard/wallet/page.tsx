@@ -8,7 +8,6 @@ import {
   LifeBuoy,
   ReceiptText,
   ShieldCheck,
-  Wallet,
 } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
 import { Badge } from "@/components/ui/badge";
@@ -17,9 +16,10 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { FundWalletButton } from "@/components/dashboard/fund-wallet-dialog";
 import { WalletBalanceAmount } from "@/components/wallet/balance-amount";
 import { requireUserPage } from "@/server/auth/guards";
-import { getDepositsForUser, getWalletSummary } from "@/server/data/customer";
+import { getDepositsForUser, getWalletSummary, getWalletTransactions } from "@/server/data/customer";
+import { MobileWalletTransactions } from "@/components/wallet/mobile-transactions";
 import { getAppSettings } from "@/server/data/settings";
-import { getPaystackMode, isDemoMode, isPaystackConfigured } from "@/lib/config";
+import { isDemoMode, isPaystackConfigured } from "@/lib/config";
 import { depositStatusMeta } from "@/lib/status";
 import { cn, formatDateTime, formatNaira } from "@/lib/utils";
 import type { Deposit } from "@/lib/db/types";
@@ -41,10 +41,11 @@ function depositHref(deposit: Deposit) {
 
 export default async function WalletPage() {
   const user = await requireUserPage();
-  const [wallet, deposits, settings] = await Promise.all([
+  const [wallet, deposits, settings, transactions] = await Promise.all([
     getWalletSummary(user.id),
     getDepositsForUser(user.id),
     getAppSettings(),
+    getWalletTransactions(user.id, { limit: 10 }),
   ]);
   const demo = isDemoMode();
   const paymentsEnabled = isPaystackConfigured() || demo;
@@ -88,28 +89,9 @@ export default async function WalletPage() {
       <div className="mt-5 grid items-stretch gap-3">
         <section className="relative overflow-hidden rounded-[18px] border border-[#22252a] bg-[#0A0B0D] p-4 text-white shadow-[0_40px_80px_-50px_rgba(0,0,0,0.9)] sm:p-5">
           <div className="relative">
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <span className="flex h-8 w-8 items-center justify-center rounded-[8px] border border-white/10 bg-white/[0.06]">
-                  <Wallet className="h-4 w-4 text-white/70" />
-                </span>
-                <div>
-                  <p className="text-[10px] font-medium text-white/45">
-                    Available balance
-                  </p>
-                </div>
-              </div>
-              <div className="flex flex-wrap items-center justify-end gap-1.5">
-                <Badge tone="onDark">NGN</Badge>
-                {!demo && getPaystackMode() === "test" ? (
-                  <Badge tone="warning">Test funds</Badge>
-                ) : null}
-              </div>
-            </div>
-
             <WalletBalanceAmount amountMinor={wallet.balanceMinor} />
 
-            <div className="mt-4 grid grid-cols-2 gap-2 sm:hidden">
+            <div className="mt-5 grid grid-cols-2 gap-2 sm:hidden">
               <FundWalletButton {...funding} variant="light" className="w-full" />
               <Link
                 href="/dashboard/transactions"
@@ -118,17 +100,6 @@ export default async function WalletPage() {
                 History
               </Link>
             </div>
-            <div className="mt-3 grid grid-cols-2 gap-2 sm:hidden">
-              <div className="rounded-[9px] border border-white/10 bg-white/[0.04] px-2.5 py-2">
-                <p className="text-[8px] uppercase tracking-[0.08em] text-white/40">Minimum deposit</p>
-                <p className="tabular mt-1 text-[11px] font-medium text-white/80">{formatNaira(funding.minMinor, { exact: true })}</p>
-              </div>
-              <div className="rounded-[9px] border border-white/10 bg-white/[0.04] px-2.5 py-2">
-                <p className="text-[8px] uppercase tracking-[0.08em] text-white/40">Credit rate</p>
-                <p className="mt-1 text-[11px] font-medium text-white/80">₦1 = 1 credit</p>
-              </div>
-            </div>
-            <p className="mt-2 text-[8.5px] leading-4 text-white/45 sm:hidden">BUYBIZ credits can be used for BUYBIZ services only and cannot be withdrawn as cash.</p>
 
             <div className="mt-4 hidden grid-cols-3 gap-3 border-t border-white/[0.08] pt-3.5 sm:grid">
               <div>
@@ -157,27 +128,6 @@ export default async function WalletPage() {
         </section>
 
             </div>
-
-      <div className="mt-2 flex items-center justify-between px-1 text-[9px] text-muted-foreground sm:hidden">
-        <span>
-          Deposited{" "}
-          <strong className="font-medium text-foreground">
-            {formatNaira(wallet.totalDepositedMinor)}
-          </strong>
-        </span>
-        <span>
-          Spent{" "}
-          <strong className="font-medium text-foreground">
-            {formatNaira(Math.max(0, wallet.totalSpentMinor - wallet.totalRefundedMinor))}
-          </strong>
-        </span>
-        <span>
-          Refunded{" "}
-          <strong className="font-medium text-[#16794A]">
-            {formatNaira(wallet.totalRefundedMinor)}
-          </strong>
-        </span>
-      </div>
 
       {pendingDemo ? (
         <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-[10px] border border-warning/25 bg-warning-soft px-3.5 py-2.5 text-[10px] text-warning">
@@ -213,67 +163,14 @@ export default async function WalletPage() {
             </Link>
           </div>
 
-          {deposits.length > 0 ? (
+          {deposits.length > 0 || transactions.items.length > 0 ? (
             <>
-              <div className="divide-y divide-border sm:hidden">
-                {deposits.slice(0, 3).map((deposit) => {
-                  const meta = depositStatusMeta(deposit.status);
-                  const credited =
-                    deposit.status === "credited" || deposit.status === "successful";
-                  return (
-                    <Link
-                      key={deposit.id}
-                      href={depositHref(deposit)}
-                      className="flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-accent/50"
-                    >
-                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border bg-surface-subtle">
-                        <ArrowDownLeft
-                          className={cn(
-                            "h-4 w-4",
-                            credited ? "text-success" : "text-muted-foreground",
-                          )}
-                        />
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="min-w-0">
-                            <p className="truncate text-[12px] font-semibold">
-                              {deposit.provider === "demo"
-                                ? "Demo top-up"
-                                : "Wallet deposit"}
-                            </p>
-                            <p className="mt-0.5 truncate text-[9.5px] text-muted-foreground">
-                              {formatDateTime(deposit.createdAt)}
-                            </p>
-                          </div>
-                          <p
-                            className={cn(
-                              "tabular shrink-0 text-[12.5px] font-semibold",
-                              credited ? "text-success" : "text-foreground",
-                            )}
-                          >
-                            {credited ? "+" : ""}
-                            {formatNaira(deposit.amountMinor, { exact: true })}
-                          </p>
-                        </div>
-                        <div className="mt-1.5 flex min-w-0 items-center gap-1.5">
-                          <Badge tone={meta.tone} className="shrink-0">
-                            {meta.label}
-                          </Badge>
-                          {deposit.provider === "demo" ? (
-                            <span className="shrink-0 text-[8px] text-muted-foreground">
-                              Simulated
-                            </span>
-                          ) : null}
-                          <span className="min-w-0 truncate font-mono text-[8px] text-muted-foreground/70">
-                            {deposit.providerReference}
-                          </span>
-                        </div>
-                      </div>
-                      <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/40" />
-                    </Link>
-                  );
-                })}
+              <div className="px-4 py-3 sm:hidden">
+                <MobileWalletTransactions
+                  initialItems={transactions.items}
+                  initialNextOffset={transactions.nextOffset}
+                  compact
+                />
               </div>
 
               <div className="hidden sm:block">
@@ -412,6 +309,21 @@ export default async function WalletPage() {
             </div>
           ) : null}
         </div>
+      {pendingDemo ? (
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-[10px] border border-warning/25 bg-warning-soft px-3.5 py-2.5 text-[10px] text-warning">
+          <span>
+            A demo deposit of {formatNaira(pendingDemo.amountMinor, { exact: true })} is
+            awaiting simulated payment.
+          </span>
+          <Link
+            href={`/dashboard/wallet/demo/${pendingDemo.id}`}
+            className="font-semibold underline underline-offset-2"
+          >
+            Complete demo payment
+          </Link>
+        </div>
+      ) : null}
+
       </div>
     </div>
   );

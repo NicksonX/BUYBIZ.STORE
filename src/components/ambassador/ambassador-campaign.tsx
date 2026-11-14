@@ -20,6 +20,7 @@ export function AmbassadorCampaign({
   commissionCents,
   availableCents,
   minWithdrawalCents,
+  nextPayoutAt,
 }: {
   variant: "dashboard" | "referral";
   isAmbassador: boolean;
@@ -28,6 +29,7 @@ export function AmbassadorCampaign({
   commissionCents: number;
   availableCents: number;
   minWithdrawalCents: number;
+  nextPayoutAt: Date | null;
 }) {
   const [open, setOpen] = useState(false);
   const referral = variant === "referral";
@@ -62,6 +64,15 @@ export function AmbassadorCampaign({
               {isAmbassador
                 ? `${usd(availableCents)} available in your separate USD balance.`
                 : `Free to join. Qualify ${required} referrals to unlock Ambassador, then earn ${reward} per qualified friend.`}
+            </p>
+            <p className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[8.5px] text-white/60">
+              <span className="inline-flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-[#8EE7B8]" /> Ongoing — no end date</span>
+              {nextPayoutAt ? (
+                <span className="inline-flex items-center gap-1">
+                  <span aria-hidden="true">·</span> Next payout:{" "}
+                  {new Intl.DateTimeFormat("en-NG", { day: "numeric", month: "long", year: "numeric", timeZone: "Africa/Lagos" }).format(nextPayoutAt)}
+                </span>
+              ) : null}
             </p>
           </div>
           <button

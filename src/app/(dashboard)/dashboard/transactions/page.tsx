@@ -14,7 +14,8 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { requireUserPage } from "@/server/auth/guards";
-import { getLedgerForUser, getWalletSummary } from "@/server/data/customer";
+import { getLedgerForUser, getWalletSummary, getWalletTransactions } from "@/server/data/customer";
+import { MobileWalletTransactions } from "@/components/wallet/mobile-transactions";
 import { ledgerTypeLabel } from "@/lib/status";
 import type { LedgerEntryType } from "@/lib/db/types";
 import { cn, formatNaira, formatShortDateTime, truncateMiddle } from "@/lib/utils";
@@ -53,9 +54,10 @@ export default async function TransactionsPage({
     ? (raw as (typeof filters)[number]["key"])
     : "all";
 
-  const [wallet, ledger] = await Promise.all([
+  const [wallet, ledger, transactions] = await Promise.all([
     getWalletSummary(user.id),
     getLedgerForUser(user.id, 200),
+    getWalletTransactions(user.id, { limit: 20 }),
   ]);
 
   const filtered = ledger.filter((entry) => {
@@ -82,7 +84,14 @@ export default async function TransactionsPage({
         }
       />
 
-      <div className="mt-4 grid grid-cols-2 gap-2.5 lg:grid-cols-4">
+      <div className="mt-4 lg:hidden">
+        <MobileWalletTransactions
+          initialItems={transactions.items}
+          initialNextOffset={transactions.nextOffset}
+        />
+      </div>
+
+      <div className="mt-4 hidden grid-cols-2 gap-2.5 lg:grid lg:grid-cols-4">
         {[
           { label: "Available balance", value: wallet.balanceMinor, tone: "" },
           { label: "Total deposited", value: wallet.totalDepositedMinor, tone: "text-success" },
@@ -104,7 +113,7 @@ export default async function TransactionsPage({
         ))}
       </div>
 
-      <div className="mt-4 flex flex-wrap items-center gap-1.5">
+      <div className="mt-4 hidden flex-wrap items-center gap-1.5 lg:flex">
         {filters.map((filter) => (
           <Link
             key={filter.key}
@@ -125,6 +134,7 @@ export default async function TransactionsPage({
         ))}
       </div>
 
+      <div className="hidden lg:block">
       {filtered.length === 0 ? (
         <div className="mt-4">
           <EmptyState
@@ -229,7 +239,9 @@ export default async function TransactionsPage({
         </div>
       )}
 
-      <div className="mt-4 flex items-start gap-2 rounded-[10px] border border-border bg-surface-subtle px-3.5 py-3 text-[9.5px] leading-4 text-muted-foreground">
+      </div>
+
+      <div className="mt-4 hidden items-start gap-2 rounded-[10px] border border-border bg-surface-subtle px-3.5 py-3 text-[9.5px] leading-4 text-muted-foreground lg:flex">
         <LockKeyhole className="mt-0.5 h-3.5 w-3.5 shrink-0" />
         <p>
           The wallet ledger is the source of truth for your balance. Corrections

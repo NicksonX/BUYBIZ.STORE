@@ -530,3 +530,189 @@ export const getRecentLedger = cache(getRecentLedgerUncached);
 export const getActivitySeries = cache(getActivitySeriesUncached);
 export const getActiveAllocations = cache(getActiveAllocationsUncached);
 export const getDepositsForUser = cache(getDepositsForUserUncached);
+
+export type WalletTransactionStatus =
+  | "completed"
+  | "pending"
+  | "failed"
+  | "refunded"
+  | "reversed"
+  | "abandoned";
+
+export type WalletTransaction = {
+  id: string;
+  kind: "ledger" | "deposit";
+  title: string;
+  createdAt: Date;
+  amountMinor: number;
+  status: WalletTransactionStatus;
+  reference: string;
+  copyReference: string;
+  method: string | null;
+  feeMinor: number;
+  relatedOrderId: string | null;
+  relatedDepositId: string | null;
+  entryType: string | null;
+};
+
+const LEDGER_TITLES: Record<string, string> = {
+  deposit_credit: "Wallet deposit",
+  purchase_debit: "Proxy purchase",
+  refund_credit: "Wallet refund",
+  admin_credit: "Account credit",
+  admin_debit: "Account debit",
+  transfer_debit: "Transfer out",
+  transfer_credit: "Transfer in",
+  referral_credit: "Referral reward",
+  reversal: "Reversal",
+};
+
+const DEPOSIT_STATUS: Record<string, WalletTransactionStatus> = {
+  initiated: "pending",
+  pending: "pending",
+  failed: "failed",
+  abandoned: "abandoned",
+  reversed: "reversed",
+};
+
+function ledgerStatus(entryType: string): WalletTransactionStatus {
+  if (entryType === "refund_credit") return "refunded";
+  if (entryType === "reversal") return "reversed";
+  return "completed";
+}
+
+export type WalletTransactionQuery = {
+  offset?: number;
+  limit?: number;
+  filter?: "all" | "deposits" | "purchases" | "refunds";
+  query?: string;
+};
+
+export async function getWalletTransactions(
+  userId: string,
+  input: WalletTransactionQuery = {},
+) {
+  const db = await getDb();
+  const limit = Math.min(50, Math.max(1, input.limit ?? 20));
+  const offset = Math.max(0, input.offset ?? 0);
+  const filter = input.filter ?? "all";
+  const term = (input.query ?? "").trim().toLowerCase();
+
+  const [ledger, deposits] = await Promise.all([
+    db.query<{
+      id: string;
+      entryType: string;
+      amountMinor: number;
+      description: string;
+      createdAt: Date;
+      relatedOrderId: string | null;
+      relatedDepositId: string | null;
+      reference: string;
+      orderNumber: string | null;
+    }>(
+      `select l.id, l.entry_type as "entryType", l.amount_minor::bigint as "amountMinor",
+              l.description, l.created_at as "createdAt",
+              l.related_order_id as "relatedOrderId",
+              l.related_deposit_id as "relatedDepositId",
+              l.reference, o.order_number as "orderNumber"
+         from wallet_ledger l
+         left join orders o on o.id = l.related_order_id
+        where l.user_id = $1
+        order by l.created_at desc
+        limit 400`,
+      [userId],
+    ),
+    db.query<{
+      id: string;
+      provider: string;
+      providerReference: string;
+      amountMinor: number;
+      status: string;
+      channel: string | null;
+      gatewayFeeMinor: number;
+      createdAt: Date;
+    }>(
+      `select id, provider, provider_reference as "providerReference",
+              amount_minor::bigint as "amountMinor", status, channel,
+              gateway_fee_minor::bigint as "gatewayFeeMinor", created_at as "createdAt"
+         from deposits
+        where user_id = $1
+        order by created_at desc
+        limit 200`,
+      [userId],
+    ),
+  ]);
+
+  const depositRefs = new Map(
+    deposits.rows.map((row) => [row.id, row.providerReference]),
+  );
+  const items: WalletTransaction[] = [];
+
+  for (const row of ledger.rows) {
+    const entryType = String(row.entryType);
+    const copyReference =
+      (row.relatedDepositId ? depositRefs.get(row.relatedDepositId) : null) ??
+      row.orderNumber ??
+      row.reference;
+    items.push({
+      id: `ledger:${row.id}`,
+      kind: "ledger",
+      title: LEDGER_TITLES[entryType] ?? row.description,
+      createdAt: new Date(row.createdAt),
+      amountMinor: Number(row.amountMinor),
+      status: ledgerStatus(entryType),
+      reference: row.reference,
+      copyReference,
+      method: null,
+      feeMinor: 0,
+      relatedOrderId: row.relatedOrderId,
+      relatedDepositId: row.relatedDepositId,
+      entryType,
+    });
+  }
+
+  for (const row of deposits.rows) {
+    if (row.status === "credited" || row.status === "successful") continue;
+    items.push({
+      id: `deposit:${row.id}`,
+      kind: "deposit",
+      title: "Wallet deposit",
+      createdAt: new Date(row.createdAt),
+      amountMinor: Number(row.amountMinor),
+      status: DEPOSIT_STATUS[row.status] ?? "pending",
+      reference: row.providerReference,
+      copyReference: row.providerReference,
+      method: row.provider === "demo" ? null : row.channel,
+      feeMinor: Number(row.gatewayFeeMinor),
+      relatedOrderId: null,
+      relatedDepositId: row.id,
+      entryType: null,
+    });
+  }
+
+  items.sort((left, right) => right.createdAt.getTime() - left.createdAt.getTime());
+
+  const filtered = items.filter((item) => {
+    if (filter === "deposits") {
+      return item.kind === "deposit" || item.entryType === "deposit_credit";
+    }
+    if (filter === "purchases") return item.entryType === "purchase_debit";
+    if (filter === "refunds") {
+      return item.entryType === "refund_credit" || item.entryType === "reversal";
+    }
+    if (term) {
+      return [item.title, item.copyReference]
+        .join(" ")
+        .toLowerCase()
+        .includes(term);
+    }
+    return true;
+  });
+
+  const page = filtered.slice(offset, offset + limit);
+  return {
+    items: page,
+    nextOffset: offset + limit < filtered.length ? offset + limit : null,
+    total: filtered.length,
+  };
+}

@@ -131,7 +131,7 @@ export function UsdRewardsPanel({
           <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[9px] text-muted-foreground">
             <span>Available {usd(ambassador.availableCents)}</span><span>Pending {usd(ambassador.pendingCents)}</span><span>Paid {usd(ambassador.paidCents)}</span>
           </div>
-          <p className="mt-2 text-[9px] leading-4 text-muted-foreground">{isAmbassador ? "Your Ambassador balance remains separate from campaign rewards." : "Unlock Ambassador status after 10 qualified referrals."} Next $3 payout batch: {ambassadorNextPayoutAt ? date(ambassadorNextPayoutAt) : "scheduled by BUYBIZ"}.</p>
+          <p className="mt-2 text-[9px] leading-4 text-muted-foreground">{isAmbassador ? "Your Ambassador balance remains separate from campaign rewards." : "Unlock Ambassador status after 10 qualified referrals."} The programme is ongoing with no end date. Next $3 payout batch: {ambassadorNextPayoutAt ? date(ambassadorNextPayoutAt) : "scheduled by BUYBIZ"}.</p>
         </section>
       </div>
 
