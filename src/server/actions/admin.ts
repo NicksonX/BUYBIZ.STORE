@@ -1229,6 +1229,7 @@ export async function updateSettingsAction(
   }
   const parsed = settingsSchema.safeParse({
     inventoryDefaultMaxSeats: formData.get("inventoryDefaultMaxSeats"),
+    referralMinProxyDurationDays: formData.get("referralMinProxyDurationDays"),
     allocationSafetyBufferMinutes: formData.get("allocationSafetyBufferMinutes"),
     stockExpiryDefaultDays: formData.get("stockExpiryDefaultDays"),
     depositMin: formData.get("depositMin"),
@@ -1270,6 +1271,10 @@ export async function updateSettingsAction(
   const meta = await getRequestMeta();
   const updates: Array<[string, unknown]> = [
     ["inventory_default_max_seats", parsed.data.inventoryDefaultMaxSeats],
+    [
+      "referral_qualifying_proxy_duration_seconds",
+      parsed.data.referralMinProxyDurationDays * 86_400,
+    ],
     [
       "allocation_safety_buffer_seconds",
       parsed.data.allocationSafetyBufferMinutes * 60,
@@ -1323,6 +1328,8 @@ export async function updateSettingsAction(
     revalidatePath("/");
     revalidatePath("/pricing");
     revalidatePath("/dashboard");
+    revalidatePath("/dashboard/referrals");
+    revalidatePath("/campaigns/[slug]", "page");
     return formSuccess("Settings saved.");
   } catch (error) {
     console.error("[buybiz/admin] settings update failed", error);

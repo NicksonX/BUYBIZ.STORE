@@ -37,6 +37,8 @@ export function AmbassadorPanel({
   qualified,
   required,
   total,
+  pending,
+  rejected,
   availableCents,
   earnedCents,
   minWithdrawalCents,
@@ -46,11 +48,14 @@ export function AmbassadorPanel({
   withdrawals,
   promotedAt,
   nextPayoutAt,
+  minProxyDays,
 }: {
   isAmbassador: boolean;
   qualified: number;
   required: number;
   total: number;
+  pending: number;
+  rejected: number;
   availableCents: number;
   earnedCents: number;
   minWithdrawalCents: number;
@@ -60,6 +65,7 @@ export function AmbassadorPanel({
   withdrawals: PayoutRow[];
   promotedAt: Date | null;
   nextPayoutAt: Date | null;
+  minProxyDays: number;
 }) {
   const [addressState, addressAction, addressPending] = useActionState(
     submitAmbassadorAddressAction,
@@ -91,8 +97,8 @@ export function AmbassadorPanel({
             </h2>
             <p className="mt-1 max-w-[620px] text-[10px] leading-4 text-white/45">
               {isAmbassador
-                ? `You earn $${(commissionCents / 100).toFixed(2)} for every referral that completes the qualifying task, with no cap. USD earnings stay separate from your naira wallet.`
-                : `Refer ${required} friends who complete the qualifying task to unlock Ambassador status and uncapped USD commissions.`}
+                ? `You earn $${(commissionCents / 100).toFixed(2)} for every referral that completes a ${minProxyDays}-day+ proxy purchase and the qualifying deposit, with no cap. USD earnings stay separate from your naira wallet.`
+                : `Refer ${required} friends who complete a ${minProxyDays}-day+ proxy purchase and the qualifying deposit to unlock Ambassador status and uncapped USD commissions.`}
             </p>
           </div>
           <span className="rounded-full border border-white/20 bg-white/[0.04] px-2.5 py-1 text-[9px] font-medium text-white/70">
@@ -103,14 +109,32 @@ export function AmbassadorPanel({
 
       <div className="grid gap-4 p-5 lg:grid-cols-[1.1fr_0.9fr]">
         <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+            <div className="rounded-[10px] border border-border bg-surface-subtle p-3">
+              <p className="text-[9px] text-muted-foreground">Total referrals</p>
+              <p className="tabular mt-1.5 text-[18px] font-semibold">{total}</p>
+            </div>
+            <div className="rounded-[10px] border border-border bg-surface-subtle p-3">
+              <p className="text-[9px] text-muted-foreground">Qualifying</p>
+              <p className="tabular mt-1.5 text-[18px] font-semibold">{qualified}</p>
+            </div>
+            <div className="rounded-[10px] border border-border bg-surface-subtle p-3">
+              <p className="text-[9px] text-muted-foreground">Pending</p>
+              <p className="tabular mt-1.5 text-[18px] font-semibold">{pending}</p>
+            </div>
+            <div className="rounded-[10px] border border-border bg-surface-subtle p-3">
+              <p className="text-[9px] text-muted-foreground">Rejected</p>
+              <p className="tabular mt-1.5 text-[18px] font-semibold">{rejected}</p>
+            </div>
+          </div>
           <div className="grid grid-cols-2 gap-2.5">
             <div className="rounded-[10px] border border-border bg-surface-subtle p-3">
-              <p className="text-[9px] text-muted-foreground">Qualified referrals</p>
-              <p className="tabular mt-1.5 text-[20px] font-semibold">{qualified}/{required}</p>
+              <p className="text-[9px] text-muted-foreground">Qualified / required</p>
+              <p className="tabular mt-1.5 text-[18px] font-semibold">{qualified}/{required}</p>
             </div>
             <div className="rounded-[10px] border border-border bg-surface-subtle p-3">
               <p className="text-[9px] text-muted-foreground">USD available</p>
-              <p className="tabular mt-1.5 text-[20px] font-semibold">{isAmbassador ? availableLabel : "$0.00"}</p>
+              <p className="tabular mt-1.5 text-[18px] font-semibold">{isAmbassador ? availableLabel : "$0.00"}</p>
             </div>
           </div>
           <div>

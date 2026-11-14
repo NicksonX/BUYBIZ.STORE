@@ -8,6 +8,7 @@ import { writeAuditLog } from "@/server/services/audit";
 import { notifyUser } from "@/server/services/notifications";
 import { recordCustomerActivity } from "@/server/services/activity";
 import { notifyAdmin } from "@/server/services/admin-notifications";
+import { qualifyReferralForPurchase } from "@/server/services/referrals";
 import { qualifyReferralForAmbassador } from "@/server/services/ambassador";
 import { evaluateCampaignRewards } from "@/server/services/campaigns";
 
@@ -477,10 +478,15 @@ export async function purchaseProxy(input: {
         [selectedInventoryId],
       );
 
+      await qualifyReferralForPurchase(tx, {
+        refereeId: input.userId,
+        orderId,
+      });
       await qualifyReferralForAmbassador(tx, {
         refereeId: input.userId,
         eventType: "purchase",
         eventRef: orderId,
+        durationSeconds: product.durationSeconds,
       });
       await evaluateCampaignRewards(tx, { customerId: input.userId });
       await notifyUser(tx, {

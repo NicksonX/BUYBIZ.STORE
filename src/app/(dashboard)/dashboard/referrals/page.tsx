@@ -44,7 +44,7 @@ export default async function ReferralsPage({
       <PageHeader
         eyebrow="Referrals"
         title="Invite friends. Build rewards."
-        description="Earn 1,000 BUYBIZ credits when a friend makes a qualifying ₦2,000 deposit. Keep progressing toward Ambassador status, and see every USD campaign reward in one place."
+        description="Earn 1,000 BUYBIZ credits when a friend makes a qualifying proxy purchase. A wallet deposit alone never qualifies. Keep progressing toward Ambassador status, and see every USD campaign reward in one place."
       />
 
       <div className="mt-4">
@@ -65,13 +65,13 @@ export default async function ReferralsPage({
                 <p className="min-w-0 flex-1 truncate rounded-[7px] border border-white/10 bg-white/[0.05] px-3 py-2.5 font-mono text-[10px] text-white/70">{link}</p>
                 <CopyButton value={link} label="Copy link" />
               </div>
-              <p className="mt-4 text-[9.5px] leading-4 text-white/55">Wallet rewards are credited to your BUYBIZ balance. Referral credit does not count toward the ₦2,000 deposit requirement.</p>
+              <p className="mt-4 text-[9.5px] leading-4 text-white/55">Purchase a qualifying proxy subscription to unlock referral rewards. A single verified deposit of ₦2,000 is also required; the proxy purchase is what qualifies the referral.</p>
             </section>
 
             <div className="grid grid-cols-2 gap-2.5">
               {[
                 { label: "People referred", value: data.stats.total, icon: Users },
-                { label: "Pending", value: data.stats.pending, icon: Gift },
+                { label: "Awaiting purchase", value: data.stats.registered + data.stats.pending, icon: Gift },
                 { label: "Rewarded", value: data.stats.rewarded, icon: Gift },
                 { label: "Wallet earned", value: formatNaira(data.stats.earnedMinor), icon: Wallet },
               ].map((item) => (
@@ -85,18 +85,18 @@ export default async function ReferralsPage({
 
           <section className="surface-card mt-3 overflow-hidden rounded-[14px]">
             <div className="flex items-start justify-between gap-3 border-b border-border px-4 py-3">
-              <div><h2 className="text-[12px] font-semibold">Your referrals</h2><p className="mt-0.5 text-[9px] text-muted-foreground">The first qualifying external deposit unlocks the wallet reward.</p></div>
-              <Link href="/dashboard/wallet" className="text-[9.5px] text-muted-foreground hover:text-foreground">Wallet</Link>
+              <div><h2 className="text-[12px] font-semibold">Your referrals</h2><p className="mt-0.5 text-[9px] text-muted-foreground">Purchase a qualifying proxy subscription to unlock referral rewards.</p></div>
+              <Link href="/marketplace" className="text-[9.5px] text-muted-foreground hover:text-foreground">Marketplace</Link>
             </div>
             {data.referrals.length === 0 ? (
-              <EmptyState icon={Gift} title="No referrals yet" description="Share your code with someone who has not opened a BUYBIZ account. Your first wallet reward appears after their qualifying deposit is verified." />
+              <EmptyState icon={Gift} title="No referrals yet" description={`Share your code with someone who has not opened a BUYBIZ account. Your wallet reward appears after their qualifying ${data.minProxyDays}-day+ proxy purchase is verified.`} />
             ) : (
               <div className="divide-y divide-border">
                 {data.referrals.map((referral) => (
                   <div key={referral.id} className="flex flex-wrap items-center justify-between gap-2 px-4 py-3">
                     <div><p className="text-[11px] font-medium">@{referral.refereeUsername}</p><p className="mt-0.5 text-[9px] text-muted-foreground">Joined {formatDate(referral.createdAt)}</p></div>
                     <div className="text-right">
-                      {referral.status === "rewarded" ? (<><Badge tone="success">1,000 credits earned</Badge><p className="mt-1 text-[8.5px] text-muted-foreground">{referral.rewardedAt ? formatDate(referral.rewardedAt) : ""}</p>{referral.ambassadorQualifiedAt ? <p className="mt-1 text-[8px] text-success">Ambassador task complete</p> : null}</>) : referral.status === "pending" ? (<Badge tone="warning">Waiting for ₦2,000 deposit</Badge>) : (<Badge tone="neutral">Not eligible</Badge>)}
+                      {referral.status === "rewarded" ? (<><Badge tone="success">1,000 credits earned</Badge><p className="mt-1 text-[8.5px] text-muted-foreground">{referral.rewardedAt ? formatDate(referral.rewardedAt) : ""}</p>{referral.ambassadorQualifiedAt ? <p className="mt-1 text-[8px] text-success">Ambassador task complete</p> : null}</>) : referral.status === "qualified" ? (<Badge tone="info">Qualifying purchase complete</Badge>) : referral.status === "pending" ? (<><Badge tone="warning">{`Purchase ${data.minProxyDays} days+ to unlock`}</Badge><p className="mt-1 text-[8px] text-muted-foreground">Deposit verified</p></>) : referral.status === "registered" ? (<Badge tone="neutral">Registered · purchase required</Badge>) : (<Badge tone="danger">Rejected</Badge>)}
                     </div>
                   </div>
                 ))}
@@ -106,7 +106,7 @@ export default async function ReferralsPage({
 
           <div className="mt-3 grid gap-2 text-[10px] leading-5 text-muted-foreground sm:grid-cols-3">
             <p className="rounded-[9px] border border-border bg-surface-subtle p-3">One referral per new customer. There is no cap on qualified referrals or wallet rewards.</p>
-            <p className="rounded-[9px] border border-border bg-surface-subtle p-3">The qualifying deposit must be a single verified Paystack deposit of ₦2,000 or more. Internal transfers, refunds and admin credits do not count.</p>
+            <p className="rounded-[9px] border border-border bg-surface-subtle p-3">The qualifying purchase must be a completed proxy subscription of {data.minProxyDays} days or more. A single verified deposit of ₦2,000 is also required; deposits, transfers and refunds alone never qualify.</p>
             <p className="rounded-[9px] border border-border bg-surface-subtle p-3">Self-referrals, duplicate accounts and code abuse are rejected. BUYBIZ may review or reverse rewards tied to abuse.</p>
           </div>
         </>
@@ -127,11 +127,12 @@ export default async function ReferralsPage({
               availableCents={ambassador.availableCents}
               minWithdrawalCents={ambassador.config.withdrawalMinCents}
               nextPayoutAt={ambassador.config.nextPayoutAt}
+              minProxyDays={Math.max(1, Math.ceil(ambassador.config.qualifyingProxyDurationSeconds / 86400))}
             />
           ) : null}
           {ambassador.config.nextPayoutAt ? <p className="rounded-[9px] border border-border bg-surface-subtle px-3 py-2 text-[9px] text-muted-foreground">The $3 Ambassador Programme is <strong className="font-medium text-foreground">ongoing with no end date</strong>. Its next payout batch is <strong className="font-medium text-foreground">{new Intl.DateTimeFormat("en-NG", { day: "numeric", month: "long", year: "numeric", timeZone: "Africa/Lagos" }).format(ambassador.config.nextPayoutAt)}</strong> — a payout date, not a campaign close date. It is separate from the $10 campaign.</p> : null}
           <div className="grid gap-2 text-[10px] leading-5 text-muted-foreground sm:grid-cols-2">
-            <p className="rounded-[9px] border border-border bg-surface-subtle p-3"><strong className="text-foreground">Current campaign:</strong> both the qualifying customer and their referrer earn $10 in USD rewards. The customer must deposit at least ₦2,000 and make an eligible purchase during the campaign window.</p>
+            <p className="rounded-[9px] border border-border bg-surface-subtle p-3"><strong className="text-foreground">Current campaign:</strong> both the qualifying customer and their referrer earn $10 in USD rewards. The customer must deposit at least ₦2,000 and complete a proxy purchase of {data.minProxyDays} days or more during the campaign window.</p>
             <p className="rounded-[9px] border border-border bg-surface-subtle p-3"><strong className="text-foreground">Ambassador programme:</strong> the existing separate programme pays $3 per qualified referral after 10 qualified referrals. Ambassador USD commissions never mix with campaign rewards.</p>
           </div>
           {ambassador.isAmbassador ? (
@@ -140,6 +141,8 @@ export default async function ReferralsPage({
               qualified={ambassador.qualified}
               required={ambassador.config.referralsRequired}
               total={ambassador.total}
+              pending={ambassador.pending}
+              rejected={ambassador.rejected}
               availableCents={ambassador.availableCents}
               earnedCents={ambassador.earnedCents}
               minWithdrawalCents={ambassador.config.withdrawalMinCents}
@@ -149,6 +152,7 @@ export default async function ReferralsPage({
               withdrawals={ambassador.withdrawals}
               promotedAt={ambassador.promotedAt}
               nextPayoutAt={ambassador.config.nextPayoutAt}
+              minProxyDays={Math.max(1, Math.ceil(ambassador.config.qualifyingProxyDurationSeconds / 86400))}
             />
           ) : null}
         </div>

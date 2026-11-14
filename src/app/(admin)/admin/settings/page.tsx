@@ -88,6 +88,9 @@ export default async function AdminSettingsPage() {
               confirmMessage="Apply these platform settings?"
             >
               <div className="grid gap-3 sm:grid-cols-2">
+                <AdminField label="Minimum qualifying proxy duration (days)" htmlFor="referral-min-days" hint="Default 7. Applies to referrals, Ambassador progress and reward campaigns.">
+                  <Input id="referral-min-days" name="referralMinProxyDurationDays" type="number" min={1} max={365} defaultValue={settings.referralMinProxyDurationDays} />
+                </AdminField>
                 <AdminField label="Default maximum seats" htmlFor="default-seats" hint="1-10">
                   <Input id="default-seats" name="inventoryDefaultMaxSeats" type="number" min={1} max={10} defaultValue={settings.inventoryDefaultMaxSeats} />
                 </AdminField>

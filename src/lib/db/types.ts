@@ -263,6 +263,7 @@ export interface AuditLog {
 
 export interface AppSettings {
   inventoryDefaultMaxSeats: number;
+  referralMinProxyDurationDays: number;
   allocationSafetyBufferSeconds: number;
   stockExpiryDefaultDays: number;
   depositMinMinor: number;

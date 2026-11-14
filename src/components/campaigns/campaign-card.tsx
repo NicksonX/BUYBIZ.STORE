@@ -28,9 +28,9 @@ export function CampaignCard({ campaign, compact = false }: { campaign: Campaign
         </div>
         <div className={`mt-4 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[9px] ${active ? "text-white/50" : "text-muted-foreground"}`}>
           <span className="inline-flex items-center gap-1"><CalendarDays className="h-3 w-3" /> {formatCampaignDate(campaign.startsAt)} – {formatCampaignDate(campaign.endsAt)}</span>
-          <span className="inline-flex items-center gap-1"><Users className="h-3 w-3" /> {formatNaira(campaign.qualifyingDepositMinor)} deposit + eligible purchase</span>
+          <span className="inline-flex items-center gap-1"><Users className="h-3 w-3" /> {formatNaira(campaign.qualifyingDepositMinor)} deposit + {campaign.qualifyingProxyDays}-day+ proxy purchase</span>
         </div>
-        {!compact ? <div className={`mt-4 flex flex-col gap-2 border-t pt-3 text-[9.5px] sm:flex-row sm:items-center sm:justify-between ${active ? "border-white/10 text-white/55" : "border-border text-muted-foreground"}`}><span className="inline-flex items-center gap-1.5"><Check className="h-3 w-3 text-success" /> Both sides are rewarded after both steps.</span><Link href={`/campaigns/${campaign.slug}`} className={`inline-flex items-center gap-1 font-medium ${active ? "text-white/80 hover:text-white" : "text-foreground hover:underline"}`}>Campaign details <ArrowUpRight className="h-3 w-3" /></Link></div> : null}
+        {!compact ? <div className={`mt-4 flex flex-col gap-2 border-t pt-3 text-[9.5px] sm:flex-row sm:items-center sm:justify-between ${active ? "border-white/10 text-white/55" : "border-border text-muted-foreground"}`}><span className="inline-flex items-center gap-1.5"><Check className="h-3 w-3 text-success" /> Purchase a proxy subscription of {campaign.qualifyingProxyDays} days or more to unlock eligibility.</span><Link href={`/campaigns/${campaign.slug}`} className={`inline-flex items-center gap-1 font-medium ${active ? "text-white/80 hover:text-white" : "text-foreground hover:underline"}`}>Campaign details <ArrowUpRight className="h-3 w-3" /></Link></div> : null}
       </div>
     </section>
   );

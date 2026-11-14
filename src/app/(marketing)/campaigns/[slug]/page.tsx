@@ -44,7 +44,7 @@ export default async function CampaignPage({ params }: { params: Promise<{ slug:
         <div className="mt-8 grid gap-3 sm:grid-cols-3">
           <div className="rounded-[13px] border border-black/[0.06] bg-white p-4"><CalendarDays className="h-4 w-4 text-[#8C9097]" /><p className="mt-2 text-[9px] uppercase tracking-[0.1em] text-[#8C9097]">Campaign window</p><p className="mt-1 text-[12px] font-semibold">{formatCampaignDate(item.startsAt)} – {formatCampaignDate(item.endsAt)}</p><p className="mt-1 text-[9px] text-[#6E7178]">Africa/Lagos</p></div>
           <div className="rounded-[13px] border border-black/[0.06] bg-white p-4"><Gift className="h-4 w-4 text-[#8C9097]" /><p className="mt-2 text-[9px] uppercase tracking-[0.1em] text-[#8C9097]">Payout date</p><p className="mt-1 text-[12px] font-semibold">{formatCampaignDate(item.payoutAt)}</p><p className="mt-1 text-[9px] text-[#6E7178]">Manual USDT BEP20 review</p></div>
-          <div className="rounded-[13px] border border-black/[0.06] bg-white p-4"><ShieldCheck className="h-4 w-4 text-[#8C9097]" /><p className="mt-2 text-[9px] uppercase tracking-[0.1em] text-[#8C9097]">Qualifying deposit</p><p className="mt-1 text-[12px] font-semibold">{formatNaira(item.qualifyingDepositMinor)}</p><p className="mt-1 text-[9px] text-[#6E7178]">Plus one eligible purchase</p></div>
+          <div className="rounded-[13px] border border-black/[0.06] bg-white p-4"><ShieldCheck className="h-4 w-4 text-[#8C9097]" /><p className="mt-2 text-[9px] uppercase tracking-[0.1em] text-[#8C9097]">Qualifying activity</p><p className="mt-1 text-[12px] font-semibold">{formatNaira(item.qualifyingDepositMinor)} deposit</p><p className="mt-1 text-[9px] text-[#6E7178]">Plus a {item.qualifyingProxyDays}-day+ proxy purchase</p></div>
         </div>
 
         <section className="mt-8 rounded-[15px] border border-black/[0.06] bg-white p-5">
@@ -53,11 +53,11 @@ export default async function CampaignPage({ params }: { params: Promise<{ slug:
             <div className="space-y-3 text-[11px] leading-5 text-[#6E7178]">
               <p className="flex gap-2"><CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#16794A]" /> Register during the campaign using a valid referral link.</p>
               <p className="flex gap-2"><CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#16794A]" /> Make a single verified deposit of at least {formatNaira(item.qualifyingDepositMinor)}.</p>
-              <p className="flex gap-2"><CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#16794A]" /> Complete at least one eligible proxy purchase during the campaign.</p>
+              <p className="flex gap-2"><CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#16794A]" /> Purchase a proxy subscription of {item.qualifyingProxyDays} days or more to unlock eligibility for this reward campaign.</p>
             </div>
             <div className="rounded-[10px] bg-[#F4F4F5] p-3.5 text-[10px] leading-5 text-[#6E7178]">
               <p className="font-semibold text-[#0A0B0D]">Both sides earn $10.</p>
-              <p className="mt-1">The qualifying customer earns $10 and the referrer earns $10, each in their separate USD rewards balance. If there is no valid referrer, only the customer reward is issued.</p>
+              <p className="mt-1">The qualifying customer earns $10 and the referrer earns $10, each in their separate USD rewards balance. The proxy purchase is a real service purchase, with referral rewards as an added benefit — not an entry fee. If there is no valid referrer, only the customer reward is issued.</p>
               <p className="mt-2">Failed, reversed, refunded or fraudulent transactions do not qualify. One customer reward per qualifying customer.</p>
             </div>
           </div>

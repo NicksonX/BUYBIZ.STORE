@@ -1253,14 +1253,21 @@ export async function getAdminReferrals() {
     referrerUsername: string;
     referrerEmail: string;
     refereeUsername: string;
+    qualifyingPurchaseAt: Date | null;
+    qualifyingDurationSeconds: number | null;
+    orderNumber: string | null;
   }>(
     `select r.id, r.status, r.referral_code as code,
             r.reward_amount_minor::bigint as "rewardMinor",
             r.created_at as "createdAt", r.rewarded_at as "rewardedAt",
+            r.qualifying_purchase_at as "qualifyingPurchaseAt",
+            r.qualifying_duration_seconds as "qualifyingDurationSeconds",
+            o.order_number as "orderNumber",
             referrer.username as "referrerUsername",
             referrer.email as "referrerEmail",
             referee.username as "refereeUsername"
        from referrals r
+       left join orders o on o.id = r.qualifying_order_id
        join profiles referrer on referrer.id = r.referrer_id
        join profiles referee on referee.id = r.referee_id
       order by r.created_at desc limit 200`,
@@ -1273,8 +1280,11 @@ export async function getAdminReferrals() {
     referrals,
     stats: {
       total: referrals.length,
+      registered: referrals.filter((row) => row.status === "registered").length,
       pending: referrals.filter((row) => row.status === "pending").length,
+      qualified: referrals.filter((row) => row.status === "qualified").length,
       rewarded: referrals.filter((row) => row.status === "rewarded").length,
+      rejected: referrals.filter((row) => row.status === "rejected").length,
       paidMinor: referrals.reduce((sum, row) => sum + (row.rewardMinor ?? 0), 0),
     },
   };

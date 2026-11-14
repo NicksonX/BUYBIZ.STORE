@@ -13,15 +13,16 @@ import { createTestUser } from "../helpers";
 
 beforeAll(async () => { await getDb(); });
 
-async function productId() {
+async function productId(days: 1 | 7 = 7) {
   const db = await getDb();
-  const existing = await db.query<{ id: string }>(`select id from products where slug='proxy-24-hours' limit 1`);
+  const slug = days === 7 ? "proxy-7-days" : "proxy-24-hours";
+  const existing = await db.query<{ id: string }>(`select id from products where slug=$1 limit 1`, [slug]);
   if (existing.rows[0]) return existing.rows[0].id;
   const id = randomUUID();
   await db.query(
     `insert into products (id,slug,name,description,category,duration_seconds,price_minor,currency,is_active,is_coming_soon)
-     values ($1,'proxy-24-hours','24-Hour Proxy','Test product','proxy',86400,50000,'NGN',true,false)`,
-    [id],
+     values ($1,$2,$3,'Test product','proxy',$4,50000,'NGN',true,false)`,
+    [id, slug, days === 7 ? "7-Day Proxy" : "24-Hour Proxy", days * 86400],
   );
   return id;
 }
@@ -50,6 +51,7 @@ async function qualifyCustomer(options: {
   depositMinor?: number;
   depositedAt?: Date;
   orderedAt?: Date;
+  durationDays?: 1 | 7;
 } = {}) {
   const db = await getDb();
   const customer = await createTestUser("camp");
@@ -57,7 +59,7 @@ async function qualifyCustomer(options: {
     await db.transaction((tx) => attachReferralForSignup(tx, customer.id, "unused"));
     await db.query(`insert into referrals (referrer_id,referee_id,referral_code) values ($1,$2,'TEST') on conflict (referee_id) do nothing`, [options.referrerId, customer.id]);
   }
-  const pid = await productId();
+  const pid = await productId(options.durationDays ?? 7);
   const depositId = randomUUID();
   const reference = `CAMPAIGN-${randomUUID()}`;
   await db.query(
@@ -119,6 +121,17 @@ describe("$10 customer + $10 referrer campaign", () => {
     await qualifyCustomer({ depositMinor: 199_999 });
     const low = await db.query<{ count: number }>(`select count(*)::int as count from campaign_rewards where customer_id=$1`, [customer.id]);
     expect(low.rows[0].count).toBe(2);
+  });
+
+  it("does not reward a 24-hour proxy purchase", async () => {
+    await setupCampaign();
+    const { customer } = await qualifyCustomer({ durationDays: 1 });
+    const db = await getDb();
+    const count = await db.query<{ count: number }>(
+      `select count(*)::int as count from campaign_rewards where customer_id=$1`,
+      [customer.id],
+    );
+    expect(count.rows[0].count).toBe(0);
   });
 
   it("refuses activity outside the campaign window", async () => {

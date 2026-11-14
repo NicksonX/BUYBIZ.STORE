@@ -21,6 +21,7 @@ export function AmbassadorCampaign({
   availableCents,
   minWithdrawalCents,
   nextPayoutAt,
+  minProxyDays,
 }: {
   variant: "dashboard" | "referral";
   isAmbassador: boolean;
@@ -30,6 +31,7 @@ export function AmbassadorCampaign({
   availableCents: number;
   minWithdrawalCents: number;
   nextPayoutAt: Date | null;
+  minProxyDays: number;
 }) {
   const [open, setOpen] = useState(false);
   const referral = variant === "referral";
@@ -63,7 +65,7 @@ export function AmbassadorCampaign({
             <p className="mt-1 text-[9.5px] leading-4 text-white/70">
               {isAmbassador
                 ? `${usd(availableCents)} available in your separate USD balance.`
-                : `Free to join. Qualify ${required} referrals to unlock Ambassador, then earn ${reward} per qualified friend.`}
+                : `Free to join. Qualify ${required} referrals to unlock Ambassador, then earn ${reward} per friend who completes a ${minProxyDays}-day+ proxy purchase.`}
             </p>
             <p className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[8.5px] text-white/60">
               <span className="inline-flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-[#8EE7B8]" /> Ongoing — no end date</span>
@@ -109,8 +111,8 @@ export function AmbassadorCampaign({
             <div className="border-t border-white/10 pt-3">
               <p className="text-[9.5px] leading-4 text-white/70">
                 {isAmbassador
-                  ? `No cap. Every friend who completes the qualifying task adds ${reward} to your USD balance. No wallet credits are used.`
-                  : `Joining is free. Unlock Ambassador at ${required} qualified referrals, then earn ${reward} for every qualified friend. No cap.`}
+                  ? `No cap. Every friend who completes a ${minProxyDays}-day+ proxy purchase and the qualifying deposit adds ${reward} to your USD balance. No wallet credits are used.`
+                  : `Joining is free. Unlock Ambassador at ${required} qualified referrals, then earn ${reward} for every friend who completes a 7-day+ proxy purchase. No cap.`}
               </p>
               <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[8.5px] text-white/60">
                 <span>Share your link</span>

@@ -13,6 +13,7 @@ export type AmbassadorConfig = {
   withdrawalMinCents: number;
   qualifyingTask: "referral_deposit" | "referral_first_purchase";
   qualifyingDepositMinor: number;
+  qualifyingProxyDurationSeconds: number;
   nextPayoutAt: Date | null;
 };
 
@@ -24,7 +25,7 @@ export async function getAmbassadorConfig(tx?: SqlTransaction): Promise<Ambassad
         'ambassador_enabled','ambassador_referrals_required',
         'ambassador_commission_usd_cents','ambassador_withdrawal_min_usd_cents',
         'ambassador_qualifying_task','ambassador_qualifying_deposit_minor',
-        'ambassador_next_payout_at'
+        'ambassador_next_payout_at','referral_qualifying_proxy_duration_seconds'
       )`,
   );
   const map = new Map(result.rows.map((row) => [row.key, row.value]));
@@ -37,6 +38,10 @@ export async function getAmbassadorConfig(tx?: SqlTransaction): Promise<Ambassad
     qualifyingTask:
       task === "referral_first_purchase" ? "referral_first_purchase" : "referral_deposit",
     qualifyingDepositMinor: Math.max(0, Number(map.get("ambassador_qualifying_deposit_minor") ?? 200_000)),
+    qualifyingProxyDurationSeconds: Math.max(
+      86_400,
+      Number(map.get("referral_qualifying_proxy_duration_seconds") ?? 604_800),
+    ),
     nextPayoutAt: (() => {
       const raw = map.get("ambassador_next_payout_at");
       if (typeof raw !== "string" || !raw.trim()) return null;
@@ -145,17 +150,40 @@ export async function qualifyReferralForAmbassador(
     refereeId: string;
     eventType: "deposit" | "purchase";
     eventRef: string;
-    amountMinor?: number;
+    durationSeconds?: number;
   },
 ) {
   const config = await getAmbassadorConfig(tx);
   if (!config.enabled) return null;
-  if (config.qualifyingTask === "referral_deposit") {
-    if (input.eventType !== "deposit") return null;
-    if (Number(input.amountMinor ?? 0) < config.qualifyingDepositMinor) return null;
-  } else if (input.eventType !== "purchase") {
-    return null;
+
+  // A deposit event only checks whether a qualifying purchase already exists.
+  // The purchase requirement can never be replaced by a wallet deposit.
+  let orderId = input.eventRef;
+  if (input.eventType === "deposit") {
+    const existing = await tx.query<{ id: string }>(
+      `select o.id
+         from orders o join products p on p.id = o.product_id
+        where o.user_id = $1 and o.status = 'completed'
+          and p.duration_seconds >= $2
+        order by o.completed_at asc nulls last, o.created_at asc
+        limit 1`,
+      [input.refereeId, config.qualifyingProxyDurationSeconds],
+    );
+    if (!existing.rows[0]) return null;
+    orderId = existing.rows[0].id;
   }
+
+  // Verify the actual completed order and product duration in the database.
+  const orderResult = await tx.query<{ id: string; durationSeconds: number }>(
+    `select o.id, p.duration_seconds as "durationSeconds"
+       from orders o join products p on p.id = o.product_id
+      where o.id = $1 and o.user_id = $2 and o.status = 'completed'
+      limit 1`,
+    [orderId, input.refereeId],
+  );
+  const order = orderResult.rows[0];
+  if (!order) return null;
+  if (Number(order.durationSeconds) < config.qualifyingProxyDurationSeconds) return null;
 
   const referralResult = await tx.query<{
     id: string;
@@ -163,11 +191,13 @@ export async function qualifyReferralForAmbassador(
     referrerEmail: string;
     referrerName: string;
     refereeName: string;
+    qualifyingDepositId: string | null;
   }>(
     `select r.id, r.referrer_id as "referrerId",
             p.email as "referrerEmail",
             coalesce(p.display_name, p.username) as "referrerName",
-            referee.username as "refereeName"
+            referee.username as "refereeName",
+            r.qualifying_deposit_id as "qualifyingDepositId"
        from referrals r
        join profiles p on p.id = r.referrer_id
        join profiles referee on referee.id = r.referee_id
@@ -177,14 +207,15 @@ export async function qualifyReferralForAmbassador(
   );
   const referral = referralResult.rows[0];
   if (!referral) return null;
+  if (config.qualifyingTask === "referral_deposit" && !referral.qualifyingDepositId) return null;
 
   const updated = await tx.query(
     `update referrals
-        set ambassador_qualified_at=now(), ambassador_event_type=$2,
-            ambassador_event_ref=$3, updated_at=now()
+        set ambassador_qualified_at=now(), ambassador_event_type='purchase',
+            ambassador_event_ref=$2, updated_at=now()
       where id=$1 and ambassador_qualified_at is null
       returning id`,
-    [referral.id, input.eventType, input.eventRef],
+    [referral.id, order.id],
   );
   if (!updated.rows[0]) return null;
 
@@ -237,7 +268,12 @@ export async function qualifyReferralForAmbassador(
         action: "ambassador.promoted",
         entityType: "profile",
         entityId: referral.referrerId,
-        metadata: { qualifiedCount, required: config.referralsRequired },
+        metadata: {
+        qualifiedCount,
+        required: config.referralsRequired,
+        qualifyingOrderId: order.id,
+        durationSeconds: order.durationSeconds,
+      },
       });
     }
   }
@@ -283,9 +319,18 @@ export async function getAmbassadorDashboard(userId: string) {
             (select promoted_at from ambassador_profiles where user_id=$1) as "promotedAt"`,
     [userId],
   );
-  const counts = await db.query<{ qualified: number; total: number }>(
+  const counts = await db.query<{
+    qualified: number;
+    total: number;
+    registered: number;
+    pending: number;
+    rejected: number;
+  }>(
     `select
        count(*) filter (where ambassador_qualified_at is not null)::int as qualified,
+       count(*) filter (where status = 'registered')::int as registered,
+       count(*) filter (where status in ('pending','qualified'))::int as pending,
+       count(*) filter (where status = 'rejected')::int as rejected,
        count(*)::int as total
      from referrals where referrer_id=$1`,
     [userId],
@@ -352,6 +397,9 @@ export async function getAmbassadorDashboard(userId: string) {
     promotedAt: profile.rows[0]?.promotedAt ?? null,
     qualified: Number(counts.rows[0]?.qualified ?? 0),
     total: Number(counts.rows[0]?.total ?? 0),
+    registered: Number(counts.rows[0]?.registered ?? 0),
+    pending: Number(counts.rows[0]?.pending ?? 0),
+    rejected: Number(counts.rows[0]?.rejected ?? 0),
     availableCents: Number(balance.rows[0]?.available ?? 0),
     earnedCents: Number(balance.rows[0]?.earned ?? 0),
     withdrawals: withdrawals.rows,

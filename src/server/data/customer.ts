@@ -493,10 +493,16 @@ export async function getReferralDashboard(userId: string) {
     rewardedAt: Date | null;
     refereeUsername: string;
     ambassadorQualifiedAt: Date | null;
+    qualifyingOrderId: string | null;
+    qualifyingPurchaseAt: Date | null;
+    qualifyingDurationSeconds: number | null;
   }>(
     `select r.id, r.status, r.reward_amount_minor::bigint as "rewardMinor",
             r.created_at as "createdAt", r.rewarded_at as "rewardedAt",
             r.ambassador_qualified_at as "ambassadorQualifiedAt",
+            r.qualifying_order_id as "qualifyingOrderId",
+            r.qualifying_purchase_at as "qualifyingPurchaseAt",
+            r.qualifying_duration_seconds as "qualifyingDurationSeconds",
             p.username as "refereeUsername"
        from referrals r
        join profiles p on p.id = r.referee_id
@@ -508,13 +514,27 @@ export async function getReferralDashboard(userId: string) {
     ...row,
     rewardMinor: row.rewardMinor === null ? null : Number(row.rewardMinor),
   }));
+  const duration = await db.query<{ seconds: unknown }>(
+    `select coalesce(
+       (select value from app_settings where key='referral_qualifying_proxy_duration_seconds'),
+       604800
+     ) as seconds`,
+  );
+  const minProxyDays = Math.max(
+    1,
+    Math.ceil(Number(duration.rows[0]?.seconds ?? 604_800) / 86_400),
+  );
   const rewarded = referrals.filter((row) => row.status === "rewarded");
   return {
     code: profile.rows[0]?.referralCode ?? "",
     referrals,
+    minProxyDays,
     stats: {
       total: referrals.length,
+      registered: referrals.filter((row) => row.status === "registered").length,
       pending: referrals.filter((row) => row.status === "pending").length,
+      qualified: referrals.filter((row) => row.status === "qualified").length,
+      rejected: referrals.filter((row) => row.status === "rejected").length,
       rewarded: rewarded.length,
       earnedMinor: rewarded.reduce((sum, row) => sum + (row.rewardMinor ?? 0), 0),
     },

@@ -23,7 +23,7 @@ import {
 import { rateLimit } from "@/lib/security/rate-limit";
 import { getAppSettings } from "@/server/data/settings";
 import { writeAuditLog } from "@/server/services/audit";
-import { qualifyReferralForDeposit } from "@/server/services/referrals";
+import { recordReferralDeposit } from "@/server/services/referrals";
 import { notifyUser } from "@/server/services/notifications";
 import { recordCustomerActivity } from "@/server/services/activity";
 import { qualifyReferralForAmbassador } from "@/server/services/ambassador";
@@ -194,7 +194,7 @@ async function creditVerifiedDeposit(
     ],
   );
 
-  await qualifyReferralForDeposit(tx, {
+  await recordReferralDeposit(tx, {
     id: deposit.id,
     userId: deposit.userId,
     amountMinor: Number(deposit.amountMinor),
@@ -205,7 +205,6 @@ async function creditVerifiedDeposit(
     refereeId: deposit.userId,
     eventType: "deposit",
     eventRef: deposit.id,
-    amountMinor: Number(deposit.amountMinor),
   });
   await evaluateCampaignRewards(tx, { customerId: deposit.userId });
 

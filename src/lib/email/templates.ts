@@ -129,13 +129,13 @@ const DEFAULT_TEMPLATES: Record<
   },
   campaign_customer_reward: {
     subject: "You earned $10 — your BUYBIZ reward is in",
-    preheader: "Your qualifying deposit and purchase counted.",
-    intro: "Your qualifying deposit and eligible purchase earned a campaign reward. It sits in USD Rewards, separate from your BUYBIZ wallet balance.",
+    preheader: "Your qualifying deposit and 7-day+ proxy purchase counted.",
+    intro: "Your qualifying deposit and 7-day-or-longer proxy purchase earned a campaign reward. It sits in USD Rewards, separate from your BUYBIZ wallet balance.",
   },
   campaign_referrer_reward: {
     subject: "You both win — your $10 referral reward is in",
     preheader: "A referral completed both qualifying steps.",
-    intro: "Someone you referred completed the qualifying deposit and purchase during the campaign. Your separate referrer reward has been recorded, and they earned $10 too.",
+    intro: "Someone you referred completed the qualifying deposit and a 7-day-or-longer proxy purchase during the campaign. Your separate referrer reward has been recorded, and they earned $10 too.",
   },
   campaign_payout_requested: {
     subject: "Payout request received — pending review",
@@ -503,7 +503,7 @@ export function renderEmail(input: {
         referrerValue: data.payoutDate ?? "24 December 2026",
         windowLabel: "USD rewards · USDT BEP20 · separate from your naira wallet",
       })}
-      <p style="margin:16px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.7;color:#4E5157;">Your qualifying deposit and eligible purchase counted. Add and verify a BEP20 address in Rewards, and request your payout after ${escapeHtml(data.payoutDate ?? "the scheduled payout date")}.</p>
+      <p style="margin:16px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.7;color:#4E5157;">Your qualifying deposit and 7-day-or-longer proxy purchase counted. Add and verify a BEP20 address in Rewards, and request your payout after ${escapeHtml(data.payoutDate ?? "the scheduled payout date")}.</p>
       ${button("Open USD Rewards", `${input.websiteUrl}/dashboard/referrals?tab=rewards`)}`;
       break;
     case "campaign_referrer_reward":

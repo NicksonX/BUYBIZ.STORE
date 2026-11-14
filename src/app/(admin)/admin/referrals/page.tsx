@@ -18,13 +18,13 @@ export default async function AdminReferralsPage() {
       <PageHeader
         eyebrow="Finance"
         title="Referral rewards"
-        description="A reward is credited only after a referred customer makes one verified external deposit of at least ₦2,000. Internal transfers, refunds and admin credits never qualify."
+        description="A reward is credited only after a referred customer makes one verified deposit of at least ₦2,000 and a completed proxy purchase of 7 days or more. Deposits, transfers, refunds and admin credits alone never qualify."
       />
 
       <div className="mt-4 grid grid-cols-2 gap-2.5 xl:grid-cols-4">
         {[
           ["Referrals", stats.total],
-          ["Pending", stats.pending],
+          ["Awaiting purchase", stats.registered + stats.pending],
           ["Rewarded", stats.rewarded],
           ["Rewards credited", formatNaira(stats.paidMinor, { exact: true })],
         ].map(([label, value]) => (
@@ -53,7 +53,7 @@ export default async function AdminReferralsPage() {
             <table className="w-full min-w-[880px] border-collapse text-left">
               <thead>
                 <tr className="border-b border-border bg-surface-subtle/60">
-                  {["Referrer", "New customer", "Code", "Status", "Reward", "Joined", "Rewarded"].map((label) => (
+                  {["Referrer", "New customer", "Code", "Status", "Qualifying purchase", "Reward", "Joined", "Rewarded"].map((label) => (
                     <th key={label} className="px-4 py-2 text-[8.5px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">{label}</th>
                   ))}
                 </tr>
@@ -70,9 +70,18 @@ export default async function AdminReferralsPage() {
                     <td className="px-4 py-2.5 text-[10px]">{referral.refereeUsername}</td>
                     <td className="px-4 py-2.5 font-mono text-[9px] text-muted-foreground">{referral.code}</td>
                     <td className="px-4 py-2.5">
-                      <Badge tone={referral.status === "rewarded" ? "success" : referral.status === "pending" ? "warning" : "neutral"}>
-                        {referral.status}
+                      <Badge tone={referral.status === "rewarded" ? "success" : referral.status === "rejected" ? "danger" : referral.status === "qualified" ? "info" : "warning"}>
+                        {referral.status === "registered" ? "Purchase required" : referral.status === "pending" ? "Deposit verified" : referral.status}
                       </Badge>
+                    </td>
+                    <td className="px-4 py-2.5 text-[9px] text-muted-foreground">
+                      {referral.qualifyingDurationSeconds ? (
+                        <>
+                          <span className="font-medium text-foreground">{Math.round(referral.qualifyingDurationSeconds / 86400)} days</span>
+                          {referral.qualifyingPurchaseAt ? <p className="mt-0.5">{formatDateTime(referral.qualifyingPurchaseAt)}</p> : null}
+                          {referral.orderNumber ? <p className="mt-0.5 font-mono text-[8px]">{referral.orderNumber}</p> : null}
+                        </>
+                      ) : "Not yet"}
                     </td>
                     <td className="tabular px-4 py-2.5 text-[10px]">
                       {referral.rewardMinor ? formatNaira(referral.rewardMinor, { exact: true }) : "Not yet"}

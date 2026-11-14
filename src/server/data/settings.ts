@@ -5,6 +5,7 @@ import type { AppSettings } from "@/lib/db/types";
 
 const DEFAULTS: AppSettings = {
   inventoryDefaultMaxSeats: 10,
+  referralMinProxyDurationDays: 7,
   allocationSafetyBufferSeconds: 3600,
   stockExpiryDefaultDays: 30,
   depositMinMinor: 150_000,
@@ -53,6 +54,18 @@ export const getAppSettings = cache(async (): Promise<AppSettings> => {
       inventoryDefaultMaxSeats: Math.min(
         10,
         Math.max(1, num("inventory_default_max_seats", DEFAULTS.inventoryDefaultMaxSeats)),
+      ),
+      referralMinProxyDurationDays: Math.min(
+        365,
+        Math.max(
+          1,
+          Math.round(
+            num(
+              "referral_qualifying_proxy_duration_seconds",
+              DEFAULTS.referralMinProxyDurationDays * 86_400,
+            ) / 86_400,
+          ),
+        ),
       ),
       allocationSafetyBufferSeconds: Math.max(
         0,

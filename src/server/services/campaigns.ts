@@ -15,6 +15,8 @@ export type Campaign = {
   customerRewardCents: number;
   referrerRewardCents: number;
   qualifyingDepositMinor: number;
+  qualifyingProxyDurationSeconds: number;
+  qualifyingProxyDays: number;
   eligibleProductSlugs: string[];
   startsAt: Date;
   endsAt: Date;
@@ -31,6 +33,11 @@ const CAMPAIGN_SELECT = `
   customer_reward_usd_cents as "customerRewardCents",
   referrer_reward_usd_cents as "referrerRewardCents",
   qualifying_deposit_minor::bigint as "qualifyingDepositMinor",
+  coalesce(
+    (select (value #>> '{}')::int from app_settings
+      where key = 'referral_qualifying_proxy_duration_seconds'),
+    604800
+  ) as "qualifyingProxyDurationSeconds",
   eligible_product_slugs as "eligibleProductSlugs",
   starts_at as "startsAt", ends_at as "endsAt", payout_at as "payoutAt",
   timezone, terms, published_at as "publishedAt"
@@ -46,6 +53,11 @@ function normalizeCampaign(row: Record<string, unknown>): Campaign {
     customerRewardCents: Number(row.customerRewardCents),
     referrerRewardCents: Number(row.referrerRewardCents),
     qualifyingDepositMinor: Number(row.qualifyingDepositMinor),
+    qualifyingProxyDurationSeconds: Number(row.qualifyingProxyDurationSeconds ?? 604_800),
+    qualifyingProxyDays: Math.max(
+      1,
+      Math.ceil(Number(row.qualifyingProxyDurationSeconds ?? 604_800) / 86_400),
+    ),
     eligibleProductSlugs: Array.isArray(row.eligibleProductSlugs)
       ? row.eligibleProductSlugs.map(String)
       : [],
@@ -190,12 +202,20 @@ export async function evaluateCampaignRewards(
          from orders o join products p on p.id = o.product_id
         where o.user_id = $1 and o.status = 'completed'
           and o.completed_at between $2 and $3
+          and p.duration_seconds >= $6
           and (
             ($4::int = 0 and p.category = 'proxy')
             or p.slug = any($5::text[])
           )
         order by o.completed_at asc limit 1`,
-      [input.customerId, campaign.startsAt, campaign.endsAt, eligible.length, eligible],
+      [
+        input.customerId,
+        campaign.startsAt,
+        campaign.endsAt,
+        eligible.length,
+        eligible,
+        campaign.qualifyingProxyDurationSeconds,
+      ],
     );
     const qualifyingOrder = order.rows[0];
     if (!qualifyingOrder) continue;
@@ -218,7 +238,7 @@ export async function evaluateCampaignRewards(
         userId: input.customerId,
         type: "system",
         title: "You earned a $10 campaign reward",
-        body: `Your qualifying deposit and purchase earned ${usd(campaign.customerRewardCents)} in USD rewards. It becomes available for payout on ${formatCampaignDate(campaign.payoutAt)}.`,
+        body: `Your qualifying deposit and 7-day-or-longer proxy purchase earned ${usd(campaign.customerRewardCents)} in USD rewards. It becomes available for payout on ${formatCampaignDate(campaign.payoutAt)}.`,
         href: "/dashboard/referrals?tab=rewards",
       });
       await queueEmail(tx, {

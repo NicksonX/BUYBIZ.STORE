@@ -93,6 +93,8 @@ export async function createDemoDatabase(options?: {
     "20261116000300_campaign_policy.sql",
     "20261116000400_campaign_emails.sql",
     "20261116000500_email_polish.sql",
+    "20261116000600_referral_proxy_eligibility.sql",
+    "20261116000700_campaign_eligibility_email_copy.sql",
   ]) {
     const referralSql = await readFile(
       path.join(process.cwd(), "supabase/migrations", migration),

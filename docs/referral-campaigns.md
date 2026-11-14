@@ -2,7 +2,7 @@
 
 ## Existing referral / Ambassador programme
 
-- A referral earns **1,000 NGN wallet credits** after the referred customer makes one verified external Paystack deposit of at least **₦2,000**.
+- A referral earns **1,000 NGN wallet credits** after the referred customer makes one verified external Paystack deposit of at least **₦2,000** **and completes a proxy purchase of 7 days or more**. A deposit alone never qualifies.
 - Wallet rewards stay in the immutable NGN `wallet_ledger`; they are not cash-withdrawable.
 - At **10 qualified referrals**, the referrer is automatically promoted to Ambassador.
 - Ambassadors earn **$3 USD** per qualified referral, uncapped, in the separate `ambassador_ledger`.
@@ -14,7 +14,7 @@
 
 - Default campaign: `customer-referrer-10`, 20 November 2026 00:00 through 23 December 2026 23:59, Africa/Lagos.
 - Payout date: 24 December 2026. Rewards become available for campaign payout requests on that date.
-- A qualifying customer must register during the campaign, make one verified Paystack deposit of at least **₦2,000**, and complete one eligible proxy purchase during the campaign.
+- A qualifying customer must register during the campaign, make one verified Paystack deposit of at least **₦2,000**, and complete a proxy purchase of **7 days or more** during the campaign.
 - The customer earns **$10** and a valid referrer earns **$10**, stored as separate `campaign_rewards` rows (`customer` and `referrer`).
 - No valid referrer means the customer still earns $10; no referrer row is generated.
 - Failed, reversed, refunded, or fraudulent activity does not qualify. Duplicate customer rewards are blocked by `(campaign_id, customer_id, role)` and idempotency keys. Duplicate referrer rewards are blocked by the referral/role unique index.

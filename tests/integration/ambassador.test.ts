@@ -20,16 +20,55 @@ beforeEach(async () => {
   // Each test uses unique users; no global inventory is involved.
 });
 
-async function insertReferral(referrerId: string, refereeId: string) {
+async function prepareQualifyingReferral(referrerId: string, refereeId: string) {
   const db = await getDb();
-  return (
+  const referralId = (
     await db.query<{ id: string }>(
-      `insert into referrals (referrer_id, referee_id, referral_code)
-       values ($1,$2,'TESTREF') returning id`,
+      `insert into referrals (referrer_id, referee_id, referral_code, status)
+       values ($1,$2,'TESTREF','registered') returning id`,
       [referrerId, refereeId],
     )
   ).rows[0].id;
+  const product = await db.query<{ id: string; durationSeconds: number }>(
+    `select id, duration_seconds as "durationSeconds" from products
+      where duration_seconds >= 604800 order by duration_seconds asc limit 1`,
+  );
+  const row = product.rows[0];
+  if (!row) throw new Error("No 7-day product seeded");
+  const depositId = randomUUID();
+  await db.query(
+    `insert into deposits (id,user_id,provider,provider_reference,amount_minor,currency,status,credited_at)
+     values ($1,$2,'paystack',$3,200000,'NGN','credited',now())`,
+    [depositId, refereeId, `AMB-${randomUUID()}`],
+  );
+  const orderId = randomUUID();
+  await db.query(
+    `insert into orders (id,order_number,user_id,product_id,amount_minor,currency,status,idempotency_key,created_at,completed_at)
+     values ($1,$2,$3,$4,50000,'NGN','completed',$5,now(),now())`,
+    [orderId, `BZ-AMB-${orderId.slice(0, 8)}`, refereeId, row.id, `amb-${orderId}`],
+  );
+  await db.query(
+    `update referrals set status='pending', qualifying_deposit_id=$2,
+            qualifying_order_id=$3, qualifying_purchase_at=now(),
+            qualifying_duration_seconds=$4, updated_at=now()
+      where id=$1`,
+    [referralId, depositId, orderId, row.durationSeconds],
+  );
+  return { referralId, orderId };
 }
+
+async function qualifyPurchase(refereeId: string, orderId: string) {
+  const db = await getDb();
+  return db.transaction((tx) =>
+    qualifyReferralForAmbassador(tx, {
+      refereeId,
+      eventType: "purchase",
+      eventRef: orderId,
+      durationSeconds: 604800,
+    }),
+  );
+}
+
 
 describe("ambassador promotion and USD commissions", () => {
   it("promotes after 10 qualified referrals without touching NGN wallet credits", async () => {
@@ -38,15 +77,9 @@ describe("ambassador promotion and USD commissions", () => {
     let last: Awaited<ReturnType<typeof qualifyReferralForAmbassador>> = null;
     for (let index = 0; index < 10; index += 1) {
       const referee = await createTestUser(`ref${index}`);
-      const referralId = await insertReferral(referrer.id, referee.id);
-      last = await db.transaction((tx) =>
-        qualifyReferralForAmbassador(tx, {
-          refereeId: referee.id,
-          eventType: "deposit",
-          eventRef: randomUUID(),
-          amountMinor: 300_000,
-        }),
-      );
+      const prepared = await prepareQualifyingReferral(referrer.id, referee.id);
+      const referralId = prepared.referralId;
+      last = await qualifyPurchase(referee.id, prepared.orderId);
       if (index < 9) expect(last?.promoted).toBe(false);
       expect(referralId).toBeTruthy();
     }
@@ -99,27 +132,17 @@ describe("ambassador promotion and USD commissions", () => {
     const db = await getDb();
     for (let index = 0; index < 10; index += 1) {
       const referee = await createTestUser(`dup${index}`);
-      await insertReferral(referrer.id, referee.id);
-      await db.transaction((tx) =>
-        qualifyReferralForAmbassador(tx, {
-          refereeId: referee.id,
-          eventType: "deposit",
-          eventRef: randomUUID(),
-          amountMinor: 300_000,
-        }),
-      );
+      const prepared = await prepareQualifyingReferral(referrer.id, referee.id);
+      await qualifyPurchase(referee.id, prepared.orderId);
     }
-    const firstReferee = await db.query<{ id: string }>(
-      `select referee_id as id from referrals where referrer_id=$1 limit 1`,
+    const firstReferee = await db.query<{ id: string; orderId: string }>(
+      `select referee_id as id, qualifying_order_id as "orderId"
+         from referrals where referrer_id=$1 limit 1`,
       [referrer.id],
     );
-    const duplicate = await db.transaction((tx) =>
-      qualifyReferralForAmbassador(tx, {
-        refereeId: firstReferee.rows[0].id,
-        eventType: "deposit",
-        eventRef: randomUUID(),
-        amountMinor: 300_000,
-      }),
+    const duplicate = await qualifyPurchase(
+      firstReferee.rows[0].id,
+      firstReferee.rows[0].orderId,
     );
     expect(duplicate).toBeNull();
     const count = await db.query<{ count: number }>(
@@ -138,15 +161,8 @@ describe("ambassador USDT payouts", () => {
     await db.query(`update profiles set role='admin' where id=$1`, [admin.id]);
     for (let index = 0; index < 10; index += 1) {
       const referee = await createTestUser(`pay${index}`);
-      await insertReferral(referrer.id, referee.id);
-      await db.transaction((tx) =>
-        qualifyReferralForAmbassador(tx, {
-          refereeId: referee.id,
-          eventType: "deposit",
-          eventRef: randomUUID(),
-          amountMinor: 300_000,
-        }),
-      );
+      const prepared = await prepareQualifyingReferral(referrer.id, referee.id);
+      await qualifyPurchase(referee.id, prepared.orderId);
     }
     const config = await getAmbassadorConfig();
     expect(config.withdrawalMinCents).toBe(1000);
@@ -201,15 +217,8 @@ describe("uncapped ambassador rewards", () => {
     const db = await getDb();
     for (let index = 0; index < 12; index += 1) {
       const referee = await createTestUser(`uncap${index}`);
-      await insertReferral(referrer.id, referee.id);
-      await db.transaction((tx) =>
-        qualifyReferralForAmbassador(tx, {
-          refereeId: referee.id,
-          eventType: "deposit",
-          eventRef: randomUUID(),
-          amountMinor: 300_000,
-        }),
-      );
+      const prepared = await prepareQualifyingReferral(referrer.id, referee.id);
+      await qualifyPurchase(referee.id, prepared.orderId);
     }
     const result = await db.query<{ count: number; total: number }>(
       `select count(*)::int as count, coalesce(sum(amount_usd_cents),0)::int as total
