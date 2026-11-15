@@ -240,8 +240,14 @@ tr:last-child td { border-bottom: 0; }
     ]
   };
   const key = "buybiz_demo_static_user";
-  const getStored = () => { try { return JSON.parse(localStorage.getItem(key) || "null"); } catch { return null; } };
-  const store = (u) => localStorage.setItem(key, JSON.stringify(u));
+  let memoryUser = null;
+  const getStored = () => {
+    try { return JSON.parse(localStorage.getItem(key) || "null") || memoryUser; } catch { return memoryUser; }
+  };
+  const store = (u) => {
+    memoryUser = u;
+    try { localStorage.setItem(key, JSON.stringify(u)); } catch { /* preview hosts may block storage */ }
+  };
   const reply = (message, user) => {
     const t = message.toLowerCase();
     if (/withdraw|125|ambassador|payout/.test(t)) return `Your $125.00 Ambassador withdrawal was marked sent on 15 November 2026 to ${user.withdrawal?.address?.slice(0,8)}… on BEP20. This is the demo record ${user.withdrawal?.reference}. Open Withdrawals → details for the full timeline and copy address.`;
