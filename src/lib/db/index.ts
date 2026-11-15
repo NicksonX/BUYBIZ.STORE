@@ -37,7 +37,7 @@ function createProductionDatabase(): Database {
   const pool = new Pool({
     connectionString,
     max: 1,
-    idleTimeoutMillis: 5_000,
+    idleTimeoutMillis: 2_000,
     connectionTimeoutMillis: 8_000,
     allowExitOnIdle: true,
     statement_timeout: 20_000,
@@ -50,10 +50,26 @@ function createProductionDatabase(): Database {
     console.error("[buybiz/db] idle client error:", error.message);
   });
 
+  function isSessionLimit(error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    return /EMAXCONNSESSION|too many clients/i.test(message);
+  }
+
   return {
     async query(text, params) {
-      const result = await pool.query(text, params as unknown[] | undefined);
-      return { rows: result.rows, rowCount: result.rowCount ?? 0 };
+      // A rolling deployment can briefly leave older instances holding their
+      // pools. Retry read connections when Supabase rejects a new session; the
+      // query never reached the database, so this is safe.
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        try {
+          const result = await pool.query(text, params as unknown[] | undefined);
+          return { rows: result.rows, rowCount: result.rowCount ?? 0 };
+        } catch (error) {
+          if (attempt === 2 || !isSessionLimit(error)) throw error;
+          await new Promise((resolve) => setTimeout(resolve, 250 * (attempt + 1)));
+        }
+      }
+      throw new Error("Database query failed.");
     },
     async transaction(fn) {
       const client = await pool.connect();

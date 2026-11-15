@@ -1,7 +1,7 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
-import { ArrowRight, Landmark, Loader2, ShieldCheck } from "lucide-react";
+import { useActionState, useEffect, useRef, useState } from "react";
+import { ArrowRight, Loader2, ShieldCheck } from "lucide-react";
 import { initializeDepositAction } from "@/server/actions/customer";
 import { initialActionState } from "@/lib/validation/action-state";
 import { Alert } from "@/components/ui/alert";
@@ -28,6 +28,9 @@ export function AddFundsForm({
   );
   const [amount, setAmount] = useState(String(Math.round(minMinor / 100)));
   const [clientReference, setClientReference] = useState("");
+  const [paying, setPaying] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+  const nativeSubmit = useRef(false);
 
   useEffect(() => {
     // The reference only exists in the browser, so it is created after mount.
@@ -39,11 +42,25 @@ export function AddFundsForm({
     if (state.status === "error") {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setClientReference(`BZ-${crypto.randomUUID()}`);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setPaying(false);
+      nativeSubmit.current = false;
     }
   }, [state.status]);
 
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    if (nativeSubmit.current) return;
+    event.preventDefault();
+    setPaying(true);
+    // Give the BUYBIZ loader a visible beat before handing off to checkout.
+    window.setTimeout(() => {
+      nativeSubmit.current = true;
+      formRef.current?.requestSubmit();
+    }, 1200);
+  }
+
   return (
-    <form action={formAction} className="space-y-4">
+    <form ref={formRef} action={formAction} onSubmit={handleSubmit} className="space-y-4">
       <input type="hidden" name="clientReference" value={clientReference} />
       {state.message && state.status === "error" ? (
         <Alert tone="danger">{state.message}</Alert>
@@ -51,7 +68,7 @@ export function AddFundsForm({
 
       {!paymentsEnabled && !demoMode ? (
         <Alert tone="warning" title="Deposits are unavailable">
-          Paystack is not configured for this deployment. Please contact support
+          Payments are unavailable for this deployment. Please contact support
           before attempting a transfer.
         </Alert>
       ) : null}
@@ -98,8 +115,8 @@ export function AddFundsForm({
       <div className="rounded-[9px] border border-border bg-surface-subtle p-3">
         <div className="flex items-center justify-between">
           <span className="flex items-center gap-1.5 text-[10px] font-medium">
-            <Landmark className="h-3.5 w-3.5" />
-            {demoMode ? "Demo checkout" : "Paystack hosted checkout"}
+            <ShieldCheck className="h-3.5 w-3.5" />
+            {demoMode ? "Demo checkout" : "Secure checkout"}
           </span>
           <span className="text-[8.5px] uppercase tracking-[0.1em] text-muted-foreground">
             {demoMode ? "Simulated" : "Secure"}
@@ -107,8 +124,8 @@ export function AddFundsForm({
         </div>
         <p className="mt-1.5 text-[9px] leading-4 text-muted-foreground">
           {demoMode
-            ? "Demo mode uses a clearly labelled local checkout page. No real money moves and no real Paystack charge is created."
-            : "You will be redirected to Paystack's secure checkout. BUYBIZ credits your wallet only after server-side verification. BUYBIZ does not add fees to your deposit."}
+            ? "Demo mode uses a clearly labelled local checkout page. No real money moves and no real charge is created."
+            : "You will be redirected to complete payment securely. BUYBIZ credits your wallet only after server-side verification and does not add fees to your deposit."}
         </p>
         {!demoMode ? (
           <p className="mt-1.5 text-[8.5px] text-muted-foreground/80">
@@ -119,16 +136,16 @@ export function AddFundsForm({
 
       <button
         type="submit"
-        disabled={pending || !clientReference || (!paymentsEnabled && !demoMode)}
+        disabled={pending || paying || !clientReference || (!paymentsEnabled && !demoMode)}
         className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-foreground text-[12px] font-semibold text-background transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-45"
       >
         {pending ? (
           <>
-            <Loader2 className="h-4 w-4 animate-spin" /> Starting secure checkout…
+            <Loader2 className="h-4 w-4 animate-spin" /> Preparing payment…
           </>
         ) : (
           <>
-            {demoMode ? "Continue to demo checkout" : "Continue to Paystack"}
+            {demoMode ? "Pay (demo)" : "Pay"}
             <ArrowRight className="h-4 w-4" />
           </>
         )}
@@ -140,6 +157,16 @@ export function AddFundsForm({
           ? "No real payment. Demo ledger entries are identified as simulated."
           : "Server-side verification · idempotent wallet credit"}
       </p>
+
+      {paying || pending ? (
+        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center gap-4 bg-[#0A0B0D] text-white">
+          <span className="flex h-12 w-12 items-center justify-center rounded-[13px] bg-white text-[22px] font-black text-[#0A0B0D]">B</span>
+          <div className="flex items-center gap-2 text-[12px] font-medium text-white/80">
+            <Loader2 className="h-4 w-4 animate-spin" /> Preparing your secure payment…
+          </div>
+          <p className="text-[10px] text-white/40">You’ll be redirected to complete payment.</p>
+        </div>
+      ) : null}
     </form>
   );
 }

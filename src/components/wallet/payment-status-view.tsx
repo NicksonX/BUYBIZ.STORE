@@ -26,8 +26,8 @@ export async function PaymentStatusView({ reference }: { reference?: string }) {
     return (
       <div className="mx-auto max-w-[560px]">
         <Alert tone="warning" title="Payment reference missing">
-          This page needs the reference from your Paystack payment. Open your
-          wallet to see your transaction history.
+          This page needs the reference from your payment. Open your wallet to
+          see your transaction history.
         </Alert>
         <Link
           href="/dashboard/wallet"
@@ -150,9 +150,9 @@ export async function PaymentStatusView({ reference }: { reference?: string }) {
           </h1>
           <p className="mx-auto mt-1.5 max-w-[400px] text-[11.5px] leading-5 text-muted-foreground">
             {credited
-              ? "Paystack confirmed the payment on our server and your wallet has been credited. The credit can only happen once."
+              ? "Your payment was confirmed securely and your wallet has been credited. The credit can only happen once."
               : pending
-                ? "Paystack has not confirmed this payment yet. Do not treat it as successful, and do not pay twice. You can check the status again."
+                ? "Your payment has not been confirmed yet. Do not treat it as successful, and do not pay twice. You can check the status again."
                 : "This payment was not completed. Your wallet was not credited. You can start a new deposit from your wallet."}
           </p>
 
@@ -169,14 +169,14 @@ export async function PaymentStatusView({ reference }: { reference?: string }) {
                 <span className="font-medium">{meta.label}</span>
               </div>
               <div className="mt-2.5 flex items-center justify-between text-[10.5px]">
-                <span className="text-muted-foreground">Provider</span>
+                <span className="text-muted-foreground">Payment</span>
                 <span className="flex items-center gap-1.5">
                   {deposit.provider === "demo" ? (
                     <>
                       <FlaskConical className="h-3 w-3" /> Demo (simulated)
                     </>
                   ) : (
-                    "Paystack"
+                    "Secure payment"
                   )}
                 </span>
               </div>

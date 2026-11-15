@@ -63,7 +63,7 @@ export default async function DemoCheckoutPage({
           <FlaskConical className="h-4 w-4 shrink-0" />
           <span>
             <strong className="font-semibold">Demo payment simulator.</strong>{" "}
-            This is not Paystack, no card is charged, and no real money moves.
+            This is a demo checkout. No card is charged and no real money moves.
             It exists only to exercise the wallet-credit and webhook logic
             locally.
           </span>
@@ -147,9 +147,9 @@ export default async function DemoCheckoutPage({
         <div className="mt-5 flex max-w-[460px] items-start gap-2 rounded-[10px] border border-border bg-surface-subtle px-3 py-2.5 text-[9px] leading-4 text-muted-foreground">
           <ShieldAlert className="mt-0.5 h-3 w-3 shrink-0" />
           <p>
-            In production this page does not exist. BUYBIZ redirects to Paystack's
-            hosted checkout and verifies the transaction server-side before any
-            wallet credit. The browser callback alone never marks a payment
+            In production this page does not exist. BUYBIZ uses a secure hosted
+            checkout and verifies the transaction server-side before any wallet
+            credit. The browser callback alone never marks a payment
             successful.
           </p>
         </div>

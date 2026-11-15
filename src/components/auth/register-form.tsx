@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { ArrowRight, Loader2 } from "lucide-react";
 import { signupAction } from "@/server/actions/auth";
 import { initialActionState } from "@/lib/validation/action-state";
@@ -21,6 +21,10 @@ export function RegisterForm({
   googleEnabled: boolean;
   demoMode: boolean;
 }) {
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [acceptTerms, setAcceptTerms] = useState(false);
   const [state, formAction, pending] = useActionState(
     signupAction,
     initialActionState,
@@ -68,6 +72,8 @@ export function RegisterForm({
             name="username"
             autoComplete="username"
             placeholder="e.g. ademola_01"
+            value={username}
+            onChange={(event) => setUsername(event.target.value)}
             required
             minLength={3}
             maxLength={24}
@@ -88,6 +94,8 @@ export function RegisterForm({
             inputMode="email"
             autoComplete="email"
             placeholder="you@example.com"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
             required
             aria-invalid={Boolean(state.fieldErrors?.email)}
           />
@@ -104,6 +112,8 @@ export function RegisterForm({
             name="password"
             autoComplete="new-password"
             placeholder="Create a strong password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
             required
             minLength={8}
             aria-invalid={Boolean(state.fieldErrors?.password)}
@@ -115,6 +125,8 @@ export function RegisterForm({
             <input
               type="checkbox"
               name="acceptTerms"
+              checked={acceptTerms}
+              onChange={(event) => setAcceptTerms(event.target.checked)}
               required
               className="mt-0.5 h-3.5 w-3.5 rounded border-black/20 accent-[#0A0B0D]"
             />

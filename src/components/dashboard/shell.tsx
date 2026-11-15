@@ -47,7 +47,7 @@ export function DashboardShell({
             {testPayments ? (
               <div className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-[9px] border border-info/20 bg-info-soft px-3 py-2 text-[11px] leading-4 text-info sm:text-[10.5px]">
                 <FlaskConical className="h-3.5 w-3.5 shrink-0" />
-                <span className="font-semibold">Paystack test mode</span>
+                <span className="font-semibold">Test payment mode</span>
                 <span className="text-info/80">
                   Wallet credits from test payments are test funds. They will not
                   become live money.

@@ -66,8 +66,8 @@ export function FundWalletButton({
           <DialogHeader>
             <DialogTitle>Add money to your wallet</DialogTitle>
             <DialogDescription>
-              Choose an amount, then continue to Paystack's secure checkout. Your
-              wallet is credited only after the server verifies the payment.
+              Choose an amount, then continue to secure checkout. Your wallet is
+              credited only after the server verifies the payment.
             </DialogDescription>
           </DialogHeader>
 

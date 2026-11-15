@@ -277,8 +277,8 @@ export default async function WalletPage() {
               Secure, verified deposits
             </h2>
             <p className="mt-1.5 text-[10px] leading-5 text-white/65">
-              Paystack confirms every payment on our server before your wallet is
-              credited. Duplicate callbacks cannot credit twice.
+              Every payment is confirmed securely on our server before your wallet is
+              credited. Duplicate confirmations cannot credit twice.
             </p>
             <Link
               href="/faq"
@@ -304,8 +304,8 @@ export default async function WalletPage() {
           {demo ? (
             <div className="rounded-[12px] border border-border bg-surface-subtle p-3.5 text-[9px] leading-4 text-muted-foreground">
               You are in demo mode. Deposits are simulated locally and labelled
-              “Simulated” in this history. Production deployments route through
-              Paystack's hosted checkout and are verified server-side.
+              “Simulated” in this history. Production deployments use a secure
+              hosted checkout and verify every payment server-side.
             </div>
           ) : null}
         </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { ArrowRight, Loader2 } from "lucide-react";
 import { loginAction } from "@/server/actions/auth";
 import { initialActionState } from "@/lib/validation/action-state";
@@ -22,6 +22,8 @@ export function LoginForm({
   googleEnabled: boolean;
   demoMode: boolean;
 }) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [state, formAction, pending] = useActionState(loginAction, {
     ...initialActionState,
     ...(initialMessage
@@ -63,6 +65,8 @@ export function LoginForm({
             inputMode="email"
             autoComplete="email"
             placeholder="you@example.com"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
             required
             aria-invalid={Boolean(state.fieldErrors?.email)}
           />
@@ -78,6 +82,8 @@ export function LoginForm({
             name="password"
             autoComplete="current-password"
             placeholder="Your password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
             required
             aria-invalid={Boolean(state.fieldErrors?.password)}
           />

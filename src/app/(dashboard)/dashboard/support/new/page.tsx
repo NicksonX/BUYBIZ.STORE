@@ -40,7 +40,7 @@ export default function NewSupportTicketPage() {
               <ShieldCheck className="h-3.5 w-3.5" /> Never share
             </h2>
             <p className="mt-1 text-[9px] leading-4 text-warning/80">
-              Your password, Paystack secret keys, full card numbers or the
+              Your password, payment secret keys, full card numbers or the
               security answers to your email account. Support does not need
               them.
             </p>
