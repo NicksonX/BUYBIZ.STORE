@@ -185,16 +185,19 @@ export async function evaluateCampaignRewards(
     if (referral && !inWindow(referral.createdAt, campaign)) continue;
     if (referral && referral.referrerId === input.customerId) continue;
 
-    const deposit = await tx.query<{ id: string }>(
-      `select id from deposits
-        where user_id = $1 and provider = 'paystack' and status = 'credited'
-          and amount_minor >= $2
-          and credited_at between $3 and $4
-        order by credited_at asc limit 1`,
-      [input.customerId, campaign.qualifyingDepositMinor, campaign.startsAt, campaign.endsAt],
-    );
-    const qualifyingDeposit = deposit.rows[0];
-    if (!qualifyingDeposit) continue;
+    let qualifyingDeposit: { id: string } | null = null;
+    if (campaign.qualifyingDepositMinor > 0) {
+      const deposit = await tx.query<{ id: string }>(
+        `select id from deposits
+          where user_id = $1 and provider = 'paystack' and status = 'credited'
+            and amount_minor >= $2
+            and credited_at between $3 and $4
+          order by credited_at asc limit 1`,
+        [input.customerId, campaign.qualifyingDepositMinor, campaign.startsAt, campaign.endsAt],
+      );
+      qualifyingDeposit = deposit.rows[0] ?? null;
+      if (!qualifyingDeposit) continue;
+    }
 
     const eligible = normaliseSlugs(campaign.eligibleProductSlugs);
     const order = await tx.query<{ id: string }>(
@@ -227,7 +230,7 @@ export async function evaluateCampaignRewards(
       beneficiaryId: input.customerId,
       role: "customer",
       amountCents: campaign.customerRewardCents,
-      depositId: qualifyingDeposit.id,
+      depositId: qualifyingDeposit?.id ?? null,
       orderId: qualifyingOrder.id,
       referralId: referral?.id ?? null,
       idempotencyKey: `campaign:${campaign.id}:customer:${input.customerId}`,
@@ -238,7 +241,7 @@ export async function evaluateCampaignRewards(
         userId: input.customerId,
         type: "system",
         title: "You earned a $10 campaign reward",
-        body: `Your qualifying deposit and 7-day-or-longer proxy purchase earned ${usd(campaign.customerRewardCents)} in USD rewards. It becomes available for payout on ${formatCampaignDate(campaign.payoutAt)}.`,
+        body: `Your qualifying 7-day-or-longer proxy purchase earned ${usd(campaign.customerRewardCents)} in USD rewards. It becomes available for payout on ${formatCampaignDate(campaign.payoutAt)}.`,
         href: "/dashboard/referrals?tab=rewards",
       });
       await queueEmail(tx, {
@@ -264,7 +267,7 @@ export async function evaluateCampaignRewards(
         beneficiaryId: referral.referrerId,
         role: "referrer",
         amountCents: campaign.referrerRewardCents,
-        depositId: qualifyingDeposit.id,
+        depositId: qualifyingDeposit?.id ?? null,
         orderId: qualifyingOrder.id,
         referralId: referral.id,
         idempotencyKey: `campaign:${campaign.id}:referrer:${input.customerId}`,
@@ -291,7 +294,7 @@ export async function evaluateCampaignRewards(
         metadata: {
           customerId: input.customerId,
           referralId: referral?.id ?? null,
-          depositId: qualifyingDeposit.id,
+          depositId: qualifyingDeposit?.id ?? null,
           orderId: qualifyingOrder.id,
           customerRewardCents: customerReward ? campaign.customerRewardCents : 0,
           referrerRewardCents: awards.some((award) => award.campaignId === campaign.id && award.role === "referrer")
@@ -313,7 +316,7 @@ async function insertReward(
     beneficiaryId: string;
     role: "customer" | "referrer";
     amountCents: number;
-    depositId: string;
+    depositId: string | null;
     orderId: string;
     referralId: string | null;
     idempotencyKey: string;

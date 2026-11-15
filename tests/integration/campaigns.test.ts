@@ -40,7 +40,7 @@ async function setupCampaign(overrides: Partial<{ slug: string; startsAt: Date; 
     `insert into campaigns
        (id,slug,name,description,status,customer_reward_usd_cents,referrer_reward_usd_cents,
         qualifying_deposit_minor,eligible_product_slugs,starts_at,ends_at,payout_at,timezone,terms,published_at)
-     values ($1,$2,'Test Referral Campaign','Test campaign','published',1000,1000,200000,'[]'::jsonb,$3,$4,$5,'Africa/Lagos','Test terms',now())`,
+     values ($1,$2,'Test Referral Campaign','Test campaign','published',1000,1000,0,'[]'::jsonb,$3,$4,$5,'Africa/Lagos','Test terms',now())`,
     [id, slug, startsAt, endsAt, payoutAt],
   );
   return { id, slug, startsAt, endsAt, payoutAt };
@@ -52,6 +52,7 @@ async function qualifyCustomer(options: {
   depositedAt?: Date;
   orderedAt?: Date;
   durationDays?: 1 | 7;
+  withDeposit?: boolean;
 } = {}) {
   const db = await getDb();
   const customer = await createTestUser("camp");
@@ -60,13 +61,15 @@ async function qualifyCustomer(options: {
     await db.query(`insert into referrals (referrer_id,referee_id,referral_code) values ($1,$2,'TEST') on conflict (referee_id) do nothing`, [options.referrerId, customer.id]);
   }
   const pid = await productId(options.durationDays ?? 7);
-  const depositId = randomUUID();
-  const reference = `CAMPAIGN-${randomUUID()}`;
-  await db.query(
-    `insert into deposits (id,user_id,provider,provider_reference,amount_minor,currency,status,verified_at,credited_at,created_at)
-     values ($1,$2,'paystack',$3,$4,'NGN','credited',$5,$5,$5)`,
-    [depositId, customer.id, reference, options.depositMinor ?? 200_000, options.depositedAt ?? new Date()],
-  );
+  if (options.withDeposit !== false) {
+    const depositId = randomUUID();
+    const reference = `CAMPAIGN-${randomUUID()}`;
+    await db.query(
+      `insert into deposits (id,user_id,provider,provider_reference,amount_minor,currency,status,verified_at,credited_at,created_at)
+       values ($1,$2,'paystack',$3,$4,'NGN','credited',$5,$5,$5)`,
+      [depositId, customer.id, reference, options.depositMinor ?? 200_000, options.depositedAt ?? new Date()],
+    );
+  }
   const orderId = randomUUID();
   await db.query(
     `insert into orders (id,order_number,user_id,product_id,amount_minor,currency,status,idempotency_key,created_at,completed_at)
@@ -74,7 +77,7 @@ async function qualifyCustomer(options: {
     [orderId, `BZ-CAMP-${orderId.slice(0, 8)}`, customer.id, pid, `camp-${orderId}`, options.orderedAt ?? new Date()],
   );
   await db.transaction((tx) => evaluateCampaignRewards(tx, { customerId: customer.id }));
-  return { customer, depositId, orderId };
+  return { customer, orderId };
 }
 
 describe("$10 customer + $10 referrer campaign", () => {
@@ -95,6 +98,21 @@ describe("$10 customer + $10 referrer campaign", () => {
     ]));
     const ngn = await db.query<{ total: number }>(`select coalesce(sum(amount_minor),0)::bigint as total from wallet_ledger where user_id in ($1,$2)`, [customer.id, referrer.id]);
     expect(Number(ngn.rows[0].total)).toBe(0);
+  });
+
+  it("awards without a separate wallet deposit on a purchase-only campaign", async () => {
+    const referrer = await createTestUser("campnoref");
+    await setupCampaign();
+    const { customer } = await qualifyCustomer({
+      referrerId: referrer.id,
+      withDeposit: false,
+    });
+    const db = await getDb();
+    const rewards = await db.query<{ count: number }>(
+      `select count(*)::int as count from campaign_rewards where customer_id=$1`,
+      [customer.id],
+    );
+    expect(rewards.rows[0].count).toBe(2);
   });
 
   it("awards only the customer when there is no valid referrer", async () => {

@@ -88,9 +88,9 @@ const DEFAULT_TEMPLATES: Record<
     intro: "Good news: someone signed up with your referral link. Their progress is now visible in your referral dashboard.",
   },
   referral_qualified: {
-    subject: "Your referral made a qualifying deposit",
+    subject: "Your referral made a qualifying purchase",
     preheader: "Your friend has met the referral requirement.",
-    intro: "Your friend has completed the qualifying deposit. We are checking and crediting your referral reward now.",
+    intro: "Your friend completed a qualifying 7-day-or-longer proxy purchase. We are checking and crediting your referral reward now.",
   },
   referral_reward: {
     subject: "Your referral reward is in",
@@ -129,13 +129,13 @@ const DEFAULT_TEMPLATES: Record<
   },
   campaign_customer_reward: {
     subject: "You earned $10 — your BUYBIZ reward is in",
-    preheader: "Your qualifying deposit and 7-day+ proxy purchase counted.",
-    intro: "Your qualifying deposit and 7-day-or-longer proxy purchase earned a campaign reward. It sits in USD Rewards, separate from your BUYBIZ wallet balance.",
+    preheader: "Your qualifying 7-day+ proxy purchase counted.",
+    intro: "Your qualifying 7-day-or-longer proxy purchase earned a campaign reward. It sits in USD Rewards, separate from your BUYBIZ wallet balance.",
   },
   campaign_referrer_reward: {
     subject: "You both win — your $10 referral reward is in",
     preheader: "A referral completed both qualifying steps.",
-    intro: "Someone you referred completed the qualifying deposit and a 7-day-or-longer proxy purchase during the campaign. Your separate referrer reward has been recorded, and they earned $10 too.",
+    intro: "Someone you referred completed a 7-day-or-longer proxy purchase during the campaign. Your separate referrer reward has been recorded, and they earned $10 too.",
   },
   campaign_payout_requested: {
     subject: "Payout request received — pending review",
@@ -160,7 +160,7 @@ const DEFAULT_TEMPLATES: Record<
   deposit_followup: {
     subject: "Ready to try BUYBIZ?",
     preheader: "Your account is set up. Your first deposit is the next step.",
-    intro: "You are all set up. When you are ready, add at least ₦2,000 to your wallet and choose the proxy plan that fits your work.",
+    intro: "You are all set up. When you are ready, add funds to your wallet and choose the proxy plan that fits your work.",
   },
   marketing: {
     subject: "A little something from BUYBIZ",
@@ -415,8 +415,8 @@ export function renderEmail(input: {
     case "referral_qualified":
       content = `${details([
         ["Referral", data.referralName ?? "Your friend"],
-        ["Qualifying deposit", data.amountLabel ?? "₦2,000"],
-        ["Next step", "Your ₦1,000 wallet reward"],
+        ["Qualifying purchase", "7-day+ proxy plan"],
+        ["Reward", data.amountLabel ?? "₦1,000"],
       ])}
       ${button("See your referrals", `${input.websiteUrl}/dashboard/referrals`)}`;
       break;
@@ -503,7 +503,7 @@ export function renderEmail(input: {
         referrerValue: data.payoutDate ?? "24 December 2026",
         windowLabel: "USD rewards · USDT BEP20 · separate from your naira wallet",
       })}
-      <p style="margin:16px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.7;color:#4E5157;">Your qualifying deposit and 7-day-or-longer proxy purchase counted. Add and verify a BEP20 address in Rewards, and request your payout after ${escapeHtml(data.payoutDate ?? "the scheduled payout date")}.</p>
+      <p style="margin:16px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.7;color:#4E5157;">Your qualifying 7-day-or-longer proxy purchase counted. Add and verify a BEP20 address in Rewards, and request your payout after ${escapeHtml(data.payoutDate ?? "the scheduled payout date")}.</p>
       ${button("Open USD Rewards", `${input.websiteUrl}/dashboard/referrals?tab=rewards`)}`;
       break;
     case "campaign_referrer_reward":
@@ -568,7 +568,7 @@ export function renderEmail(input: {
       })}
       ${campaignSteps([
         ["1", "Send your referral link to a friend."],
-        ["2", "They deposit at least ₦2,000 and buy a proxy during the campaign."],
+        ["2", "They purchase an eligible 7-day+ proxy plan during the campaign."],
         ["3", "You both earn $10 in separate USD rewards."],
       ])}
       <p style="margin:4px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:11px;line-height:1.7;color:${BRAND.muted};">One reward per qualifying customer. Failed, refunded or fraudulent activity never counts. No fake participation numbers — only real qualifying referrals.</p>
