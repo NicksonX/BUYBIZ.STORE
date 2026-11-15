@@ -257,6 +257,8 @@ tr:last-child td { border-bottom: 0; }
     return "I can help with your demo wallet, proxy plans, Ambassador earnings, withdrawals and notifications. This educational demo only simulates account activity.";
   };
   const respond = (status, body) => new Response(JSON.stringify(body), { status, headers:{ "Content-Type":"application/json" } });
+  window.__DEMO__ = { demoUser, getStored, store, reply, generatedAtWat };
+  window.__DEMO__ = { demoUser, getStored, store, reply, generatedAtWat };
   const originalFetch = window.fetch.bind(window);
   window.fetch = async (input, init = {}) => {
     const path = new URL(input, location.href).pathname;
@@ -436,8 +438,8 @@ function render() {
   if (state.loading) { app.innerHTML = `<div class="login-wrap"><div class="login-box"><div class="login-card"><div class="brand"><span class="logo">B</span><strong>BUYBIZ</strong></div><p class="sub">Loading demo...</p></div></div></div>`; return; }
   const isAuth = Boolean(state.user);
   const publicRoutes = ["/","/login","/register"];
-  if (!isAuth && !publicRoutes.includes(path)) { history.replaceState({}, "", "#/login"); return render(); }
-  if (isAuth && (path === "/login" || path === "/register")) { history.replaceState({}, "", "#/dashboard"); return render(); }
+  if (!isAuth && !publicRoutes.includes(path)) { location.hash = "#/login"; return render(); }
+  if (isAuth && (path === "/login" || path === "/register")) { location.hash = "#/dashboard"; return render(); }
   if (path === "/") { app.innerHTML = homePage(); return; }
   if (path === "/login") { app.innerHTML = loginPage(); return bindAuth(false); }
   if (path === "/register") { app.innerHTML = loginPage(true); return bindAuth(true); }
@@ -457,13 +459,19 @@ function render() {
 function bindAuth(register) {
   const form = document.getElementById(register ? "register-form" : "login-form");
   if (!form) return;
-  form.addEventListener("submit", async (event) => {
+  form.addEventListener("submit", (event) => {
     event.preventDefault();
     const data = Object.fromEntries(new FormData(form));
-    const response = await fetch(register ? "/api/register" : "/api/login", { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify(data) });
-    const payload = await response.json();
-    if (!response.ok) { alert(payload.message || "Could not sign in."); return; }
-    state.user = payload.user; state.loading = false; history.pushState({}, "", "#/dashboard"); render();
+    if (register) {
+      if (!data.email || !data.name) { alert("Enter your name and email."); return; }
+      const user = { id:"user-"+Date.now(), email:String(data.email).toLowerCase(), name:String(data.name), role:"Customer", joined:"November 2026", balanceMinor:0, ambassador:{ availableCents:0, earnedCents:0, paidCents:0, qualified:0, total:0, pending:0, rejected:0, nextPayout:"20 December 2026" }, withdrawal:null, transactions:[], notifications:[] };
+      window.__DEMO__.store(user); state.user=user; state.loading=false; location.hash="#/dashboard"; render(); return;
+    }
+    const demo = window.__DEMO__.demoUser;
+    if (String(data.email).toLowerCase() === demo.email && data.password === demo.password) {
+      const user = { ...demo, withdrawal: demo.withdrawal ? { ...demo.withdrawal, generatedAtWat: window.__DEMO__.generatedAtWat } : null };
+      window.__DEMO__.store(user); state.user=user; state.loading=false; location.hash="#/dashboard"; render();
+    } else { alert("Incorrect email or password."); }
   });
 }
 
@@ -498,13 +506,12 @@ document.addEventListener("submit", async (event) => {
   if (!text) return;
   messages.insertAdjacentHTML("beforeend", `<div class="msg user">${esc(text)}</div>`);
   input.value = "";
-  const response = await fetch("/api/support", { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ message:text }) });
-  const payload = await response.json();
-  messages.insertAdjacentHTML("beforeend", `<div class="msg bot">${esc(payload.reply || "Please try again.")}</div>`);
+  const localReply = window.__DEMO__.reply(text, state.user);
+  messages.insertAdjacentHTML("beforeend", `<div class="msg bot">${esc(localReply)}</div>`);
   messages.scrollTop = messages.scrollHeight;
 });
 
-fetch("/api/session", { cache:"no-store" }).then(r=>r.json()).then(payload => { state.user = payload.user || null; state.loading=false; render(); }).catch(()=>{ state.loading=false; render(); });
+state.user = window.__DEMO__.getStored(); state.loading=false; render();
 </script>
 </body>
 </html>
