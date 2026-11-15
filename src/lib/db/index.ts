@@ -25,6 +25,19 @@ function createProductionDatabase(): Database {
   const isLocal =
     connectionString.includes("localhost") ||
     connectionString.includes("127.0.0.1");
+
+  // Supabase exposes the transaction pooler on 6543. The 5432 session pooler
+  // caps this project at 15 clients, which cannot support serverless traffic.
+  let resolvedConnectionString = connectionString;
+  try {
+    const parsed = new URL(connectionString);
+    if (!isLocal && parsed.port === "5432") {
+      parsed.port = "6543";
+      resolvedConnectionString = parsed.toString();
+    }
+  } catch {
+    // Keep the original string if it is not a URL.
+  }
   const sslEnabled =
     process.env.DATABASE_SSL !== "false" && !isLocal
       ? { rejectUnauthorized: false }
@@ -35,8 +48,8 @@ function createProductionDatabase(): Database {
   // and release it quickly. Parallel dashboard queries queue on that connection
   // instead of exhausting the database and failing whole pages.
   const pool = new Pool({
-    connectionString,
-    max: 1,
+    connectionString: resolvedConnectionString,
+    max: Number(process.env.DATABASE_POOL_MAX || 5),
     idleTimeoutMillis: 2_000,
     connectionTimeoutMillis: 8_000,
     allowExitOnIdle: true,

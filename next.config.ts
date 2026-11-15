@@ -53,7 +53,16 @@ const nextConfig: NextConfig = {
   experimental: {
     optimizePackageImports: ["lucide-react"],
   },
-  serverExternalPackages: ["@electric-sql/pglite", "pg"],
+  serverExternalPackages: [
+    "@electric-sql/pglite",
+    "pg",
+    "geoip-lite",
+    "https-proxy-agent",
+    "socks-proxy-agent",
+  ],
+  outputFileTracingIncludes: {
+    "/*": ["./node_modules/geoip-lite/data/**/*"],
+  },
   turbopack: {
     root: process.cwd(),
     rules: {
