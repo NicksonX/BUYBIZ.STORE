@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Bot, Loader2, Send, ShieldCheck } from "lucide-react";
 
 type Turn = { role: "user" | "assistant"; content: string };
@@ -19,6 +19,22 @@ export function AiSupportAssistant({ configured = true }: { configured?: boolean
   const [pending, setPending] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [conversationId, setConversationId] = useState<string | null>(null);
+  const [restored, setRestored] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/support/ai/history", { cache: "no-store" })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data: { conversationId?: string | null; turns?: Turn[] } | null) => {
+        if (!cancelled && data) {
+          if (data.turns?.length) setTurns(data.turns);
+          if (data.conversationId) setConversationId(data.conversationId);
+        }
+      })
+      .catch(() => undefined)
+      .finally(() => { if (!cancelled) setRestored(true); });
+    return () => { cancelled = true; };
+  }, []);
 
   async function send(text: string) {
     const clean = text.trim();
@@ -83,7 +99,8 @@ export function AiSupportAssistant({ configured = true }: { configured?: boolean
             support ticket and a human will reply.
           </p>
         ) : null}
-        {turns.length === 0 ? (
+        {!restored ? <p className="text-[9.5px] text-muted-foreground">Restoring your conversation…</p> : null}
+        {restored && turns.length === 0 ? (
           <div>
             <p className="text-[10.5px] leading-5 text-muted-foreground">
               Hello! Welcome to BUYBIZ. I can help with proxy purchases, account

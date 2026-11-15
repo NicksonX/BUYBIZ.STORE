@@ -20,6 +20,7 @@ export function ProxyAiWorkspace({
 }) {
   const [countryCode, setCountryCode] = useState("US");
   const [raw, setRaw] = useState("");
+  const [protocol, setProtocol] = useState<"http" | "https" | "socks4" | "socks5">("socks5");
   const [productSlug, setProductSlug] = useState(products[0]?.slug ?? "proxy-7-days");
   const [accessType, setAccessType] = useState<"shared" | "single">("shared");
   const [expiryDays, setExpiryDays] = useState(30);
@@ -51,7 +52,7 @@ export function ProxyAiWorkspace({
     setError(null);
     setSavedMessage(null);
     try {
-      const result = await parseAndVerifyProxiesAction({ countryCode, raw, productSlug, accessType, expiryDays, maxSeats });
+      const result = await parseAndVerifyProxiesAction({ countryCode, protocol, raw, productSlug, accessType, expiryDays, maxSeats });
       if (!result.ok) {
         setError(result.message);
         return;
@@ -115,7 +116,8 @@ export function ProxyAiWorkspace({
           <span className="text-muted-foreground">{raw.split(/\r?\n/).filter((line) => line.trim()).length} lines</span>
         </div>
 
-        <div className="mt-4 grid gap-2 sm:grid-cols-4">
+        <div className="mt-4 grid gap-2 sm:grid-cols-5">
+          <label className="text-[9.5px] text-muted-foreground">Protocol<select value={protocol} onChange={(event) => setProtocol(event.target.value as typeof protocol)} className="mt-1 h-9 w-full rounded-[8px] border border-border bg-surface px-2 text-[10.5px] text-foreground"><option value="socks5">SOCKS5</option><option value="socks4">SOCKS4</option><option value="http">HTTP</option><option value="https">HTTPS</option></select></label>
           <label className="text-[9.5px] text-muted-foreground">Plan<select value={productSlug} onChange={(event) => setProductSlug(event.target.value)} className="mt-1 h-9 w-full rounded-[8px] border border-border bg-surface px-2 text-[10.5px] text-foreground">{products.map((product) => <option key={product.slug} value={product.slug}>{product.name}</option>)}</select></label>
           <label className="text-[9.5px] text-muted-foreground">Access<select value={accessType} onChange={(event) => { const next = event.target.value as "shared" | "single"; setAccessType(next); if (next === "single") setMaxSeats(1); }} className="mt-1 h-9 w-full rounded-[8px] border border-border bg-surface px-2 text-[10.5px] text-foreground"><option value="shared">Shared</option><option value="single">Single customer</option></select></label>
           <label className="text-[9.5px] text-muted-foreground">Expiry (days)<input type="number" min={1} max={365} value={expiryDays} onChange={(event) => setExpiryDays(Number(event.target.value))} className="mt-1 h-9 w-full rounded-[8px] border border-border bg-surface px-2 text-[10.5px] text-foreground" /></label>

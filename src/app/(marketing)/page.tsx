@@ -194,11 +194,11 @@ export default async function HomePage() {
             fill
             priority
             sizes="55vw"
-            className="object-cover object-[38%_42%] grayscale contrast-[1.04] [clip-path:polygon(12%_0,100%_0,100%_100%,0_100%)]"
+            className="marketing-kenburns object-cover object-[38%_42%] grayscale contrast-[1.04] [clip-path:polygon(12%_0,100%_0,100%_100%,0_100%)]"
           />
           <div className="marketing-hero-fade-left absolute inset-0 bg-[linear-gradient(90deg,#F4F4F5_0%,rgba(244,244,245,0.76)_8%,rgba(244,244,245,0.08)_34%,rgba(244,244,245,0)_62%)]" />
           <div className="marketing-hero-fade-bottom absolute inset-x-0 bottom-0 h-44 bg-[linear-gradient(0deg,#F4F4F5_0%,rgba(244,244,245,0)_100%)]" />
-          <div className="absolute bottom-6 right-[8%] z-10 inline-flex items-center gap-2.5 rounded-full border border-white/35 bg-[#0A0B0D]/55 px-3 py-2 shadow-[0_12px_30px_-18px_rgba(0,0,0,0.65)] backdrop-blur-md">
+          <div className="marketing-float absolute bottom-6 right-[8%] z-10 inline-flex items-center gap-2.5 rounded-full border border-white/35 bg-[#0A0B0D]/55 px-3 py-2 shadow-[0_12px_30px_-18px_rgba(0,0,0,0.65)] backdrop-blur-md">
             <LogoMark tone="onDark" className="h-5 w-5 rounded-[6px]" />
             <span className="text-[9px] font-bold uppercase tracking-[0.16em] text-white/90">
               BUYBIZ
@@ -213,24 +213,24 @@ export default async function HomePage() {
         <div className="relative mx-auto w-full max-w-[1200px] px-5 pb-7 pt-8 sm:px-8 sm:pb-8 sm:pt-10 lg:pb-8 lg:pt-12">
           <div className="grid min-w-0 items-center gap-8 lg:min-h-[500px] lg:grid-cols-[minmax(0,0.98fr)_minmax(0,1.02fr)]">
             <div className="relative z-10 min-w-0 max-w-full sm:max-w-[620px]">
-              <div className="inline-flex items-center gap-2 rounded-full border border-black/[0.08] bg-white/70 px-3.5 py-1.5 text-[10px] font-medium text-[#0A0B0D]/55 shadow-[0_8px_20px_-18px_rgba(0,0,0,0.4)] backdrop-blur">
+              <div className="marketing-rise inline-flex items-center gap-2 rounded-full border border-black/[0.08] bg-white/70 px-3.5 py-1.5 text-[10px] font-medium text-[#0A0B0D]/55 shadow-[0_8px_20px_-18px_rgba(0,0,0,0.4)] backdrop-blur">
                 <span className="h-1.5 w-1.5 rounded-full bg-[#16794A] shadow-[0_0_0_4px_rgba(22,121,74,0.09)]" />
                 Live now: proxy access in naira
               </div>
 
-              <h1 className="mt-5 max-w-full text-[44px] font-semibold leading-[0.92] tracking-[-0.06em] min-[360px]:text-[48px] sm:text-[72px] lg:text-[80px]">
+              <h1 className="marketing-rise marketing-delay-1 mt-5 max-w-full text-[44px] font-semibold leading-[0.92] tracking-[-0.06em] min-[360px]:text-[48px] sm:text-[72px] lg:text-[80px]">
                 Proxy access.
                 <br />
                 <span className="text-[#0A0B0D]/38">Pay in naira.</span>
               </h1>
 
-              <p className="mt-5 max-w-[500px] text-[14px] leading-6 text-[#0A0B0D]/55 sm:mt-6 sm:text-[15px] sm:leading-7">
+              <p className="marketing-rise marketing-delay-2 mt-5 max-w-[500px] text-[14px] leading-6 text-[#0A0B0D]/55 sm:mt-6 sm:text-[15px] sm:leading-7">
                 Buy shared or personal proxy access in naira, pay from your
                 wallet and get your connection details when allocation completes.
                 Clear prices, real expiry and no auto-renewal.
               </p>
 
-              <div className="mt-7 flex flex-col gap-2 sm:flex-row sm:items-center">
+              <div className="marketing-rise marketing-delay-3 mt-7 flex flex-col gap-2 sm:flex-row sm:items-center">
                 <Link
                   href="/register"
                   className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-[#0A0B0D] px-5 text-[12px] font-semibold text-white shadow-[0_18px_35px_-24px_rgba(0,0,0,0.8)] transition-colors hover:bg-[#202226] sm:h-12 sm:px-6"
@@ -250,7 +250,7 @@ export default async function HomePage() {
                 action="/marketplace"
                 method="get"
                 role="search"
-                className="mt-6 flex h-[52px] w-full max-w-[510px] items-center rounded-full border border-black/[0.09] bg-white p-1.5 shadow-[0_18px_40px_-30px_rgba(0,0,0,0.45)] sm:mt-8"
+                className="marketing-rise marketing-delay-4 mt-6 flex h-[52px] w-full max-w-[510px] items-center rounded-full border border-black/[0.09] bg-white p-1.5 shadow-[0_18px_40px_-30px_rgba(0,0,0,0.45)] sm:mt-8"
               >
                 <Search className="ml-3 h-4 w-4 shrink-0 text-[#0A0B0D]/35" aria-hidden="true" />
                 <label htmlFor="site-product-search" className="sr-only">
@@ -271,7 +271,7 @@ export default async function HomePage() {
                 </button>
               </form>
 
-              <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-[10px] text-[#0A0B0D]/45 sm:mt-6">
+              <div className="marketing-rise marketing-delay-5 mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-[10px] text-[#0A0B0D]/45 sm:mt-6">
                 <span className="inline-flex items-center gap-1.5">
                   <Zap className="h-3.5 w-3.5" /> Instant allocation
                 </span>
@@ -294,7 +294,7 @@ export default async function HomePage() {
         <div className="mx-auto w-full max-w-[1200px] px-5 sm:px-8">
           <div className="grid grid-cols-2 overflow-hidden rounded-[18px] border border-black/[0.06] bg-white shadow-[0_30px_70px_-55px_rgba(0,0,0,0.55)] sm:grid-cols-4 sm:divide-x sm:divide-black/[0.06]">
             {trustPoints.map((item) => (
-              <div key={item.title} className="flex gap-3 border-b border-black/[0.05] p-4 last:border-b-0 sm:border-b-0 sm:p-5 [&:nth-child(2)]:border-r-0">
+              <div key={item.title} className="marketing-rise flex gap-3 border-b border-black/[0.05] p-4 last:border-b-0 sm:border-b-0 sm:p-5 [&:nth-child(2)]:border-r-0" style={{ animationDelay: `${120 + trustPoints.indexOf(item) * 80}ms` }}>
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#F4F4F5] text-[#0A0B0D]">
                   <item.icon className="h-4 w-4" strokeWidth={1.7} />
                 </span>

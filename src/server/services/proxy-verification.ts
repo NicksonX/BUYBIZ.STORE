@@ -3,6 +3,7 @@ import dns from "node:dns/promises";
 import https from "node:https";
 import geoip from "geoip-lite";
 import { HttpsProxyAgent } from "https-proxy-agent";
+import { SocksProxyAgent } from "socks-proxy-agent";
 import { isIP } from "node:net";
 import { countryName } from "@/lib/ai/countries";
 import { isPublicIp, type ParsedProxy } from "@/lib/ai/proxy-parser";
@@ -29,7 +30,10 @@ function requestThroughProxy(proxy: ParsedProxy, timeoutMs: number) {
       ? `${encodeURIComponent(proxy.username)}:${encodeURIComponent(proxy.password ?? "")}@`
       : "";
     const agentUrl = `${proxy.protocol}://${auth}${proxy.host}:${proxy.port}`;
-    const agent = new HttpsProxyAgent(agentUrl, { timeout: timeoutMs });
+    const agent =
+      proxy.protocol === "socks4" || proxy.protocol === "socks5"
+        ? new SocksProxyAgent(agentUrl, { timeout: timeoutMs })
+        : new HttpsProxyAgent(agentUrl, { timeout: timeoutMs });
     const request = https.request(
       "https://api.ipify.org?format=json",
       {

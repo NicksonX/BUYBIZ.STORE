@@ -10,6 +10,11 @@ describe("proxy credential parser", () => {
     expect(parseProxyLine("user:secret@proxy.example.com:3128", 2)).toMatchObject({ host: "proxy.example.com", port: 3128, username: "user", password: "secret" });
     expect(parseProxyLine("https://user:secret@proxy.example.com:443", 3)).toMatchObject({ protocol: "https", port: 443 });
   });
+  it("supports SOCKS5 credentials and protocol override", () => {
+    const proxy = parseProxyLine("user:pass@203.0.113.10:1080", 8, "socks5");
+    expect(proxy).toMatchObject({ protocol: "socks5", host: "203.0.113.10", port: 1080, error: null });
+    expect(parseProxyLine("socks5://u:p@proxy.example.com:1080", 9)?.protocol).toBe("socks5");
+  });
   it("parses host:port without authentication", () => {
     expect(parseProxyLine("proxy.example.com:8080", 4)).toMatchObject({ host: "proxy.example.com", port: 8080, username: null, password: null });
   });

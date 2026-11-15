@@ -34,6 +34,7 @@ function previewId(prefix: string) {
 
 export async function parseAndVerifyProxiesAction(input: {
   countryCode: string;
+  protocol: "http" | "https" | "socks4" | "socks5";
   raw: string;
   productSlug: string;
   accessType: "shared" | "single";
@@ -65,7 +66,10 @@ export async function parseAndVerifyProxiesAction(input: {
   );
   if (!product.rows[0]) return { ok: false as const, message: "Choose an active proxy plan." };
 
-  const parsed = parseProxyList(raw, 300);
+  const selectedProtocol = ["http", "https", "socks4", "socks5"].includes(input.protocol)
+    ? input.protocol
+    : "socks5";
+  const parsed = parseProxyList(raw, 300, selectedProtocol);
   const candidates = parsed.parsed;
   if (candidates.length === 0) {
     return { ok: false as const, message: "No valid proxy entries were found. Check the format and try again." };

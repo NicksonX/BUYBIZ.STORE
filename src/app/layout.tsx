@@ -3,6 +3,7 @@ import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import { Toaster } from "@/components/ui/toaster";
 import { NetworkStatus } from "@/components/system/network-status";
+import { FloatingSupport } from "@/components/support/floating-support";
 import "./globals.css";
 
 const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
@@ -88,6 +89,7 @@ export default function RootLayout({
         </a>
         <NetworkStatus />
         {children}
+        <FloatingSupport />
         <Toaster />
       </body>
     </html>

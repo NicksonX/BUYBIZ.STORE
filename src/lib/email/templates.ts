@@ -42,6 +42,8 @@ export type EmailTemplateData = {
   unsubscribeUrl?: string;
   preferencesUrl?: string;
   campaignName?: string;
+  reference?: string;
+  depositDate?: string;
   rewardLabel?: string;
   payoutDate?: string;
   statusLabel?: string;
@@ -78,9 +80,9 @@ const DEFAULT_TEMPLATES: Record<
     intro: "We are glad you are here. BUYBIZ gives you a simple way to buy the proxy access you need, with clear prices and real support.",
   },
   deposit_confirmation: {
-    subject: "Your BUYBIZ wallet is funded",
-    preheader: "Your deposit has been verified.",
-    intro: "Your payment has been verified and added to your BUYBIZ wallet. Here are the details.",
+    subject: "Deposit Successful — BUYBIZ",
+    preheader: "Your payment has been received and credited.",
+    intro: "Your payment has been successfully received and credited to your BUYBIZ wallet. Here are the details.",
   },
   referral_joined: {
     subject: "Someone joined BUYBIZ with your link",
@@ -403,6 +405,8 @@ export function renderEmail(input: {
     case "deposit_confirmation":
       content = `${details([
         ["Amount deposited", data.amountLabel ?? ""],
+        ["Transaction reference", data.reference ?? ""],
+        ["Date", data.depositDate ?? ""],
         ["New wallet balance", data.balanceLabel ?? ""],
         ["Status", "Verified and credited"],
       ])}

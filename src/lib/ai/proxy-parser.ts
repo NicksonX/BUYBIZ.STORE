@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { isIP } from "node:net";
 
-export type ProxyProtocol = "http" | "https" | "socks5";
+export type ProxyProtocol = "http" | "https" | "socks4" | "socks5";
 export type ParsedProxy = {
   lineNumber: number;
   raw: string;
@@ -50,13 +50,17 @@ function fingerprint(protocol: string, host: string, port: number, username: str
     .digest("hex");
 }
 
-export function parseProxyLine(rawLine: string, lineNumber: number): ParsedProxy | null {
+export function parseProxyLine(
+  rawLine: string,
+  lineNumber: number,
+  defaultProtocol: ProxyProtocol = "http",
+): ParsedProxy | null {
   const raw = rawLine.trim();
   if (!raw || raw.startsWith("#")) return null;
 
-  let protocol: ProxyProtocol = "http";
+  let protocol: ProxyProtocol = defaultProtocol;
   let line = raw;
-  const scheme = line.match(/^(https?|socks5):\/\//i);
+  const scheme = line.match(/^(https?|socks4|socks5):\/\//i);
   if (scheme) {
     protocol = scheme[1].toLowerCase() as ProxyProtocol;
     line = line.slice(scheme[0].length);
@@ -118,8 +122,6 @@ export function parseProxyLine(rawLine: string, lineNumber: number): ParsedProxy
   if (!error && (username !== null || password !== null) && (!username || !password)) {
     error = "Username and password must be supplied together.";
   }
-  if (!error && protocol === "socks5") error = "SOCKS5 is parsed but not verifiable by this deployment.";
-
   return {
     lineNumber,
     raw,
@@ -133,14 +135,18 @@ export function parseProxyLine(rawLine: string, lineNumber: number): ParsedProxy
   };
 }
 
-export function parseProxyList(text: string, maxEntries = 500) {
+export function parseProxyList(
+  text: string,
+  maxEntries = 500,
+  defaultProtocol: ProxyProtocol = "http",
+) {
   const lines = text.replace(/\r\n?/g, "\n").split("\n");
   const parsed: ParsedProxy[] = [];
   const malformed: ParsedProxy[] = [];
   const seen = new Set<string>();
   let duplicates = 0;
   for (let index = 0; index < lines.length; index += 1) {
-    const item = parseProxyLine(lines[index], index + 1);
+    const item = parseProxyLine(lines[index], index + 1, defaultProtocol);
     if (!item) continue;
     if (parsed.length + malformed.length >= maxEntries) break;
     if (!item.error && seen.has(item.fingerprint)) {

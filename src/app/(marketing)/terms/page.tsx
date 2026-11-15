@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { LegalPage, type LegalSection } from "@/components/marketing/legal-page";
 
 export const metadata: Metadata = {
-  title: "Terms of service (draft)",
+  title: "Terms of service",
   description:
-    "Draft BUYBIZ terms covering accounts, wallet credit, proxy access, shared capacity, expiry, refunds and acceptable use.",
+    "BUYBIZ terms covering accounts, wallet credit, proxy access, shared capacity, expiry, refunds and acceptable use.",
 };
 
 const sections: LegalSection[] = [
@@ -14,14 +14,10 @@ const sections: LegalSection[] = [
     content: (
       <>
         <p>
-          These terms describe the intended rules for using BUYBIZ, a
-          Nigeria-focused digital marketplace operated under the BUYBIZ brand.
-          The legal entity, registered address and final governing-law provisions
-          must be supplied and reviewed before launch.
-        </p>
-        <p>
-          By creating an account or using the service, you agree to these terms
-          and the Privacy Notice. If you do not agree, do not use BUYBIZ.
+          These terms govern your use of BUYBIZ, a Nigeria-focused digital
+          marketplace operated under the BUYBIZ brand. By using BUYBIZ, you agree
+          to these terms and the Privacy Notice. If you do not agree, do not use
+          the service.
         </p>
       </>
     ),
@@ -283,7 +279,7 @@ const sections: LegalSection[] = [
         </p>
         <p>
           BUYBIZ is not liable for indirect or consequential loss, or for a
-          customer's misuse of credentials. Nothing in these draft terms excludes
+          customer's misuse of credentials. Nothing in these terms excludes
           liability that cannot lawfully be excluded. The final liability,
           consumer-rights and dispute-resolution provisions require legal review.
         </p>
@@ -298,13 +294,12 @@ const sections: LegalSection[] = [
         <p>
           Questions about these terms can be sent through the{" "}
           <a href="/contact">BUYBIZ contact page</a>. Official legal entity
-          details and a formal notices address must be added before launch.
+          details and formal notices are available through the BUYBIZ contact page.
         </p>
         <p>
-          These terms are intended to be governed by the laws of the Federal
-          Republic of Nigeria. This governing-law statement is subject to legal
-          review and does not replace mandatory consumer protections that apply to
-          you.
+          These terms are governed by the laws of the Federal Republic of
+          Nigeria. Mandatory consumer protections that apply to you are not
+          excluded.
         </p>
       </>
     ),
@@ -316,8 +311,9 @@ export default function TermsPage() {
     <LegalPage
       kind="Terms"
       title="Terms of service."
-      description="The intended rules for accounts, wallet credit, proxy allocation, shared capacity, expiry and refunds. This is a draft, not a final legal document."
-      updated="November 2026"
+      description="The rules for accounts, wallet credit, proxy allocation, shared capacity, expiry, refunds and acceptable use."
+      updated="15 November 2026"
+      status="approved"
       sections={sections}
     />
   );

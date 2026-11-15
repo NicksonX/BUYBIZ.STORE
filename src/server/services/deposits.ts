@@ -230,6 +230,11 @@ async function creditVerifiedDeposit(
         name: depositor.rows[0].name,
         amountLabel: money.format(Number(deposit.amountMinor) / 100),
         balanceLabel: money.format(nextBalance / 100),
+        reference: deposit.providerReference,
+        depositDate: new Intl.DateTimeFormat("en-NG", {
+          day: "numeric", month: "long", year: "numeric",
+          hour: "numeric", minute: "2-digit", timeZone: "Africa/Lagos",
+        }).format(new Date()),
       },
       dedupeKey: `deposit_confirmation:${deposit.id}`,
     });
@@ -238,11 +243,11 @@ async function creditVerifiedDeposit(
   await notifyUser(tx, {
     userId: deposit.userId,
     type: "deposit",
-    title: deposit.provider === "demo" ? "Demo wallet top-up credited" : "Wallet funded",
+    title: deposit.provider === "demo" ? "Demo wallet top-up credited" : "Payment Received!",
     body:
       deposit.provider === "demo"
         ? "Your simulated demo deposit was credited. No real money was involved."
-        : "Your payment was verified with Paystack and credited to your BUYBIZ wallet.",
+        : `Your deposit of ${new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN" }).format(Number(deposit.amountMinor) / 100)} has been successfully received and credited to your BUYBIZ wallet. Reference: ${deposit.providerReference}. New balance: ${new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN" }).format(nextBalance / 100)}.`,
     href: "/dashboard/wallet",
   });
 

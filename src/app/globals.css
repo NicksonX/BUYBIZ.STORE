@@ -975,3 +975,37 @@ nextjs-portal {
   background-color: #111216;
   border-color: rgb(255 255 255 / 0.1);
 }
+
+/* Homepage motion: short, purposeful entrances only. Content remains readable
+   without JavaScript and is disabled for prefers-reduced-motion. */
+@keyframes marketing-rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes marketing-soft-in {
+  from { opacity: 0; transform: scale(0.985); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes marketing-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+@keyframes marketing-kenburns {
+  from { transform: scale(1.02); }
+  to { transform: scale(1.06); }
+}
+.marketing-rise { animation: marketing-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.marketing-soft-in { animation: marketing-soft-in 0.65s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.marketing-delay-1 { animation-delay: 80ms; }
+.marketing-delay-2 { animation-delay: 160ms; }
+.marketing-delay-3 { animation-delay: 240ms; }
+.marketing-delay-4 { animation-delay: 320ms; }
+.marketing-delay-5 { animation-delay: 400ms; }
+.marketing-float { animation: marketing-float 5s ease-in-out infinite; }
+.marketing-kenburns { animation: marketing-kenburns 14s ease-out both; }
+.marketing-hover-lift { transition: transform 220ms ease, box-shadow 220ms ease; }
+.marketing-hover-lift:hover { transform: translateY(-3px); }
+@media (prefers-reduced-motion: reduce) {
+  .marketing-rise, .marketing-soft-in, .marketing-float, .marketing-kenburns,
+  .marketing-hover-lift { animation: none !important; transition: none !important; }
+}
