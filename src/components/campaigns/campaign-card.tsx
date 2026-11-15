@@ -36,15 +36,15 @@ export function CampaignCard({
   return (
     <section className="relative overflow-hidden rounded-[22px] border border-black/[0.08] bg-white text-[#0A0B0D] shadow-[0_24px_60px_-48px_rgba(0,0,0,0.35)]">
       <div className="pointer-events-none absolute -right-24 -top-28 h-72 w-72 rounded-full border border-black/[0.045]" />
-      <div className={`relative ${compact ? "p-5 sm:p-6" : "p-6 sm:p-8"}`}>
-        <p className="flex items-center gap-2.5 text-[11px] font-medium uppercase tracking-[0.16em] text-[#6E7178]">
-          <Gift className="h-[18px] w-[18px]" strokeWidth={1.7} />
+      <div className={`relative ${compact ? "p-6 sm:p-8" : "p-7 sm:p-10"}`}>
+        <p className="flex items-center gap-2.5 text-[12px] font-medium uppercase tracking-[0.18em] text-[#6E7178]">
+          <Gift className="h-5 w-5" strokeWidth={1.7} />
           Referral campaign
         </p>
 
         <h2
-          className={`mt-5 max-w-[760px] font-semibold leading-[1.03] tracking-[-0.045em] ${
-            compact ? "text-[26px] sm:text-[30px]" : "text-[28px] sm:text-[34px]"
+          className={`mt-6 max-w-[800px] font-semibold leading-[1.02] tracking-[-0.05em] ${
+            compact ? "text-[32px] sm:text-[38px]" : "text-[36px] sm:text-[44px]"
           }`}
         >
           <Link
@@ -55,36 +55,36 @@ export function CampaignCard({
           </Link>
         </h2>
 
-        <p className="mt-4 max-w-[680px] text-[13px] leading-6 text-[#5F6268] sm:text-[14px] sm:leading-7">
+        <p className="mt-5 max-w-[720px] text-[14px] leading-7 text-[#5F6268] sm:text-[16px] sm:leading-8">
           {campaign.description}
         </p>
 
         <span
-          className={`mt-5 inline-flex items-center rounded-full border px-3.5 py-1.5 text-[11px] font-medium ${statusClass}`}
+          className={`mt-6 inline-flex items-center rounded-full border px-4 py-2 text-[12px] font-medium ${statusClass}`}
         >
           {label}
         </span>
 
-        <div className="mt-7 grid grid-cols-2 gap-3">
-          <div className="rounded-[14px] border border-black/[0.08] bg-[#FBFBFC] p-5 sm:p-6">
-            <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-[#7A7D83] sm:text-[11px]">
+        <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-4">
+          <div className="rounded-[16px] border border-black/[0.08] bg-[#FBFBFC] p-5 sm:p-7">
+            <p className="text-[11px] font-medium uppercase tracking-[0.13em] text-[#7A7D83] sm:text-[12px]">
               Customer reward
             </p>
             <p
-              className={`tabular mt-3 font-semibold leading-none tracking-[-0.05em] ${
-                compact ? "text-[36px] sm:text-[40px]" : "text-[40px] sm:text-[46px]"
+              className={`tabular mt-4 font-semibold leading-none tracking-[-0.055em] ${
+                compact ? "text-[42px] sm:text-[50px]" : "text-[46px] sm:text-[58px]"
               }`}
             >
               {reward(campaign.customerRewardCents)}
             </p>
           </div>
-          <div className="rounded-[14px] border border-black/[0.08] bg-[#FBFBFC] p-5 sm:p-6">
-            <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-[#7A7D83] sm:text-[11px]">
+          <div className="rounded-[16px] border border-black/[0.08] bg-[#FBFBFC] p-5 sm:p-7">
+            <p className="text-[11px] font-medium uppercase tracking-[0.13em] text-[#7A7D83] sm:text-[12px]">
               Referrer reward
             </p>
             <p
-              className={`tabular mt-3 font-semibold leading-none tracking-[-0.05em] ${
-                compact ? "text-[36px] sm:text-[40px]" : "text-[40px] sm:text-[46px]"
+              className={`tabular mt-4 font-semibold leading-none tracking-[-0.055em] ${
+                compact ? "text-[42px] sm:text-[50px]" : "text-[46px] sm:text-[58px]"
               }`}
             >
               {reward(campaign.referrerRewardCents)}
@@ -92,14 +92,14 @@ export function CampaignCard({
           </div>
         </div>
 
-        <div className="mt-7 space-y-2.5 text-[12.5px] leading-5 text-[#5F6268] sm:text-[13px]">
-          <p className="flex items-center gap-2.5">
-            <CalendarDays className="h-4 w-4 shrink-0 text-[#7A7D83]" strokeWidth={1.8} />
+        <div className="mt-8 space-y-3 text-[14px] leading-6 text-[#5F6268] sm:text-[15px]">
+          <p className="flex items-center gap-3">
+            <CalendarDays className="h-5 w-5 shrink-0 text-[#7A7D83]" strokeWidth={1.8} />
             {formatCampaignDate(campaign.startsAt)} – {formatCampaignDate(campaign.endsAt)}
           </p>
-          <p className="flex items-center gap-2.5">
-            <Users className="h-4 w-4 shrink-0 text-[#7A7D83]" strokeWidth={1.8} />
-            Fund and purchase at least an eligible {campaign.qualifyingProxyDays}-day+ proxy plan.
+          <p className="flex items-center gap-3">
+            <Users className="h-5 w-5 shrink-0 text-[#7A7D83]" strokeWidth={1.8} />
+            Fund and purchase at least an eligible {campaign.qualifyingProxyDays}-day + proxy plan.
           </p>
         </div>
       </div>

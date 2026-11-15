@@ -14,7 +14,7 @@
 
 - Default campaign: `customer-referrer-10`, 20 November 2026 00:00 through 23 December 2026 23:59, Africa/Lagos.
 - Payout date: 24 December 2026. Rewards become available for campaign payout requests on that date.
-- A qualifying customer must register during the campaign, make one verified Paystack deposit of at least **₦2,000**, and complete a proxy purchase of **7 days or more** during the campaign.
+- A qualifying customer must register during the campaign and complete a proxy purchase of **7 days or more** during the campaign. The $10 campaign is **purchase-only**; no separate fixed deposit threshold is required (the customer must still fund the wallet enough to buy the plan).
 - The customer earns **$10** and a valid referrer earns **$10**, stored as separate `campaign_rewards` rows (`customer` and `referrer`).
 - No valid referrer means the customer still earns $10; no referrer row is generated.
 - Failed, reversed, refunded, or fraudulent activity does not qualify. Duplicate customer rewards are blocked by `(campaign_id, customer_id, role)` and idempotency keys. Duplicate referrer rewards are blocked by the referral/role unique index.
