@@ -1,36 +1,107 @@
 import Link from "next/link";
-import { ArrowUpRight, CalendarDays, Check, Gift, Users } from "lucide-react";
-import { campaignPhase, formatCampaignDate, type Campaign } from "@/server/services/campaigns";
-import { formatNaira } from "@/lib/utils";
+import { CalendarDays, Gift, Users } from "lucide-react";
+import {
+  campaignPhase,
+  formatCampaignDate,
+  type Campaign,
+} from "@/server/services/campaigns";
 
-function reward(value: number) { return `$${(value / 100).toFixed(0)}`; }
+function reward(value: number) {
+  return `$${(value / 100).toFixed(0)}`;
+}
 
-export function CampaignCard({ campaign, compact = false }: { campaign: Campaign; compact?: boolean }) {
+export function CampaignCard({
+  campaign,
+  compact = false,
+}: {
+  campaign: Campaign;
+  compact?: boolean;
+}) {
   const phase = campaignPhase(campaign);
-  const active = phase === "active";
-  const ended = phase === "ended";
-  const label = active ? "Active now" : ended ? "Completed" : phase === "paused" ? "Paused" : "Coming soon";
+  const label =
+    phase === "active"
+      ? "Active now"
+      : phase === "ended"
+        ? "Completed"
+        : phase === "paused"
+          ? "Paused"
+          : "Coming soon";
+  const statusClass =
+    phase === "active"
+      ? "border-[#B9E8CC] bg-[#ECF8F1] text-[#16794A]"
+      : phase === "ended" || phase === "paused"
+        ? "border-[#E3E4E7] bg-[#F6F6F7] text-[#6E7178]"
+        : "border-[#F1D49A] bg-[#FFF7E8] text-[#946200]";
+
   return (
-    <section className={`relative overflow-hidden rounded-[16px] border ${active ? "border-[#ff5a36]/30 bg-[#0A0B0D] text-white" : "border-border bg-surface"}`}>
-      <div className="absolute -right-16 -top-20 h-52 w-52 rounded-full border border-current opacity-[0.06]" />
-      <div className="relative p-4 sm:p-5">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <p className={`flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-[0.15em] ${active ? "text-[#ff8b68]" : "text-muted-foreground"}`}><Gift className="h-3 w-3" /> Referral campaign</p>
-            <h2 className={`mt-2 text-[19px] font-semibold tracking-[-0.035em] ${active ? "text-white" : "text-foreground"}`}>{campaign.name}</h2>
-            <p className={`mt-1.5 max-w-[620px] text-[10.5px] leading-5 ${active ? "text-white/55" : "text-muted-foreground"}`}>{campaign.description}</p>
+    <section className="relative overflow-hidden rounded-[22px] border border-black/[0.08] bg-white text-[#0A0B0D] shadow-[0_24px_60px_-48px_rgba(0,0,0,0.35)]">
+      <div className="pointer-events-none absolute -right-24 -top-28 h-72 w-72 rounded-full border border-black/[0.045]" />
+      <div className={`relative ${compact ? "p-5 sm:p-6" : "p-6 sm:p-8"}`}>
+        <p className="flex items-center gap-2.5 text-[11px] font-medium uppercase tracking-[0.16em] text-[#6E7178]">
+          <Gift className="h-[18px] w-[18px]" strokeWidth={1.7} />
+          Referral campaign
+        </p>
+
+        <h2
+          className={`mt-5 max-w-[760px] font-semibold leading-[1.03] tracking-[-0.045em] ${
+            compact ? "text-[26px] sm:text-[30px]" : "text-[28px] sm:text-[34px]"
+          }`}
+        >
+          <Link
+            href={`/campaigns/${campaign.slug}`}
+            className="transition-colors hover:text-[#3F4146]"
+          >
+            {campaign.name}
+          </Link>
+        </h2>
+
+        <p className="mt-4 max-w-[680px] text-[13px] leading-6 text-[#5F6268] sm:text-[14px] sm:leading-7">
+          {campaign.description}
+        </p>
+
+        <span
+          className={`mt-5 inline-flex items-center rounded-full border px-3.5 py-1.5 text-[11px] font-medium ${statusClass}`}
+        >
+          {label}
+        </span>
+
+        <div className="mt-7 grid grid-cols-2 gap-3">
+          <div className="rounded-[14px] border border-black/[0.08] bg-[#FBFBFC] p-5 sm:p-6">
+            <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-[#7A7D83] sm:text-[11px]">
+              Customer reward
+            </p>
+            <p
+              className={`tabular mt-3 font-semibold leading-none tracking-[-0.05em] ${
+                compact ? "text-[36px] sm:text-[40px]" : "text-[40px] sm:text-[46px]"
+              }`}
+            >
+              {reward(campaign.customerRewardCents)}
+            </p>
           </div>
-          <span className={`rounded-full border px-2.5 py-1 text-[9px] font-medium ${active ? "border-[#ff5a36]/30 bg-[#ff5a36]/10 text-[#ffb197]" : ended ? "border-border bg-surface-subtle text-muted-foreground" : "border-warning/25 bg-warning-soft text-warning"}`}>{label}</span>
+          <div className="rounded-[14px] border border-black/[0.08] bg-[#FBFBFC] p-5 sm:p-6">
+            <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-[#7A7D83] sm:text-[11px]">
+              Referrer reward
+            </p>
+            <p
+              className={`tabular mt-3 font-semibold leading-none tracking-[-0.05em] ${
+                compact ? "text-[36px] sm:text-[40px]" : "text-[40px] sm:text-[46px]"
+              }`}
+            >
+              {reward(campaign.referrerRewardCents)}
+            </p>
+          </div>
         </div>
-        <div className="mt-4 grid grid-cols-2 gap-2 sm:max-w-[430px]">
-          <div className={`rounded-[10px] border p-3 ${active ? "border-white/10 bg-white/[0.05]" : "border-border bg-surface-subtle"}`}><p className={`text-[8.5px] uppercase tracking-[0.1em] ${active ? "text-white/45" : "text-muted-foreground"}`}>Customer reward</p><p className={`tabular mt-1 text-[22px] font-semibold ${active ? "text-white" : "text-foreground"}`}>{reward(campaign.customerRewardCents)}</p></div>
-          <div className={`rounded-[10px] border p-3 ${active ? "border-white/10 bg-white/[0.05]" : "border-border bg-surface-subtle"}`}><p className={`text-[8.5px] uppercase tracking-[0.1em] ${active ? "text-white/45" : "text-muted-foreground"}`}>Referrer reward</p><p className={`tabular mt-1 text-[22px] font-semibold ${active ? "text-white" : "text-foreground"}`}>{reward(campaign.referrerRewardCents)}</p></div>
+
+        <div className="mt-7 space-y-2.5 text-[12.5px] leading-5 text-[#5F6268] sm:text-[13px]">
+          <p className="flex items-center gap-2.5">
+            <CalendarDays className="h-4 w-4 shrink-0 text-[#7A7D83]" strokeWidth={1.8} />
+            {formatCampaignDate(campaign.startsAt)} – {formatCampaignDate(campaign.endsAt)}
+          </p>
+          <p className="flex items-center gap-2.5">
+            <Users className="h-4 w-4 shrink-0 text-[#7A7D83]" strokeWidth={1.8} />
+            Fund and purchase at least an eligible {campaign.qualifyingProxyDays}-day+ proxy plan.
+          </p>
         </div>
-        <div className={`mt-4 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[9px] ${active ? "text-white/50" : "text-muted-foreground"}`}>
-          <span className="inline-flex items-center gap-1"><CalendarDays className="h-3 w-3" /> {formatCampaignDate(campaign.startsAt)} – {formatCampaignDate(campaign.endsAt)}</span>
-          <span className="inline-flex items-center gap-1"><Users className="h-3 w-3" /> {formatNaira(campaign.qualifyingDepositMinor)} deposit + {campaign.qualifyingProxyDays}-day+ proxy purchase</span>
-        </div>
-        {!compact ? <div className={`mt-4 flex flex-col gap-2 border-t pt-3 text-[9.5px] sm:flex-row sm:items-center sm:justify-between ${active ? "border-white/10 text-white/55" : "border-border text-muted-foreground"}`}><span className="inline-flex items-center gap-1.5"><Check className="h-3 w-3 text-success" /> Purchase a proxy subscription of {campaign.qualifyingProxyDays} days or more to unlock eligibility.</span><Link href={`/campaigns/${campaign.slug}`} className={`inline-flex items-center gap-1 font-medium ${active ? "text-white/80 hover:text-white" : "text-foreground hover:underline"}`}>Campaign details <ArrowUpRight className="h-3 w-3" /></Link></div> : null}
       </div>
     </section>
   );
