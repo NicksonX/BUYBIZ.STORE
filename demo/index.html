@@ -1,0 +1,504 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0A0B0D" />
+  <title>BUYBIZ Demo</title>
+  
+  <style>:root {
+  --ink: #0a0b0d;
+  --muted: #6e7178;
+  --soft: #8c9097;
+  --line: #e4e5e8;
+  --bg: #f4f4f5;
+  --surface: #ffffff;
+  --green: #16794a;
+  --green-soft: #eaf8f0;
+  --amber: #946200;
+  --amber-soft: #fff8e8;
+  --red: #b42318;
+  --red-soft: #fff1f0;
+  --radius: 16px;
+  --shadow: 0 24px 60px -46px rgba(0,0,0,.45);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; }
+body { font-family: "DM Sans", system-ui, sans-serif; background: var(--bg); color: var(--ink); -webkit-font-smoothing: antialiased; }
+a { color: inherit; text-decoration: none; }
+button, input, textarea { font: inherit; }
+button { cursor: pointer; }
+.mono { font-family: "JetBrains Mono", monospace; }
+.muted { color: var(--muted); }
+.small { font-size: 12px; }
+.tiny { font-size: 10.5px; }
+.app { display: flex; min-height: 100dvh; }
+.sidebar { width: 238px; background: #0a0b0d; color: #fff; padding: 20px 14px; display: flex; flex-direction: column; position: fixed; inset: 0 auto 0 0; z-index: 30; }
+.brand { display: flex; align-items: center; gap: 9px; padding: 2px 6px 22px; }
+.logo { width: 28px; height: 28px; border-radius: 8px; background: #fff; color: #0a0b0d; display: grid; place-items: center; font-size: 16px; font-weight: 800; }
+.brand strong { font-size: 16px; letter-spacing: -.03em; }
+.side-label { color: #6f737a; font-size: 9px; letter-spacing: .14em; text-transform: uppercase; padding: 14px 10px 6px; }
+.side-nav { display: grid; gap: 2px; }
+.side-link { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 8px; color: #b9bcc2; font-size: 12px; transition: background .15s ease, color .15s ease; }
+.side-link:hover { background: #1a1c20; color: #fff; }
+.side-link.active { background: #24272c; color: #fff; }
+.side-link svg { width: 15px; height: 15px; opacity: .8; }
+.side-foot { margin-top: auto; border-top: 1px solid #202226; padding: 14px 6px 2px; display: flex; align-items: center; gap: 9px; }
+.avatar { width: 30px; height: 30px; border-radius: 50%; background: #f0d9c8; color: #4b2b13; display: grid; place-items: center; font-size: 11px; font-weight: 700; }
+.side-foot p { margin: 0; font-size: 11px; }
+.side-foot span { color: #7d8189; font-size: 9px; }
+.main { margin-left: 238px; width: calc(100% - 238px); min-height: 100dvh; }
+.topbar { height: 60px; background: rgba(255,255,255,.86); border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 14px; padding: 0 22px; position: sticky; top: 0; z-index: 20; backdrop-filter: blur(12px); }
+.search { flex: 1; max-width: 390px; position: relative; }
+.search input { width: 100%; height: 30px; border: 0; background: #f5f5f6; border-radius: 999px; padding: 0 12px 0 32px; font-size: 11px; outline: none; }
+.search svg { position: absolute; left: 11px; top: 8px; width: 13px; height: 13px; color: #9b9ea4; }
+.top-actions { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+.pill { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: #fff; height: 30px; padding: 0 11px; border-radius: 999px; font-size: 10.5px; color: #4f5258; }
+.demo-pill { border-color: #ead8bd; background: #fffaf1; color: #946200; }
+.content { padding: 30px; max-width: 1240px; margin: 0 auto; }
+.page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 22px; }
+.eyebrow { color: var(--soft); text-transform: uppercase; letter-spacing: .12em; font-size: 9.5px; font-weight: 700; }
+h1 { font-size: 30px; letter-spacing: -.045em; line-height: 1.05; margin: 7px 0 0; }
+h2 { font-size: 16px; letter-spacing: -.025em; margin: 0; }
+h3 { font-size: 13px; margin: 0; }
+.sub { color: var(--muted); font-size: 11.5px; line-height: 1.6; margin: 7px 0 0; }
+.grid { display: grid; gap: 14px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
+.card-pad { padding: 22px; }
+.dark-card { background: #0a0b0d; color: #fff; border-color: #22252a; }
+.dark-card .sub, .dark-card .eyebrow { color: rgba(255,255,255,.48); }
+.balance { font-size: 36px; letter-spacing: -.06em; font-weight: 600; margin: 9px 0 0; }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 18px; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; height: 38px; border-radius: 999px; padding: 0 17px; border: 1px solid transparent; font-size: 11px; font-weight: 600; transition: opacity .15s ease, background .15s ease; }
+.btn:hover { opacity: .88; }
+.btn-dark { background: var(--ink); color: #fff; }
+.btn-light { background: #fff; color: var(--ink); }
+.btn-outline { background: transparent; border-color: var(--line); color: #4d5056; }
+.btn-sm { height: 32px; padding: 0 12px; font-size: 10px; }
+.status { display: inline-flex; align-items: center; gap: 5px; border-radius: 999px; padding: 4px 8px; font-size: 9.5px; font-weight: 600; }
+.status.green { color: var(--green); background: var(--green-soft); }
+.status.amber { color: var(--amber); background: var(--amber-soft); }
+.status.grey { color: #62666d; background: #f2f3f5; }
+.status.red { color: var(--red); background: var(--red-soft); }
+.two { display: grid; grid-template-columns: 1.3fr .7fr; gap: 14px; }
+.three { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.stat { border: 1px solid var(--line); border-radius: 11px; padding: 13px; background: #fbfbfc; }
+.stat label { display: block; color: var(--muted); font-size: 9.5px; }
+.stat strong { display: block; margin-top: 7px; font-size: 20px; letter-spacing: -.035em; }
+.section-title { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 24px 0 11px; }
+.list { display: grid; }
+.row { display: flex; align-items: center; gap: 11px; padding: 13px 0; border-bottom: 1px solid #eff0f2; }
+.row:last-child { border-bottom: 0; }
+.row-icon { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: #f4f5f6; color: #5c6067; flex: none; }
+.row-icon.in { background: var(--green-soft); color: var(--green); }
+.row-main { min-width: 0; flex: 1; }
+.row-main strong { display: block; font-size: 12px; font-weight: 600; }
+.row-main span { display: block; color: var(--muted); font-size: 10px; margin-top: 3px; }
+.amount { font-size: 12px; font-weight: 700; white-space: nowrap; }
+.amount.in { color: var(--green); }
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 11px; }
+th { text-align: left; color: var(--soft); text-transform: uppercase; letter-spacing: .08em; font-size: 8.5px; font-weight: 600; padding: 12px 14px; background: #fbfbfc; border-bottom: 1px solid var(--line); }
+td { padding: 13px 14px; border-bottom: 1px solid #eff0f2; }
+tr:last-child td { border-bottom: 0; }
+.campaign { overflow: hidden; border-radius: 18px; border: 1px solid var(--line); background: #fff; }
+.campaign-inner { padding: 24px; }
+.reward-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }
+.reward { border: 1px solid var(--line); background: #fbfbfc; border-radius: 12px; padding: 16px; }
+.reward span { display: block; color: var(--muted); font-size: 9.5px; text-transform: uppercase; letter-spacing: .1em; }
+.reward strong { display: block; font-size: 34px; letter-spacing: -.05em; margin-top: 8px; }
+.meta-line { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 10.5px; margin-top: 9px; }
+.withdraw-banner { background: #0a0b0d; color: #fff; border-radius: 16px; padding: 24px; display: flex; justify-content: space-between; gap: 20px; align-items: center; }
+.withdraw-banner .amount { font-size: 34px; letter-spacing: -.05em; }
+.timeline { position: relative; padding-left: 22px; }
+.timeline:before { content:""; position: absolute; left: 6px; top: 7px; bottom: 8px; width: 1px; background: var(--line); }
+.timeline-item { position: relative; padding-bottom: 21px; }
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-item:before { content:""; position: absolute; left: -21px; top: 4px; width: 9px; height: 9px; border-radius: 50%; background: #fff; border: 2px solid #b9bdc4; }
+.timeline-item.done:before { background: var(--green); border-color: var(--green); }
+.timeline-item strong { display: block; font-size: 11.5px; }
+.timeline-item span { display: block; color: var(--muted); font-size: 10px; margin-top: 3px; }
+.detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.detail label { display: block; color: var(--soft); text-transform: uppercase; letter-spacing: .08em; font-size: 8.5px; margin-bottom: 6px; }
+.detail p { margin: 0; font-size: 11.5px; line-height: 1.5; }
+.address-box { display: flex; gap: 8px; align-items: center; background: #f8f8f9; border: 1px solid var(--line); padding: 9px 10px; border-radius: 8px; }
+.address-box code { font-size: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+.icon-btn { border: 1px solid var(--line); width: 28px; height: 28px; border-radius: 7px; background: #fff; display: grid; place-items: center; color: #5f636a; }
+.alert { border: 1px solid #ead8bd; background: #fffaf1; color: #7d5700; padding: 11px 13px; border-radius: 9px; font-size: 10px; line-height: 1.6; }
+.alert.dark { border-color: #24272c; background: #111317; color: rgba(255,255,255,.65); }
+.form { display: grid; gap: 13px; }
+.field label { display: block; font-size: 10.5px; font-weight: 600; margin-bottom: 6px; }
+.field input, .field textarea, .field select { width: 100%; border: 1px solid var(--line); border-radius: 9px; background: #fff; padding: 11px 12px; font-size: 12px; outline: none; }
+.field input:focus, .field textarea:focus { border-color: #8b8f96; box-shadow: 0 0 0 3px rgba(10,11,13,.04); }
+.login-wrap { min-height: 100dvh; display: grid; grid-template-columns: 1fr 1fr; background: #f4f4f5; }
+.login-art { background: #0a0b0d; color: #fff; padding: 48px; display: flex; flex-direction: column; justify-content: space-between; position: relative; overflow: hidden; }
+.login-art:after { content:""; position: absolute; width: 470px; height: 470px; border: 1px solid rgba(255,255,255,.08); border-radius: 50%; right: -160px; top: 80px; }
+.login-art h2 { font-size: 44px; line-height: 1.02; letter-spacing: -.055em; margin-top: 60px; }
+.login-art p { color: rgba(255,255,255,.48); font-size: 12px; line-height: 1.7; max-width: 360px; }
+.login-box { display: grid; place-items: center; padding: 30px; }
+.login-card { width: 100%; max-width: 390px; }
+.login-card h1 { font-size: 30px; }
+.demo-access { margin-top: 18px; padding: 13px; border: 1px solid var(--line); border-radius: 10px; background: #fff; font-size: 10px; line-height: 1.7; color: var(--muted); }
+.demo-access code { color: var(--ink); font-family: "JetBrains Mono", monospace; }
+.chat { display: grid; grid-template-rows: auto 1fr auto; min-height: 520px; }
+.chat-head { display: flex; align-items: center; gap: 10px; padding: 16px 18px; border-bottom: 1px solid var(--line); }
+.bot { width: 30px; height: 30px; border-radius: 9px; background: var(--ink); color: #fff; display: grid; place-items: center; font-size: 11px; font-weight: 700; }
+.messages { padding: 18px; display: flex; flex-direction: column; gap: 12px; max-height: 420px; overflow-y: auto; }
+.msg { max-width: 82%; padding: 10px 12px; border-radius: 12px; font-size: 11px; line-height: 1.6; white-space: pre-wrap; }
+.msg.bot { align-self: flex-start; background: #f4f5f6; border-bottom-left-radius: 3px; }
+.msg.user { align-self: flex-end; background: var(--ink); color: #fff; border-bottom-right-radius: 3px; }
+.chat-form { border-top: 1px solid var(--line); padding: 11px; display: flex; gap: 8px; }
+.chat-form input { flex: 1; border: 1px solid var(--line); border-radius: 8px; padding: 10px; font-size: 11px; outline: none; }
+.email-shell { background: #e9eaec; padding: 26px; border-radius: 14px; }
+.email { max-width: 590px; margin: auto; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 12px 35px -20px rgba(0,0,0,.4); }
+.email-head { background:#0a0b0d; color:#fff; padding:20px 26px; display:flex; align-items:center; justify-content:space-between; }
+.email-body { padding: 28px; font-size: 12px; line-height: 1.7; color: #4c4f55; }
+.email-body h1 { font-size: 23px; color: #0a0b0d; letter-spacing: -.035em; }
+.email-details { border: 1px solid #e7e8ea; border-radius: 8px; overflow: hidden; margin: 17px 0; }
+.email-details div { display:flex; justify-content:space-between; gap:10px; padding: 10px 12px; border-bottom:1px solid #eef0f2; }
+.email-details div:last-child { border-bottom:0; }
+.email-details span:first-child { color:#7b7e84; }
+.email-foot { padding: 15px 26px; border-top:1px solid #eef0f2; color:#8c9097; font-size:9px; }
+.public-nav { height:66px; display:flex; align-items:center; gap:20px; padding:0 28px; background:#fff; border-bottom:1px solid var(--line); }
+.public-nav .brand { padding:0; color:var(--ink); }
+.public-nav .logo { background:var(--ink); color:#fff; }
+.public-nav .links { display:flex; gap:18px; margin-left:18px; font-size:11px; color:#656970; }
+.public-nav .right { margin-left:auto; display:flex; gap:8px; }
+.hero { background:#0a0b0d; color:#fff; padding:70px 30px; position:relative; overflow:hidden; }
+.hero:after { content:""; position:absolute; width:600px; height:600px; border-radius:50%; border:1px solid rgba(255,255,255,.08); right:-180px; top:-240px; }
+.hero-inner { max-width:1060px; margin:auto; position:relative; z-index:1; }
+.hero h1 { font-size:58px; line-height:1.01; letter-spacing:-.06em; margin:14px 0 0; max-width:620px; }
+.hero p { color:rgba(255,255,255,.55); font-size:13px; line-height:1.75; max-width:480px; }
+.hero .btn { margin-top:20px; }
+.public-content { max-width:1060px; margin:auto; padding:28px; }
+.feature-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-top:-34px; position:relative; z-index:2; }
+.feature { background:#fff; border:1px solid var(--line); border-radius:12px; padding:16px; }
+.feature strong { display:block; font-size:11px; margin-top:8px; }
+.feature span { display:block; font-size:9.5px; color:var(--muted); line-height:1.5; margin-top:4px; }
+.mobile-bottom { display:none; }
+.fade-up { animation: fadeUp .5s cubic-bezier(.22,1,.36,1) both; }
+@keyframes fadeUp { from { opacity:0; transform:translateY(9px); } to { opacity:1; transform:none; } }
+@media (prefers-reduced-motion: reduce) { .fade-up { animation:none; } }
+@media (max-width: 980px) {
+  .sidebar { display:none; }
+  .main { margin-left:0; width:100%; }
+  .topbar { padding:0 14px; height:56px; }
+  .content { padding:18px; }
+  .two, .detail-grid { grid-template-columns:1fr; }
+  .three { grid-template-columns:1fr 1fr; }
+  h1 { font-size:25px; }
+  .login-wrap { grid-template-columns:1fr; }
+  .login-art { min-height:240px; padding:28px; }
+  .login-art h2 { font-size:30px; margin-top:24px; }
+  .login-box { padding:20px; }
+  .hero { padding:48px 20px 58px; }
+  .hero h1 { font-size:42px; }
+  .public-content { padding:18px; }
+  .feature-grid { grid-template-columns:1fr 1fr; }
+  .mobile-bottom { display:flex; position:fixed; bottom:0; left:0; right:0; height:58px; background:#fff; border-top:1px solid var(--line); z-index:40; justify-content:space-around; align-items:center; }
+  .mobile-bottom a { font-size:8.5px; color:#7b7e84; display:grid; justify-items:center; gap:3px; }
+  .mobile-bottom a.active { color:var(--ink); font-weight:700; }
+  .mobile-bottom svg { width:17px; height:17px; }
+  .content { padding-bottom:80px; }
+  .topbar .search { display:none; }
+  .withdraw-banner { align-items:flex-start; flex-direction:column; }
+  .public-nav .links { display:none; }
+  .campaign-inner { padding:18px; }
+  .email-shell { padding:8px; }
+  .email-body { padding:20px; }
+}
+@media (max-width: 480px) {
+  .three { grid-template-columns:1fr 1fr; }
+  .feature-grid { grid-template-columns:1fr; }
+  .hero h1 { font-size:37px; }
+  .reward-grid { gap:8px; }
+  .reward { padding:12px; }
+  .reward strong { font-size:28px; }
+  .top-actions .demo-pill { display:none; }
+}
+</style>
+</head>
+<body>
+  <div id="app"></div>
+  <script>(function () {
+  const WAT = (d = new Date()) => new Intl.DateTimeFormat("en-NG", { timeZone:"Africa/Lagos", day:"numeric", month:"long", year:"numeric", hour:"numeric", minute:"2-digit", hour12:true }).format(d);
+  const generatedAtWat = WAT(new Date());
+  const demoUser = {
+    id:"user-ambassador", email:"nicksonlabss@gmail.com", password:"Ambassador125!", name:"Nickson", role:"Ambassador", joined:"October 2026", balanceMinor:4850000,
+    ambassador:{ availableCents:12500, earnedCents:24900, paidCents:12400, qualified:18, total:42, pending:6, rejected:2, nextPayout:"20 December 2026" },
+    withdrawal:{ id:"WD-DEMO-125", amountCents:12500, requestedAt:"12 November 2026", sentAt:"15 November 2026", generatedAtWat, network:"BEP20", address:"0xdD48bb481dA3cb0C2FE276a28Bf473A1011Ce9df", campaign:"Ambassador Referral Campaign", reference:"DEMO-AMB-20261112-125", status:"Simulated — Sent" },
+    transactions:[
+      { id:"TX-1007", title:"Wallet deposit", date:"14 Nov 2026, 10:30 AM", amountMinor:6000000, status:"Completed" },
+      { id:"TX-1006", title:"Proxy purchase", date:"13 Nov 2026, 04:15 PM", amountMinor:-100000, status:"Completed" },
+      { id:"TX-1005", title:"Referral reward", date:"12 Nov 2026, 09:20 AM", amountMinor:100000, status:"Completed" },
+      { id:"TX-1004", title:"Wallet deposit", date:"11 Nov 2026, 02:40 PM", amountMinor:1000000, status:"Completed" }
+    ],
+    notifications:[
+      { id:"N-1", title:"Ambassador withdrawal sent", body:"Your $125.00 USDT withdrawal was marked sent on 15 November 2026.", date:"15 Nov 2026", unread:true },
+      { id:"N-2", title:"Referral qualified", body:"Tunde completed a qualifying 7-day proxy purchase. $3.00 was added to your Ambassador balance.", date:"14 Nov 2026", unread:true },
+      { id:"N-3", title:"Payment received", body:"Your deposit of ₦60,000 was received and credited to your wallet.", date:"14 Nov 2026", unread:false }
+    ]
+  };
+  const key = "buybiz_demo_static_user";
+  const getStored = () => { try { return JSON.parse(localStorage.getItem(key) || "null"); } catch { return null; } };
+  const store = (u) => localStorage.setItem(key, JSON.stringify(u));
+  const reply = (message, user) => {
+    const t = message.toLowerCase();
+    if (/withdraw|125|ambassador|payout/.test(t)) return `Your $125.00 Ambassador withdrawal was marked sent on 15 November 2026 to ${user.withdrawal?.address?.slice(0,8)}… on BEP20. This is the demo record ${user.withdrawal?.reference}. Open Withdrawals → details for the full timeline and copy address.`;
+    if (/proxy|marketplace|stock|country/.test(t)) return "This demo includes US, UK, Canada and Australia proxy inventory. In the real BUYBIZ marketplace you choose a country, then a 7-day+ plan, and availability is checked at checkout.";
+    if (/wallet|deposit|payment/.test(t)) return "Your demo wallet balance is ₦48,500.00. Deposits only appear as credited after server-side payment verification; a browser success screen alone never credits a wallet.";
+    if (/referral|campaign|\$10|\$3/.test(t)) return "The demo Ambassador balance shows $125.00 available. The $3 Ambassador programme is ongoing with a next payout of 20 December 2026, while the $10 customer/referrer campaign is separate.";
+    return "I can help with your demo wallet, proxy plans, Ambassador earnings, withdrawals and notifications. This educational demo only simulates account activity.";
+  };
+  const respond = (status, body) => new Response(JSON.stringify(body), { status, headers:{ "Content-Type":"application/json" } });
+  const originalFetch = window.fetch.bind(window);
+  window.fetch = async (input, init = {}) => {
+    const path = new URL(input, location.href).pathname;
+    if (path.endsWith("/api/session") && (!init.method || init.method === "GET")) {
+      const user = getStored();
+      return respond(200, user ? { authenticated:true, user, generatedAtWat } : { authenticated:false });
+    }
+    if (path.endsWith("/api/login")) {
+      let body = {}; try { body = JSON.parse(init.body || "{}"); } catch {}
+      if (String(body.email || "").toLowerCase() === demoUser.email && body.password === demoUser.password) {
+        const user = { ...demoUser, withdrawal: { ...demoUser.withdrawal, generatedAtWat: WAT(new Date()) } };
+        store(user); return respond(200, { ok:true, user });
+      }
+      return respond(401, { message:"Incorrect email or password." });
+    }
+    if (path.endsWith("/api/logout")) { localStorage.removeItem(key); return respond(200, { ok:true }); }
+    if (path.endsWith("/api/register")) {
+      let body = {}; try { body = JSON.parse(init.body || "{}"); } catch {}
+      if (!body.email || !body.name) return respond(400, { message:"Enter your name and email." });
+      const user = { id:"user-"+Date.now(), email:String(body.email).toLowerCase(), name:String(body.name), role:"Customer", joined:"November 2026", balanceMinor:0, ambassador:{ availableCents:0, earnedCents:0, paidCents:0, qualified:0, total:0, pending:0, rejected:0, nextPayout:"20 December 2026" }, withdrawal:null, transactions:[], notifications:[] };
+      store(user); return respond(200, { ok:true, user });
+    }
+    if (path.endsWith("/api/support")) {
+      let body = {}; try { body = JSON.parse(init.body || "{}"); } catch {}
+      const user = getStored() || demoUser;
+      return respond(200, { reply:reply(String(body.message||""), user), demo:true });
+    }
+    return originalFetch(input, init);
+  };
+})();
+
+const app = document.getElementById("app");
+let state = { user: null, loading: true };
+const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+const naira = (minor) => new Intl.NumberFormat("en-NG", { style:"currency", currency:"NGN", minimumFractionDigits: 2 }).format((Number(minor)||0)/100);
+const usd = (cents) => `$${(Number(cents||0)/100).toFixed(2)}`;
+const short = (addr) => addr ? `${addr.slice(0,8)}…${addr.slice(-6)}` : "—";
+
+const ICONS = {
+  grid:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
+  wallet:'<path d="M4 7h16v11H4z"/><path d="M4 7V5h13v2"/><circle cx="16" cy="12.5" r="1"/>',
+  users:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+  receipt:'<path d="M6 2h12v20l-3-2-3 2-3-2-3 2V2z"/><path d="M9 7h6M9 11h6M9 15h4"/>',
+  gift:'<rect x="3" y="8" width="18" height="4" rx="1"/><path d="M5 12v9h14v-9M12 8v13"/><path d="M7.5 8a2.5 2.5 0 1 1 0-5C11 3 12 8 12 8s1-5 4.5-5a2.5 2.5 0 1 1 0 5"/>',
+  bell:'<path d="M18 8a6 6 0 1 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/>',
+  support:'<path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/>',
+  settings:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-1.7 1.7-.06-.06A1.7 1.7 0 0 0 16 18.24a1.7 1.7 0 0 0-1.02 1.56V20h-2.4v-.1A1.7 1.7 0 0 0 11.56 18.3a1.7 1.7 0 0 0-1.88.34l-.06.06-1.7-1.7.06-.06A1.7 1.7 0 0 0 8.32 15a1.7 1.7 0 0 0-1.56-1.02H6.6v-2.4h.16A1.7 1.7 0 0 0 8.32 10.6a1.7 1.7 0 0 0-.34-1.88l-.06-.06 1.7-1.7.06.06A1.7 1.7 0 0 0 11.56 7.3a1.7 1.7 0 0 0 1.02-1.56V5.6h2.4v.14A1.7 1.7 0 0 0 16 7.3a1.7 1.7 0 0 0 1.88-.34l.06-.06 1.7 1.7-.06.06A1.7 1.7 0 0 0 19.24 10.6a1.7 1.7 0 0 0 1.56 1.02H21v2.4h-.2A1.7 1.7 0 0 0 19.4 15z"/>',
+  arrow:'<path d="M5 12h14M13 6l6 6-6 6"/>',
+  down:'<path d="M12 5v14M6 13l6 6 6-6"/>',
+  up:'<path d="M12 19V5M6 11l6-6 6 6"/>',
+  copy:'<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/>',
+  search:'<circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/>',
+  shield:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/>',
+  chat:'<path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/>'
+};
+const icon = (name) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${ICONS[name]||ICONS.grid}</svg>`;
+
+const nav = [
+  ["/dashboard","Overview","grid"],["/wallet","Wallet","wallet"],["/transactions","Transactions","receipt"],
+  ["/referrals","Refer & earn","users"],["/withdrawals","Withdrawals","down"],["/notifications","Notifications","bell"],
+  ["/support","Support","support"],["/profile","Settings","settings"]
+];
+
+function layout(content, active) {
+  const u = state.user;
+  if (!u) return content;
+  return `<div class="app">
+    <aside class="sidebar">
+      <div class="brand"><span class="logo">B</span><strong>BUYBIZ</strong></div>
+      <div class="side-label">Customer</div>
+      <nav class="side-nav">${nav.map(([href,label,ico]) => `<a class="side-link ${active===href?"active":""}" href="${href}" data-link>${icon(ico)}${label}</a>`).join("")}</nav>
+      <div class="side-foot"><span class="avatar">${esc(u.name.slice(0,2).toUpperCase())}</span><div><p>${esc(u.name)}</p><span>${esc(u.role)} · Demo</span></div></div>
+    </aside>
+    <div class="main">
+      <header class="topbar">
+        <div class="search">${icon("search")}<input placeholder="Search orders, proxies, tickets..." /></div>
+        <div class="top-actions">
+          <span class="pill demo-pill">Demo environment</span>
+          <a class="pill" href="#/wallet" data-link>${icon("wallet")} Wallet</a>
+          <a class="pill" href="#/notifications" data-link aria-label="Notifications">${icon("bell")} ${u.notifications.filter(n=>n.unread).length}</a>
+          <a href="#/profile" data-link class="avatar" style="border:0">${esc(u.name.slice(0,2).toUpperCase())}</a>
+        </div>
+      </header>
+      <main class="content fade-up">${content}</main>
+    </div>
+    <nav class="mobile-bottom">${nav.slice(0,5).map(([href,label,ico])=>`<a href="${href}" data-link class="${active===href?"active":""}">${icon(ico)}${label.split(" ")[0]}</a>`).join("")}</nav>
+  </div>`;
+}
+
+function publicShell(content) {
+  return `<div class="public-nav"><div class="brand"><span class="logo">B</span><strong>BUYBIZ</strong></div><div class="links"><a href="#/" data-link>Home</a><a href="#/">Campaign</a><a href="#/">Why BUYBIZ</a><a href="#/email-preview" data-link>Email preview</a></div><div class="right"><a class="btn btn-outline btn-sm" href="#/login" data-link>Log in</a><a class="btn btn-dark btn-sm" href="#/register" data-link>Create account</a></div></div>${content}`;
+}
+
+function head(eyebrow,title,sub,action="") { return `<div class="page-head"><div><div class="eyebrow">${eyebrow}</div><h1>${title}</h1>${sub?`<p class="sub">${sub}</p>`:""}</div>${action}</div>`; }
+
+function txRow(t) {
+  const income = t.amountMinor > 0;
+  return `<div class="row"><span class="row-icon ${income?"in":""}">${icon(income?"down":"up")}</span><div class="row-main"><strong>${esc(t.title)}</strong><span>${esc(t.date)} · <span class="status green">${esc(t.status)}</span></span></div><span class="amount ${income?"in":""}">${income?"+":"−"}${naira(Math.abs(t.amountMinor))}</span></div>`;
+}
+
+function homePage() {
+  return publicShell(`<section class="hero"><div class="hero-inner"><span class="status amber">Proxy access · Naira wallet</span><h1>Proxy access.<br><span style="color:rgba(255,255,255,.35)">Pay in naira.</span></h1><p>Fund your BUYBIZ wallet, choose a proxy plan and get clear, time-limited access. Fixed prices, real expiry, no auto-renewal.</p><div class="actions"><a href="#/register" data-link class="btn btn-light">Get started ${icon("arrow")}</a><a href="#/login" data-link class="btn" style="border-color:rgba(255,255,255,.22);color:#fff">Log in</a></div></div></section>
+  <div class="public-content"><div class="feature-grid" id="why">${[["Instant allocation","Wallet-funded checkout with clear expiry."],["Verified deposits","Payments confirmed before wallet credit."],["Global locations","US, UK, Canada, Australia and more."],["Human support","Account-aware help when you need it."]].map(([t,s])=>`<div class="feature">${icon("shield")}<strong>${t}</strong><span>${s}</span></div>`).join("")}</div>
+  <section id="campaign" style="margin-top:34px" class="campaign"><div class="campaign-inner"><div class="eyebrow">Referral campaign</div><h2 style="font-size:26px;margin-top:12px">The $10 + $10 Referral Campaign</h2><p class="sub" style="max-width:650px">When a new customer joins, funds and purchases at least an eligible 7-day + proxy plan, both the customer and their referrer earn $10 in USD rewards.</p><span class="status amber" style="margin-top:16px">Coming soon</span><div class="reward-grid"><div class="reward"><span>Customer reward</span><strong>$10</strong></div><div class="reward"><span>Referrer reward</span><strong>$10</strong></div></div><div class="meta-line">${icon("users")} Fund and purchase at least an eligible 7-day + proxy plan.</div></div></section>
+  <p class="tiny muted" style="margin-top:22px">BUYBIZ educational demo · simulated records · no real payments or withdrawals.</p></div>`);
+}
+
+function loginPage(register=false) {
+  if (register) return `<div class="login-wrap"><div class="login-art"><div class="brand"><span class="logo">B</span><strong>BUYBIZ</strong></div><div><div class="status amber">Create your account</div><h2>Start with a wallet.</h2><p>This is a self-contained BUYBIZ demo. You can register a new demo customer or use the dedicated Ambassador account.</p></div><p class="tiny">Educational demonstration · simulated data only</p></div><div class="login-box"><div class="login-card"><div class="eyebrow">Demo registration</div><h1>Create an account.</h1><p class="sub">Your demo account is isolated from production BUYBIZ.</p><form id="register-form" class="form" style="margin-top:22px"><div class="field"><label>Full name</label><input name="name" required placeholder="Your name" /></div><div class="field"><label>Email address</label><input name="email" type="email" required placeholder="you@example.com" /></div><div class="field"><label>Password</label><input name="password" type="password" required minlength="8" placeholder="At least 8 characters" /></div><button class="btn btn-dark" type="submit">Create demo account ${icon("arrow")}</button></form><p class="tiny muted" style="margin-top:15px">Already have an account? <a href="#/login" data-link style="text-decoration:underline">Sign in</a></p></div></div></div>`;
+  return `<div class="login-wrap"><div class="login-art"><div class="brand"><span class="logo">B</span><strong>BUYBIZ</strong></div><div><div class="status amber">Ambassador demo access</div><h2>Your rewards, clearly.</h2><p>A production-style customer dashboard for wallet activity, referrals, Ambassador earnings and withdrawal history.</p></div><p class="tiny">Educational demonstration · simulated records only</p></div><div class="login-box"><div class="login-card"><div class="eyebrow">Welcome back</div><h1>Sign in to BUYBIZ.</h1><p class="sub">Use the dedicated Ambassador demo account below.</p><div class="demo-access"><strong style="color:#0a0b0d">Demo account</strong><br>Email: <code>nicksonlabss@gmail.com</code><br>Password: <code>Ambassador125!</code></div><form id="login-form" class="form" style="margin-top:16px"><div class="field"><label>Email address</label><input name="email" type="email" required value="nicksonlabss@gmail.com" /></div><div class="field"><label>Password</label><input name="password" type="password" required value="Ambassador125!" /></div><button class="btn btn-dark" type="submit">Sign in ${icon("arrow")}</button></form><p class="tiny muted" style="margin-top:15px">Need a new demo customer? <a href="#/register" data-link style="text-decoration:underline">Register</a></p></div></div></div>`;
+}
+
+function dashboardPage() {
+  const u = state.user; const a = u.ambassador;
+  return layout(`${head("Overview",`Welcome back, ${esc(u.name)}.`,"Your wallet, Ambassador rewards and account activity in one place.",`<a href="#/wallet" data-link class="btn btn-dark btn-sm">Add funds</a>`)}
+  <div class="two">
+    <section class="card dark-card card-pad"><div class="eyebrow">Available balance</div><p class="balance">${naira(u.balanceMinor)}</p><p class="sub">BUYBIZ credits · 1 credit = ₦1</p><div class="actions"><a href="#/wallet" data-link class="btn btn-light">Add money</a><a href="#/transactions" data-link class="btn" style="border-color:rgba(255,255,255,.2);color:#fff">History</a></div></section>
+    <section class="card card-pad"><div class="eyebrow">Ambassador earnings</div><p class="balance" style="font-size:30px">${usd(a.availableCents)}</p><p class="sub">Available for withdrawal · separate USD balance</p><div class="actions"><a href="#/referrals" data-link class="btn btn-dark btn-sm">Open Ambassador</a></div></section>
+  </div>
+  <div class="three" style="margin-top:14px">${[["Referrals",a.total],["Qualifying",a.qualified],["Next payout",a.nextPayout]].map(([l,v])=>`<div class="stat"><label>${l}</label><strong style="font-size:${String(v).length>10?"12px":"20px"}">${v}</strong></div>`).join("")}</div>
+  ${u.withdrawal?`<div class="section-title"><h2>Latest Ambassador withdrawal</h2><a class="tiny muted" href="#/withdrawals" data-link>View all</a></div><div class="withdraw-banner"><div><div class="eyebrow">${esc(u.withdrawal.campaign)}</div><div class="amount">${usd(u.withdrawal.amountCents)}</div><p class="sub" style="color:rgba(255,255,255,.5)">${esc(u.withdrawal.status)} · sent ${esc(u.withdrawal.sentAt)}</p></div><a href="#/withdrawals/${u.withdrawal.id}" data-link class="btn btn-light btn-sm">View details ${icon("arrow")}</a></div>`:""}
+  <div class="section-title"><h2>Recent transactions</h2><a class="tiny muted" href="#/transactions" data-link>View all</a></div><section class="card card-pad"><div class="list">${u.transactions.slice(0,4).map(txRow).join("")||'<p class="sub">No transactions yet.</p>'}</div></section>`, "/dashboard");
+}
+
+function walletPage() {
+  const u=state.user; return layout(`${head("Wallet","Your wallet balance.","Fund your account and review verified deposits.","<span class='status green'>Live demo balance</span>")}<section class="card dark-card card-pad"><div class="eyebrow">Available balance</div><p class="balance">${naira(u.balanceMinor)}</p><div class="actions"><button class="btn btn-light" data-demo-action="add">Add money</button><a href="#/transactions" data-link class="btn" style="border-color:rgba(255,255,255,.2);color:#fff">History</a></div></section><div class="section-title"><h2>Wallet activity</h2><span class="tiny muted">Simulated records</span></div><section class="card card-pad"><div class="list">${u.transactions.map(txRow).join("")}</div></section>`, "/wallet");
+}
+
+function transactionsPage() {
+  const u=state.user; return layout(`${head("Transactions","Every movement, clearly recorded.","Newest first. All records in this demo are simulated.")}<section class="card"><div class="table-wrap"><table><thead><tr><th>Transaction</th><th>Date</th><th>Status</th><th style="text-align:right">Amount</th></tr></thead><tbody>${u.transactions.map(t=>`<tr><td><strong>${esc(t.title)}</strong><div class="tiny muted mono">${esc(t.id)}</div></td><td class="muted">${esc(t.date)}</td><td><span class="status green">${esc(t.status)}</span></td><td class="amount ${t.amountMinor>0?"in":""}" style="text-align:right">${t.amountMinor>0?"+":"−"}${naira(Math.abs(t.amountMinor))}</td></tr>`).join("")||'<tr><td colspan="4" class="muted">No transactions yet.</td></tr>'}</tbody></table></div></section>`, "/transactions");
+}
+
+function referralsPage() {
+  const u=state.user, a=u.ambassador;
+  return layout(`${head("Refer & earn","Ambassador Programme.","Earn rewards when referred customers complete qualifying activity.",`<a href="#/withdrawals" data-link class="btn btn-dark btn-sm">Withdrawals</a>`)}
+  <section class="card dark-card card-pad"><div class="eyebrow">Ambassador balance</div><p class="balance">${usd(a.availableCents)}</p><p class="sub">Available USDT rewards · BEP20</p><div class="meta-line" style="color:rgba(255,255,255,.45)">${icon("shield")} Next payout ${a.nextPayout}</div></section>
+  <div class="three" style="margin-top:14px">${[["Total referrals",a.total],["Qualifying",a.qualified],["Pending",a.pending],["Rejected",a.rejected],["Earned",usd(a.earnedCents)],["Paid",usd(a.paidCents)]].map(([l,v])=>`<div class="stat"><label>${l}</label><strong>${v}</strong></div>`).join("")}</div>
+  <div class="section-title"><h2>Ambassador Referral Campaign</h2><span class="status green">Ongoing</span></div><div class="campaign"><div class="campaign-inner"><p class="sub">Earn $3 for every qualifying referral. The programme is ongoing with no end date. Rewards are paid in USDT on BEP20 after review.</p><div class="reward-grid"><div class="reward"><span>Per qualifying referral</span><strong>$3</strong></div><div class="reward"><span>Your available</span><strong>${usd(a.availableCents)}</strong></div></div></div></div>
+  <div class="section-title"><h2>Recent withdrawals</h2><a href="#/withdrawals" data-link class="tiny muted">View all</a></div>${u.withdrawal?`<section class="card card-pad"><div class="row"><span class="row-icon in">${icon("down")}</span><div class="row-main"><strong>${usd(u.withdrawal.amountCents)} USDT</strong><span>${esc(u.withdrawal.campaign)} · ${esc(u.withdrawal.sentAt)}</span></div><span class="status amber">${esc(u.withdrawal.status)}</span><a class="tiny" style="text-decoration:underline" href="#/withdrawals/${u.withdrawal.id}" data-link>Details</a></div></section>`:""}`, "/referrals");
+}
+
+function withdrawalsPage() {
+  const u=state.user; if(!u.withdrawal) return layout(`${head("Withdrawals","No withdrawals yet.","Ambassador withdrawals will appear here.")}<section class="card card-pad"><p class="sub">No withdrawal records.</p></section>`, "/withdrawals");
+  const w=u.withdrawal;
+  return layout(`${head("Withdrawals","Ambassador withdrawals.","Track requests, review and simulated payment status.")}<section class="card"><div class="table-wrap"><table><thead><tr><th>Date requested</th><th>Campaign</th><th>Amount</th><th>Network</th><th>Status</th><th></th></tr></thead><tbody><tr><td>${esc(w.requestedAt)}</td><td>${esc(w.campaign)}</td><td><strong>${usd(w.amountCents)}</strong></td><td>${esc(w.network)}</td><td><span class="status amber">${esc(w.status)}</span></td><td><a href="#/withdrawals/${w.id}" data-link class="btn btn-outline btn-sm">Details</a></td></tr></tbody></table></div></section><p class="tiny muted" style="margin-top:12px">Simulated history for this educational demo. No blockchain transfer was made.</p>`, "/withdrawals");
+}
+
+function withdrawalDetailPage(id) {
+  const u=state.user, w=u.withdrawal; if(!w || w.id!==id) return layout(`${head("Withdrawal","Not found.","This demo withdrawal does not exist.")}`, "/withdrawals");
+  return layout(`${head("Withdrawal details","$125.00 USDT sent.","Complete timeline for your Ambassador withdrawal.",`<a href="#/withdrawals" data-link class="btn btn-outline btn-sm">Back</a>`)}
+  <div class="two"><section class="card card-pad"><div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start"><div><div class="eyebrow">${esc(w.campaign)}</div><p class="balance" style="font-size:34px">${usd(w.amountCents)}</p><p class="sub">${esc(w.network)} · USDT</p></div><span class="status amber">${esc(w.status)}</span></div><div class="section-title"><h2>Timeline</h2></div><div class="timeline"><div class="timeline-item done"><strong>Withdrawal requested</strong><span>${esc(w.requestedAt)}</span></div><div class="timeline-item done"><strong>Marked as sent</strong><span>${esc(w.sentAt)} · ${esc(w.generatedAtWat)} WAT</span></div><div class="timeline-item"><strong>Demo reference</strong><span class="mono">${esc(w.reference)}</span></div></div></section>
+  <section class="card card-pad"><div class="section-title" style="margin-top:0"><h2>Destination</h2><span class="status grey">BEP20</span></div><div class="detail" style="margin-bottom:12px"><label>Wallet address</label><div class="address-box"><code>${esc(w.address)}</code><button class="icon-btn" data-copy="${esc(w.address)}" aria-label="Copy wallet address">${icon("copy")}</button></div></div><div class="detail-grid"><div class="detail"><label>Network</label><p>${esc(w.network)} · USDT</p></div><div class="detail"><label>Amount</label><p>${usd(w.amountCents)}</p></div><div class="detail"><label>Requested</label><p>${esc(w.requestedAt)}</p></div><div class="detail"><label>Sent</label><p>${esc(w.sentAt)}</p></div></div><div class="alert dark" style="margin-top:16px">Simulated — Sent. This demo does not represent a real blockchain transaction or transfer.</div><a class="btn btn-outline" style="margin-top:14px" href="#/email-preview" data-link>Open email preview ${icon("arrow")}</a></section></div>`, "/withdrawals");
+}
+
+function notificationsPage() {
+  const u=state.user; return layout(`${head("Notifications","Account updates.","Simulated notifications for this demo.")}<section class="card card-pad"><div class="list">${u.notifications.map(n=>`<div class="row"><span class="row-icon ${n.unread?"in":""}">${icon("bell")}</span><div class="row-main"><strong>${esc(n.title)}</strong><span>${esc(n.body)}</span></div><span class="tiny muted">${esc(n.date)}</span></div>`).join("")||'<p class="sub">No notifications.</p>'}</div></section>`, "/notifications");
+}
+
+function profilePage() {
+  const u=state.user; return layout(`${head("Settings","Account profile.","Your demo identity and access details.")}<div class="two"><section class="card card-pad"><h2>Profile</h2><div class="detail-grid" style="margin-top:16px"><div class="detail"><label>Name</label><p>${esc(u.name)}</p></div><div class="detail"><label>Email</label><p>${esc(u.email)}</p></div><div class="detail"><label>Role</label><p>${esc(u.role)}</p></div><div class="detail"><label>Member since</label><p>${esc(u.joined)}</p></div></div></section><section class="card card-pad"><h2>Demo status</h2><p class="sub">This is a separate environment. No production wallet, payment or withdrawal action can be taken here.</p><div class="alert" style="margin-top:14px">Simulated and isolated. Use the login page for the dedicated Ambassador account.</div></section></div>`, "/profile");
+}
+
+function supportPage() {
+  return layout(`${head("Support","How can we help?","Ask about your wallet, proxy access, referrals or Ambassador withdrawal.")}<div class="two"><section class="card chat"><div class="chat-head"><span class="bot">B</span><div><h3>BUYBIZ AI Support</h3><div class="tiny muted">Account-aware demo assistant</div></div><span class="status green" style="margin-left:auto">Online</span></div><div class="messages" id="messages"><div class="msg bot">Hello! Welcome to BUYBIZ. I'm your AI support assistant. I can help with your wallet, proxy purchases, referrals and Ambassador withdrawal.</div></div><form class="chat-form" id="chat-form"><input id="chat-input" placeholder="Ask a support question..." autocomplete="off" /><button class="btn btn-dark btn-sm" type="submit">Send</button></form></section><aside class="card card-pad"><h2>Quick help</h2><div class="list" style="margin-top:8px">${["Where is my withdrawal?","How do referrals qualify?","How do I buy a proxy?","Why is my deposit pending?"].map(q=>`<button class="btn btn-outline btn-sm" style="justify-content:flex-start;margin-bottom:7px" data-question="${esc(q)}">${esc(q)}</button>`).join("")}</div><div class="alert" style="margin-top:14px">Simulated demo assistant. For real account action, use production support.</div></aside></div>`, "/support");
+}
+
+function emailPreviewPage() {
+  const u=state.user, w=u.withdrawal;
+  if(!w) return layout(`${head("Email preview","No withdrawal email.","The demo account has no withdrawal record.")}`, "/withdrawals");
+  return layout(`${head("Email preview","Withdrawal notification.","Preview only — this email was not sent.",`<a href="#/withdrawals/${w.id}" data-link class="btn btn-outline btn-sm">Back to details</a>`)}<div class="email-shell"><div class="email"><div class="email-head"><div class="brand"><span class="logo">B</span><strong>BUYBIZ</strong></div><span class="tiny" style="color:rgba(255,255,255,.5)">TRANSACTIONAL EMAIL</span></div><div class="email-body"><div class="eyebrow" style="color:#16794a">BUYBIZ UPDATE</div><h1>Your Ambassador withdrawal was sent.</h1><p>Hello ${esc(u.name)},</p><p>Your Ambassador withdrawal of <strong>${usd(w.amountCents)} USDT</strong> was marked as sent on <strong>${esc(w.sentAt)}</strong>.</p><div class="email-details"><div><span>Amount</span><strong>${usd(w.amountCents)} USDT</strong></div><div><span>Campaign</span><strong>${esc(w.campaign)}</strong></div><div><span>Network</span><strong>${esc(w.network)}</strong></div><div><span>Wallet address</span><strong class="mono" style="font-size:10px">${short(w.address)}</strong></div><div><span>Requested</span><strong>${esc(w.requestedAt)}</strong></div><div><span>Sent</span><strong>${esc(w.sentAt)}</strong></div><div><span>Demo reference</span><strong class="mono" style="font-size:9px">${esc(w.reference)}</strong></div><div><span>Status</span><strong>Simulated — Sent</strong></div></div><p>This is an educational preview. No real email was sent and no blockchain transfer took place.</p><p>Warmly,<br><strong>The BUYBIZ team</strong></p></div><div class="email-foot">BUYBIZ demo · simulated transaction email · ${esc(w.generatedAtWat)} WAT</div></div></div>`, "/withdrawals");
+}
+
+function notFound() { return layout(`${head("404","Page not found.","This demo page does not exist.")}`, ""); }
+
+function render() {
+  const path = (window.location.hash.replace(/^#/, "") || "/").replace(/\/+$/,"") || "/";
+  if (state.loading) { app.innerHTML = `<div class="login-wrap"><div class="login-box"><div class="login-card"><div class="brand"><span class="logo">B</span><strong>BUYBIZ</strong></div><p class="sub">Loading demo...</p></div></div></div>`; return; }
+  const isAuth = Boolean(state.user);
+  const publicRoutes = ["/","/login","/register"];
+  if (!isAuth && !publicRoutes.includes(path)) { history.replaceState({}, "", "#/login"); return render(); }
+  if (isAuth && (path === "/login" || path === "/register")) { history.replaceState({}, "", "#/dashboard"); return render(); }
+  if (path === "/") { app.innerHTML = homePage(); return; }
+  if (path === "/login") { app.innerHTML = loginPage(); return bindAuth(false); }
+  if (path === "/register") { app.innerHTML = loginPage(true); return bindAuth(true); }
+  if (path === "/dashboard") { app.innerHTML = dashboardPage(); return; }
+  if (path === "/wallet") { app.innerHTML = walletPage(); return; }
+  if (path === "/transactions") { app.innerHTML = transactionsPage(); return; }
+  if (path === "/referrals") { app.innerHTML = referralsPage(); return; }
+  if (path === "/withdrawals") { app.innerHTML = withdrawalsPage(); return; }
+  if (path.startsWith("/withdrawals/")) { app.innerHTML = withdrawalDetailPage(path.split("/")[2]); return; }
+  if (path === "/notifications") { app.innerHTML = notificationsPage(); return; }
+  if (path === "/profile") { app.innerHTML = profilePage(); return; }
+  if (path === "/support") { app.innerHTML = supportPage(); return; }
+  if (path === "/email-preview") { app.innerHTML = emailPreviewPage(); return; }
+  app.innerHTML = notFound();
+}
+
+function bindAuth(register) {
+  const form = document.getElementById(register ? "register-form" : "login-form");
+  if (!form) return;
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const data = Object.fromEntries(new FormData(form));
+    const response = await fetch(register ? "/api/register" : "/api/login", { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify(data) });
+    const payload = await response.json();
+    if (!response.ok) { alert(payload.message || "Could not sign in."); return; }
+    state.user = payload.user; state.loading = false; history.pushState({}, "", "#/dashboard"); render();
+  });
+}
+
+document.addEventListener("click", async (event) => {
+  const link = event.target.closest("a[data-link]");
+  if (link) {
+    event.preventDefault();
+    const href = link.getAttribute("href");
+    history.pushState({}, "", href);
+    window.scrollTo({ top:0 });
+    render();
+    return;
+  }
+  const copy = event.target.closest("[data-copy]");
+  if (copy) {
+    try { await navigator.clipboard.writeText(copy.dataset.copy); copy.innerHTML = "Copied"; setTimeout(()=>render(), 1000); } catch {}
+    return;
+  }
+  const demo = event.target.closest("[data-demo-action]");
+  if (demo) { alert("This is an isolated demo. No real wallet action was taken."); return; }
+  const question = event.target.closest("[data-question]");
+  if (question) { const input=document.getElementById("chat-input"); if(input){input.value=question.dataset.question; input.focus();} }
+});
+window.addEventListener("popstate", render); window.addEventListener("hashchange", render);
+
+document.addEventListener("submit", async (event) => {
+  if (event.target.id !== "chat-form") return;
+  event.preventDefault();
+  const input = document.getElementById("chat-input");
+  const messages = document.getElementById("messages");
+  const text = input.value.trim();
+  if (!text) return;
+  messages.insertAdjacentHTML("beforeend", `<div class="msg user">${esc(text)}</div>`);
+  input.value = "";
+  const response = await fetch("/api/support", { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ message:text }) });
+  const payload = await response.json();
+  messages.insertAdjacentHTML("beforeend", `<div class="msg bot">${esc(payload.reply || "Please try again.")}</div>`);
+  messages.scrollTop = messages.scrollHeight;
+});
+
+fetch("/api/session", { cache:"no-store" }).then(r=>r.json()).then(payload => { state.user = payload.user || null; state.loading=false; render(); }).catch(()=>{ state.loading=false; render(); });
+</script>
+</body>
+</html>
