@@ -30,11 +30,16 @@ function createProductionDatabase(): Database {
       ? { rejectUnauthorized: false }
       : undefined;
 
+  // Supabase's session pooler allows only 15 clients on this plan. Vercel runs
+  // many short-lived instances, so each instance must hold a single connection
+  // and release it quickly. Parallel dashboard queries queue on that connection
+  // instead of exhausting the database and failing whole pages.
   const pool = new Pool({
     connectionString,
-    max: Number(process.env.DATABASE_POOL_MAX || 10),
-    idleTimeoutMillis: 30_000,
-    connectionTimeoutMillis: 10_000,
+    max: 1,
+    idleTimeoutMillis: 5_000,
+    connectionTimeoutMillis: 8_000,
+    allowExitOnIdle: true,
     statement_timeout: 20_000,
     idle_in_transaction_session_timeout: 15_000,
     ssl: sslEnabled,
