@@ -65,7 +65,7 @@ export const getProductBySlug = cache(async (slug: string): Promise<Product | nu
   return result.rows[0] ? normalizeProduct(result.rows[0]) : null;
 });
 
-export const getPlanAvailability = cache(async (): Promise<PlanAvailability[]> => {
+export const getPlanAvailability = cache(async (countryCode?: string): Promise<PlanAvailability[]> => {
   const db = await getDb();
   const settings = await getAppSettings();
   const plans = await getActiveProxyPlans();
@@ -87,6 +87,7 @@ export const getPlanAvailability = cache(async (): Promise<PlanAvailability[]> =
          on i.status = 'available'
         and i.access_type = p.access_type
         and i.archived_at is null
+        and ($2::text is null or i.country_code = $2)
         and i.upstream_expires_at >= now() + (p.duration_seconds + $1::int) * interval '1 second'
        left join lateral (
          select count(*)::int as active_seats
@@ -98,7 +99,7 @@ export const getPlanAvailability = cache(async (): Promise<PlanAvailability[]> =
       where p.category = 'proxy' and p.is_active = true and p.is_coming_soon = false
       group by p.id
       order by p.sort_order asc`,
-    [buffer],
+    [buffer, countryCode ?? null],
   );
 
   const byId = new Map(

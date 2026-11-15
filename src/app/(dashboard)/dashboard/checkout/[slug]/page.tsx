@@ -28,13 +28,18 @@ export const dynamic = "force-dynamic";
 
 export default async function CheckoutPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { slug } = await params;
+  const query = await searchParams;
+  const rawCountry = Array.isArray(query.country) ? query.country[0] : query.country;
+  const countryCode = /^[A-Za-z]{2}$/.test(rawCountry ?? "") ? rawCountry!.toUpperCase() : null;
   const user = await requireVerifiedUserPage();
   const [{ plan, wallet }, settings] = await Promise.all([
-    getCheckoutData(user.id, slug),
+    getCheckoutData(user.id, slug, countryCode ?? undefined),
     getAppSettings(),
   ]);
 
@@ -55,7 +60,7 @@ export default async function CheckoutPage({
         backLabel="Back to marketplace"
         eyebrow="Confirm purchase"
         title="Review your proxy plan."
-        description="Nothing is charged until you confirm. Your wallet is debited only inside the allocation transaction."
+        description={countryCode ? `Selected location: ${countryCode}. Nothing is charged until you confirm.` : "Nothing is charged until you confirm. Your wallet is debited only inside the allocation transaction."}
       />
 
       <div className="mt-5 flex flex-col gap-4 lg:grid lg:grid-cols-[1.35fr_0.85fr]">
@@ -203,6 +208,7 @@ export default async function CheckoutPage({
 
             <div className="p-5">
               <CheckoutForm
+            countryCode={countryCode}
                 productSlug={product.slug}
                 idempotencyKey={idempotencyKey}
                 priceMinor={product.priceMinor}

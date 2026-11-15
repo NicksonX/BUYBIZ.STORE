@@ -401,8 +401,8 @@ export async function getTicketForUser(userId: string, ticketId: string) {
   return { ticket: ticketResult.rows[0], messages: messages.rows };
 }
 
-export async function getCheckoutData(userId: string, slug: string) {
-  const plans = await getPlanAvailability();
+export async function getCheckoutData(userId: string, slug: string, countryCode?: string) {
+  const plans = await getPlanAvailability(countryCode);
   const selected = plans.find((plan) => plan.product.slug === slug);
   const wallet = await getWalletSummary(userId);
   return { plan: selected ?? null, wallet, plans };
@@ -415,8 +415,8 @@ export async function getPublicPlanBySlug(
   return plans.find((plan) => plan.product.slug === slug) ?? null;
 }
 
-export async function getAvailablePlans(): Promise<PlanAvailability[]> {
-  return getPlanAvailability();
+export async function getAvailablePlans(countryCode?: string): Promise<PlanAvailability[]> {
+  return getPlanAvailability(countryCode);
 }
 
 export async function searchCustomerData(userId: string, query: string) {

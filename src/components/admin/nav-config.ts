@@ -19,6 +19,7 @@ import {
   ReceiptText,
   Settings,
   ShieldCheck,
+  Sparkles,
   Users,
   type LucideIcon,
 } from "lucide-react";
@@ -35,6 +36,7 @@ export const adminNav: AdminNavItem[] = [
   { href: "/admin", label: "Overview", icon: LayoutDashboard, exact: true, group: "Dashboard" },
   { href: "/admin/analytics", label: "Analytics", icon: BarChart3, group: "Dashboard" },
   { href: "/admin/users", label: "Users", icon: Users, group: "Operations" },
+  { href: "/admin/ai-proxy", label: "AI Proxy Assistant", icon: Sparkles, group: "Operations" },
   { href: "/admin/inventory", label: "Proxy inventory", icon: Package, group: "Operations" },
   { href: "/admin/rotation", label: "Credential rotation", icon: KeyRound, group: "Operations" },
   { href: "/admin/inactivity", label: "Inactivity", icon: Snowflake, group: "Operations" },

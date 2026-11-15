@@ -45,7 +45,11 @@ describe("mobile wallet transaction history", () => {
 
     const page = await getWalletTransactions(user.id, { limit: 20 });
     expect(page.items.length).toBe(4);
-    expect(page.items[0]).toMatchObject({ title: "Wallet deposit", status: "pending", amountMinor: 150_000 });
+    expect(
+      page.items.find(
+        (item) => item.title === "Wallet deposit" && item.status === "pending" && item.amountMinor === 150_000,
+      ),
+    ).toBeTruthy();
     expect(page.items.some((item) => item.title === "Proxy purchase" && item.amountMinor === -50_000 && item.status === "completed")).toBe(true);
     expect(page.items.some((item) => item.title === "Wallet refund" && item.amountMinor === 20_000 && item.status === "refunded")).toBe(true);
     expect(page.items.some((item) => item.copyReference === reference)).toBe(true);

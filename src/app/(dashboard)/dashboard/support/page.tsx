@@ -5,7 +5,6 @@ import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { buttonVariants } from "@/components/ui/button";
 import { requireUserPage } from "@/server/auth/guards";
-import { isAiSupportConfigured } from "@/lib/config";
 import { getTicketsForUser } from "@/server/data/customer";
 import { ticketStatusMeta, titleCase } from "@/lib/status";
 import { cn, formatRelativeTime } from "@/lib/utils";
@@ -38,7 +37,7 @@ export default async function SupportPage() {
 
       <div className="mt-5 grid items-start gap-4 lg:grid-cols-[1.35fr_0.65fr]">
         <div className="space-y-4">
-          <AiSupportAssistant configured={isAiSupportConfigured()} />
+          <AiSupportAssistant configured />
           <div>
           {tickets.length === 0 ? (
             <EmptyState

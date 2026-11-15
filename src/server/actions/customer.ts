@@ -76,10 +76,13 @@ export async function purchaseAction(
 
   let destination: string | null = null;
   try {
+    const rawCountry = String(formData.get("countryCode") ?? "").toUpperCase();
+    const countryCode = /^[A-Z]{2}$/.test(rawCountry) ? rawCountry : null;
     const outcome = await purchaseProxy({
       userId: user.id,
       productSlug: parsed.data.productSlug,
       idempotencyKey: parsed.data.idempotencyKey,
+      countryCode,
       ip: meta.ip,
       userAgent: meta.userAgent,
     });

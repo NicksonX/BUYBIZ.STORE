@@ -1846,3 +1846,27 @@ export async function updateAmbassadorSettingsAction(
     return formError("The Ambassador settings could not be saved.");
   }
 }
+
+export async function toggleAiSupportAction(formData: FormData): Promise<void> {
+  const admin = await requireAdmin();
+  const enabled = String(formData.get("enabled") ?? "true") === "true";
+  const db = await getDb();
+  await db.transaction(async (tx) => {
+    await tx.query(
+      `insert into app_settings (key,value,updated_by,updated_at)
+       values ('ai_support_enabled',$1::jsonb,$2,now())
+       on conflict (key) do update set value=excluded.value, updated_by=excluded.updated_by, updated_at=now()`,
+      [JSON.stringify(enabled), admin.id],
+    );
+    await writeAuditLog(tx, {
+      actorUserId: admin.id,
+      actorRole: admin.role,
+      action: "ai_support.toggle",
+      entityType: "app_settings",
+      entityId: null,
+      metadata: { enabled },
+    });
+  });
+  revalidatePath("/admin/support");
+  revalidatePath("/dashboard/support");
+}

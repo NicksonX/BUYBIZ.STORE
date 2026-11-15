@@ -10,13 +10,15 @@ const starters = [
   "How do refunds work?",
   "What is the Personal proxy?",
   "How do referrals work?",
+  "I need a human agent",
 ];
 
-export function AiSupportAssistant({ configured }: { configured: boolean }) {
+export function AiSupportAssistant({ configured = true }: { configured?: boolean }) {
   const [message, setMessage] = useState("");
   const [turns, setTurns] = useState<Turn[]>([]);
   const [pending, setPending] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const [conversationId, setConversationId] = useState<string | null>(null);
 
   async function send(text: string) {
     const clean = text.trim();
@@ -30,17 +32,20 @@ export function AiSupportAssistant({ configured }: { configured: boolean }) {
       const response = await fetch("/api/support/ai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: clean, history }),
+        body: JSON.stringify({ message: clean, history, conversationId }),
       });
       const payload = (await response.json()) as {
         reply?: string;
         message?: string;
         flagged?: boolean;
+        conversationId?: string;
+        ticketNumber?: string | null;
       };
       if (!response.ok || !payload.reply) {
         setNotice(payload.message ?? "The assistant could not reply. Please open a ticket.");
         return;
       }
+      setConversationId(payload.conversationId ?? conversationId);
       setTurns((current) => [
         ...current,
         { role: "assistant", content: payload.reply! },
@@ -60,9 +65,9 @@ export function AiSupportAssistant({ configured }: { configured: boolean }) {
             <Bot className="h-4 w-4" />
           </span>
           <div>
-            <h2 className="text-[12px] font-semibold">Ask BUYBIZ</h2>
+            <h2 className="text-[12px] font-semibold">BUYBIZ AI Support</h2>
             <p className="mt-0.5 text-[9px] text-muted-foreground">
-              Public information only. No account changes.
+              Account-aware support. Read-only checks only.
             </p>
           </div>
         </div>
@@ -81,8 +86,8 @@ export function AiSupportAssistant({ configured }: { configured: boolean }) {
         {turns.length === 0 ? (
           <div>
             <p className="text-[10.5px] leading-5 text-muted-foreground">
-              Ask about plans, the wallet, refunds, expiry or referrals. If you
-              need something changed on your account, open a ticket.
+              Hello! Welcome to BUYBIZ. I can help with proxy purchases, account
+              questions, payments, referrals and rewards. How can I help you today?
             </p>
             <div className="mt-3 flex flex-wrap gap-1.5">
               {starters.map((starter) => (
@@ -157,14 +162,13 @@ export function AiSupportAssistant({ configured }: { configured: boolean }) {
             {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
           </button>
         </div>
-        <p className="mt-2 text-[8.5px] leading-4 text-muted-foreground">
-          Do not paste passwords, card details or proxy credentials. The
-          assistant cannot change your wallet, orders or account.{" "}
-          <Link href="/dashboard/support/new" className="underline">
-            Human support
-          </Link>
-          .
-        </p>
+        <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-[8.5px] leading-4 text-muted-foreground">
+          <p>Do not paste passwords, card details or proxy credentials. I cannot change your account.</p>
+          <div className="flex items-center gap-3">
+            <button type="button" onClick={() => { setTurns([]); setConversationId(null); setNotice(null); }} className="underline">Clear chat</button>
+            <Link href="/dashboard/support/new" className="underline">Human support</Link>
+          </div>
+        </div>
       </form>
     </section>
   );

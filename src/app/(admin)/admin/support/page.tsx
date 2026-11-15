@@ -11,6 +11,9 @@ import {
   getContactMessages,
 } from "@/server/data/admin";
 import { updateContactMessageStatusAction } from "@/server/actions/admin";
+import { getAiSupportConversations } from "@/server/services/support-ai";
+import { getDb } from "@/lib/db";
+import { toggleAiSupportAction } from "@/server/actions/admin";
 import { ticketStatusMeta } from "@/lib/status";
 import { formatDateTime, formatRelativeTime } from "@/lib/utils";
 
@@ -28,10 +31,14 @@ export default async function AdminSupportPage({
   await requireStaffPage();
   const params = await searchParams;
   const q = (first(params.q) ?? "").trim().toLowerCase();
-  const [allTickets, contactMessages] = await Promise.all([
+  const db = await getDb();
+  const [allTickets, contactMessages, aiConversations, aiSetting] = await Promise.all([
     getAdminTickets(),
     getContactMessages(),
+    getAiSupportConversations(),
+    db.query<{ enabled: unknown }>(`select value as enabled from app_settings where key='ai_support_enabled' limit 1`),
   ]);
+  const aiEnabled = aiSetting.rows[0]?.enabled !== false;
   const tickets = q
     ? allTickets.filter(
         (ticket) =>
@@ -76,6 +83,27 @@ export default async function AdminSupportPage({
         <button type="submit" className="h-9 rounded-full bg-foreground px-4 text-[10.5px] font-semibold text-background">Search</button>
         <Link href="/admin/support" className="inline-flex h-9 items-center rounded-full border border-border px-3 text-[10px] text-muted-foreground">Reset</Link>
       </form>
+
+      <section className="surface-card mt-3 overflow-hidden rounded-[14px]">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-3">
+          <div><h2 className="text-[12px] font-semibold">AI support conversations</h2><p className="mt-0.5 text-[9px] text-muted-foreground">Read-only transcript metadata. Escalated chats also create a support ticket.</p></div>
+          <form action={toggleAiSupportAction}>
+            <input type="hidden" name="enabled" value={String(!aiEnabled)} />
+            <button type="submit" className="rounded-full border border-border px-3 py-1.5 text-[9.5px] font-medium">{aiEnabled ? "Disable AI support" : "Enable AI support"}</button>
+          </form>
+        </div>
+        {aiConversations.length ? (
+          <div className="divide-y divide-border">
+            {aiConversations.slice(0, 10).map((conversation) => (
+              <div key={conversation.id} className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 text-[9.5px]">
+                <span className="font-medium">{conversation.username} <span className="text-muted-foreground">({conversation.email})</span></span>
+                <span className="text-muted-foreground">{conversation.count} messages · {formatRelativeTime(conversation.updatedAt)}</span>
+                <span className={conversation.flagged ? "text-danger" : conversation.status === "escalated" ? "text-warning" : "text-success"}>{conversation.flagged ? "flagged" : conversation.status}</span>
+              </div>
+            ))}
+          </div>
+        ) : <p className="px-4 py-4 text-[9.5px] text-muted-foreground">No AI conversations yet.</p>}
+      </section>
 
       <section className="surface-card mt-3 overflow-hidden rounded-[14px]">
         <div className="border-b border-border px-4 py-3">

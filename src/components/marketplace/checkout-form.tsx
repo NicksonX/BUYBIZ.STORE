@@ -16,6 +16,7 @@ export function CheckoutForm({
   available,
   insufficient,
   accessType,
+  countryCode,
 }: {
   productSlug: string;
   idempotencyKey: string;
@@ -24,6 +25,7 @@ export function CheckoutForm({
   available: boolean;
   insufficient: boolean;
   accessType: "shared" | "single";
+  countryCode: string | null;
 }) {
   const [state, formAction, pending] = useActionState(
     purchaseAction,
@@ -35,6 +37,7 @@ export function CheckoutForm({
     <form action={formAction} className="space-y-4">
       <input type="hidden" name="productSlug" value={productSlug} />
       <input type="hidden" name="idempotencyKey" value={idempotencyKey} />
+      {countryCode ? <input type="hidden" name="countryCode" value={countryCode} /> : null}
 
       {state.message && state.status === "error" ? (
         <Alert tone="danger" title="Purchase not completed">

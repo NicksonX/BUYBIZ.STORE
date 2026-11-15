@@ -121,6 +121,7 @@ export async function purchaseProxy(input: {
   userId: string;
   productSlug: string;
   idempotencyKey: string;
+  countryCode?: string | null;
   ip?: string | null;
   userAgent?: string | null;
 }): Promise<PurchaseOutcome> {
@@ -267,12 +268,13 @@ export async function purchaseProxy(input: {
             and i.status in ('available','full')
             and i.access_type = $3
             and i.product_slug = $4
+            and ($5::text is null or i.country_code = $5)
             and i.upstream_expires_at >=
                 now() + (($1::int + $2::int) * interval '1 second')
           order by i.uploaded_at asc, i.id asc
           limit 25
           for update skip locked`,
-        [product.durationSeconds, settings.safetyBufferSeconds, product.accessType, product.slug],
+        [product.durationSeconds, settings.safetyBufferSeconds, product.accessType, product.slug, input.countryCode ?? null],
       );
 
       let selectedInventoryId: string | null = null;
@@ -302,6 +304,7 @@ export async function purchaseProxy(input: {
                 and i.status in ('available','full')
                 and i.access_type = $1
                 and i.product_slug = $2
+                and ($3::text is null or i.country_code = $3)
                 and i.upstream_expires_at > now()
                 and (
                   select count(*) from proxy_allocations a
@@ -310,7 +313,7 @@ export async function purchaseProxy(input: {
                      and a.expires_at > now()
                 ) < i.max_seats
            ) as "insufficientLife"`,
-        [product.accessType, product.slug],
+        [product.accessType, product.slug, input.countryCode ?? null],
         );
         const reason = reasonResult.rows[0]?.insufficientLife
           ? "INSUFFICIENT_STOCK_LIFETIME"

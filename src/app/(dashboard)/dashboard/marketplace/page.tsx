@@ -12,6 +12,8 @@ import { Badge } from "@/components/ui/badge";
 import { requireUserPage } from "@/server/auth/guards";
 import { getAvailablePlans } from "@/server/data/customer";
 import { getComingSoonProducts } from "@/server/data/products";
+import { getInventoryCountries } from "@/server/data/countries";
+import { countryFlag } from "@/lib/ai/countries";
 import { cn } from "@/lib/utils";
 import type { Product } from "@/lib/db/types";
 
@@ -39,11 +41,14 @@ export default async function MarketplacePage({
   const activeFilter = filters.some((filter) => filter.key === raw)
     ? (raw as (typeof filters)[number]["key"])
     : "all";
+  const requestedCountry = Array.isArray(params.country) ? params.country[0] : params.country;
+  const countryCode = /^[A-Za-z]{2}$/.test(requestedCountry ?? "") ? requestedCountry!.toUpperCase() : null;
 
   await requireUserPage();
-  const [plans, comingSoon] = await Promise.all([
-    getAvailablePlans(),
+  const [plans, comingSoon, countries] = await Promise.all([
+    getAvailablePlans(countryCode ?? undefined),
     getComingSoonProducts(),
+    getInventoryCountries(),
   ]);
 
   const showProxy = activeFilter === "all" || activeFilter === "proxy";
@@ -54,7 +59,7 @@ export default async function MarketplacePage({
       <PageHeader
         eyebrow="Marketplace"
         title="Pick a proxy plan."
-        description="Live stock and naira prices. Choose a plan, review the expiry and pay from your BUYBIZ wallet at checkout."
+        description="Choose a country, review the plan and pay from your BUYBIZ wallet. Availability is checked against live inventory."
         actions={
           <Link
             href="/how-it-works"
@@ -66,7 +71,31 @@ export default async function MarketplacePage({
       />
 
       <div className="mt-5">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <section className="surface-card rounded-[14px] p-3.5">
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <p className="text-[9px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">Proxy location</p>
+              <p className="mt-0.5 text-[10px] text-muted-foreground">Choose where your proxy should exit. Availability is live.</p>
+            </div>
+            <span className="rounded-full border border-border bg-surface-subtle px-2.5 py-1 text-[9px] text-muted-foreground">{countryCode ? countryCode : "All locations"}</span>
+          </div>
+          <div className="mt-3 flex gap-1.5 overflow-x-auto overscroll-x-contain pb-1 sm:flex-wrap">
+            <Link href="/dashboard/marketplace" className={cn("tap-target inline-flex min-h-10 shrink-0 items-center gap-2 rounded-full border px-3 text-[10.5px] font-medium", !countryCode ? "border-foreground bg-foreground text-background" : "border-border bg-surface text-muted-foreground")}>
+              🌍 All locations
+            </Link>
+            {countries.map((country) => (
+              <Link key={country.code} href={`/dashboard/marketplace?country=${country.code}`} className={cn("tap-target inline-flex min-h-10 shrink-0 items-center gap-2 rounded-full border px-3 text-[10.5px] font-medium", countryCode === country.code ? "border-foreground bg-foreground text-background" : "border-border bg-surface text-muted-foreground")}>
+                <span className="text-[14px]">{countryFlag(country.code)}</span>
+                {country.name}
+                <span className={cn("text-[8.5px]", country.available > 0 ? "text-success" : "text-warning")}>{country.available > 0 ? `${country.available} live` : "No stock"}</span>
+              </Link>
+            ))}
+          </div>
+          {countries.length === 0 ? <p className="mt-2 text-[9.5px] text-warning">No proxy inventory has been added yet. Check back shortly.</p> : null}
+          {countryCode && countries.every((country) => country.code !== countryCode) ? <p className="mt-2 text-[9.5px] text-warning">Sorry, there are currently no proxies available for this location. Please select another country.</p> : null}
+        </section>
+
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <nav
             aria-label="Marketplace categories"
             className="flex gap-1.5 overflow-x-auto overscroll-x-contain pb-1 sm:flex-wrap sm:overflow-visible"
@@ -133,6 +162,7 @@ export default async function MarketplacePage({
                   availability={plan}
                   featured={plan.product.slug === "proxy-30-days"}
                   ctaLabel="Buy with wallet"
+                  href={`/dashboard/checkout/${plan.product.slug}${countryCode ? `?country=${countryCode}` : ""}`}
                 />
               ))}
             </div>
