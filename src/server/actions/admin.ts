@@ -151,7 +151,7 @@ export async function createInventoryAction(
     : 0;
   if (costMinor === null) {
     return formError("Enter a valid purchase cost.", {
-      purchaseCost: "Use a naira amount, for example 1500.",
+      purchaseCost: "Use a naira amount, for example 2000.",
     });
   }
   const meta = await getRequestMeta();
@@ -1273,7 +1273,7 @@ export async function updateSettingsAction(
     maxMinor < minMinor
   ) {
     return formError("Check the deposit limits.", {
-      depositMin: "The minimum deposit is ₦1,500 and cannot be lowered.",
+      depositMin: "The minimum deposit is ₦2,000 and cannot be lowered.",
       depositMax: "Maximum must be greater than the minimum.",
     });
   }
