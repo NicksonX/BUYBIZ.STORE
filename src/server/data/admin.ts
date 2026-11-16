@@ -238,8 +238,8 @@ export async function getAdminOverview(): Promise<AdminOverview> {
          ) as "rotationDue"`,
     ),
     db.query<{ month: string; totalMinor: number }>(
-      `select to_char(date_trunc('month', created_at), 'YYYY-MM') as month,
-              coalesce(sum(amount_minor),0)::bigint as "totalMinor"
+      `select to_char(date_trunc('month', o.created_at), 'YYYY-MM') as month,
+              coalesce(sum(o.amount_minor),0)::bigint as "totalMinor"
          from orders o join products p on p.id=o.product_id
         where o.status = 'completed' and p.category='proxy'
           and exists (select 1 from proxy_allocations a where a.order_id=o.id)
