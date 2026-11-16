@@ -2,7 +2,7 @@
 
 ## Existing referral / Ambassador programme
 
-- A referral earns **1,000 NGN wallet credits** after the referred customer makes one verified external Paystack deposit of at least **₦2,000** **and completes a proxy purchase of 7 days or more**. A deposit alone never qualifies.
+- A referral earns **1,000 NGN wallet credits** after the referred customer successfully completes a proxy purchase of **7 days or more**. A wallet deposit alone never qualifies.
 - Wallet rewards stay in the immutable NGN `wallet_ledger`; they are not cash-withdrawable.
 - At **10 qualified referrals**, the referrer is automatically promoted to Ambassador.
 - Ambassadors earn **$3 USD** per qualified referral, uncapped, in the separate `ambassador_ledger`.
@@ -42,7 +42,7 @@ Apply these migrations before deploying the matching application build:
 
 The policy migration:
 - lowers the wallet deposit minimum to **₦1,500**;
-- sets every referral/campaign qualification deposit to **₦2,000**;
+- removes the fixed deposit threshold from referral/campaign eligibility; a 7-day+ proxy purchase is the qualifier;
 - updates the seeded campaign;
 - sets the next Ambassador payout batch to **20 December 2026**.
 

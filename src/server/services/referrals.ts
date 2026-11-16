@@ -266,7 +266,6 @@ export async function qualifyReferralForPurchase(
   );
   const referral = pending.rows[0];
   if (!referral) return null;
-  if (!referral.qualifyingDepositId) return null;
 
   const qualified = await tx.query<{ id: string }>(
     `update referrals
@@ -343,7 +342,7 @@ export async function qualifyReferralForPurchase(
       settings.rewardMinor,
       balance + settings.rewardMinor,
       `referral:${referral.id}`,
-      referral.qualifyingDepositId,
+      referral.qualifyingDepositId ?? null,
       order.id,
       `Referral reward — qualifying ${Math.round(Number(order.durationSeconds) / 86_400)}-day proxy purchase`,
     ],

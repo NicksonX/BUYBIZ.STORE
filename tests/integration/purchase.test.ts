@@ -64,6 +64,32 @@ describe("atomic proxy purchase", () => {
     expect(ledger.rows[0].count).toBe(1);
   });
 
+  it("assigns only inventory from the selected country", async () => {
+    const user = await createTestUser("countrybuy");
+    await fundWallet(user.id, PRICE * 2);
+    const inventory = await createTestInventory({ maxSeats: 10 });
+    const wrong = await purchaseProxy({
+      userId: user.id,
+      productSlug: "proxy-24-hours",
+      idempotencyKey: key(),
+      countryCode: "GB",
+    });
+    expect(wrong.outcome).toBe("refunded");
+    const right = await purchaseProxy({
+      userId: user.id,
+      productSlug: "proxy-24-hours",
+      idempotencyKey: key(),
+      countryCode: "US",
+    });
+    expect(right.outcome).toBe("allocated");
+    const db = await getDb();
+    const allocation = await db.query<{ inventoryId: string }>(
+      `select proxy_inventory_id as "inventoryId" from proxy_allocations where user_id=$1`,
+      [user.id],
+    );
+    expect(allocation.rows[0].inventoryId).toBe(inventory.id);
+  });
+
   it("refunds automatically when there is no eligible stock", async () => {
     const user = await createTestUser("nostock");
     await fundWallet(user.id, PRICE);

@@ -111,7 +111,7 @@ export function AmbassadorCampaign({
             <div className="border-t border-white/10 pt-3">
               <p className="text-[9.5px] leading-4 text-white/70">
                 {isAmbassador
-                  ? `No cap. Every friend who completes a ${minProxyDays}-day+ proxy purchase and the qualifying deposit adds ${reward} to your USD balance. No wallet credits are used.`
+                  ? `No cap. Every friend who completes a ${minProxyDays}-day+ proxy purchase adds ${reward} to your USD balance. No wallet credits are used.`
                   : `Joining is free. Unlock Ambassador at ${required} qualified referrals, then earn ${reward} for every friend who completes a 7-day+ proxy purchase. No cap.`}
               </p>
               <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[8.5px] text-white/60">

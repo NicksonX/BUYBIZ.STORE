@@ -78,9 +78,11 @@ export async function createTestInventory(options: {
   await db.query(
     `insert into proxy_inventory
        (id, label, protocol, host, port, encrypted_username, encrypted_password,
-        region, provider_note, purchase_cost_minor, max_seats, access_type,
-        product_slug, uploaded_at, upstream_expires_at, expiry_is_estimated, status)
-     values ($1,$2,'socks5','203.0.113.210',1080,$3,$4,'Test','Vitest inventory',1000,$5,$6,$7,now(),$8,false,$9)`,
+        region, country_code, country_name, verification_status, provider_note,
+        purchase_cost_minor, max_seats, access_type, product_slug, uploaded_at,
+        upstream_expires_at, expiry_is_estimated, status)
+     values ($1,$2,'socks5','203.0.113.210',1080,$3,$4,'Test','US','United States','verified',
+             'Vitest inventory',1000,$5,$6,$7,now(),$8,false,$9)`,
     [id, `Vitest proxy ${id.slice(0, 6)}`, username, password, maxSeats, options.accessType ?? "shared", options.productSlug ?? "proxy-24-hours", expiry, options.status ?? "available"],
   );
   return { id, maxSeats, expiry };

@@ -18,7 +18,7 @@ export default async function AdminReferralsPage() {
       <PageHeader
         eyebrow="Finance"
         title="Referral rewards"
-        description="A reward is credited only after a referred customer makes one verified deposit of at least ₦2,000 and a completed proxy purchase of 7 days or more. Deposits, transfers, refunds and admin credits alone never qualify."
+        description="A reward is credited only after a referred customer completes a proxy purchase of 7 days or more. A wallet deposit alone never qualifies; failed and refunded purchases are excluded."
       />
 
       <div className="mt-4 grid grid-cols-2 gap-2.5 xl:grid-cols-4">

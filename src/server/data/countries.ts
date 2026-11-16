@@ -13,7 +13,7 @@ export async function getInventoryCountries(): Promise<InventoryCountry[]> {
   const db = await getDb();
   const result = await db.query<{ code: string; available: number; total: number }>(
     `select country_code as code,
-            count(*) filter (where status = 'available')::int as available,
+            count(*) filter (where status = 'available' and verification_status = 'verified')::int as available,
             count(*)::int as total
        from proxy_inventory
       where archived_at is null and country_code is not null

@@ -266,6 +266,8 @@ export async function purchaseProxy(input: {
            from proxy_inventory i
           where i.archived_at is null
             and i.status in ('available','full')
+            and i.verification_status = 'verified'
+            and i.country_code is not null
             and i.access_type = $3
             and i.product_slug = $4
             and ($5::text is null or i.country_code = $5)
@@ -302,6 +304,8 @@ export async function purchaseProxy(input: {
                from proxy_inventory i
               where i.archived_at is null
                 and i.status in ('available','full')
+                and i.verification_status = 'verified'
+                and i.country_code is not null
                 and i.access_type = $1
                 and i.product_slug = $2
                 and ($3::text is null or i.country_code = $3)

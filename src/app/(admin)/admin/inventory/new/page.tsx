@@ -6,6 +6,7 @@ import { requireAdminPage } from "@/server/auth/guards";
 import { getAppSettings } from "@/server/data/settings";
 import { getPlanAvailability } from "@/server/data/products";
 import { createInventoryAction } from "@/server/actions/admin";
+import { allCountries } from "@/lib/ai/countries";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +27,7 @@ export default async function NewInventoryPage() {
     getPlanAvailability(),
   ]);
   const expiryDate = defaultExpiry(settings.stockExpiryDefaultDays);
+  const countries = allCountries();
 
   return (
     <div>
@@ -48,12 +50,25 @@ export default async function NewInventoryPage() {
               <AdminField label="Internal label" htmlFor="label">
                 <Input id="label" name="label" required maxLength={80} placeholder="e.g. Lagos Datacenter 01" />
               </AdminField>
+              <AdminField label="Country" htmlFor="countryCode">
+                <Select id="countryCode" name="countryCode" defaultValue="US" required>
+                  {countries.map((country) => <option key={country.code} value={country.code}>{country.name}</option>)}
+                </Select>
+              </AdminField>
               <AdminField label="Protocol" htmlFor="protocol">
                 <Select id="protocol" name="protocol" defaultValue="socks5">
                   <option value="http">HTTP</option>
                   <option value="https">HTTPS</option>
                   <option value="socks4">SOCKS4</option>
                   <option value="socks5">SOCKS5</option>
+                </Select>
+              </AdminField>
+              <AdminField label="Verification" htmlFor="verificationStatus" hint="Only verified, available stock can be sold">
+                <Select id="verificationStatus" name="verificationStatus" defaultValue="unverified">
+                  <option value="unverified">Unverified</option>
+                  <option value="verified">Verified by admin</option>
+                  <option value="review_required">Review required</option>
+                  <option value="failed">Failed</option>
                 </Select>
               </AdminField>
               <AdminField label="Host / IP" htmlFor="host">

@@ -182,6 +182,8 @@ export const productUpdateSchema = z.object({
 });
 
 export const inventorySchema = z.object({
+  countryCode: z.string().length(2).regex(/^[A-Za-z]{2}$/),
+  verificationStatus: z.enum(["unverified", "verified", "failed", "review_required"]).default("unverified"),
   label: z.string().trim().min(2, "Enter a label.").max(80),
   protocol: z.enum(["http", "https", "socks4", "socks5"]),
   host: z.string().trim().min(3, "Enter a host.").max(255),

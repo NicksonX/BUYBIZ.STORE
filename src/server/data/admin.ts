@@ -44,6 +44,9 @@ export type AdminInventoryRow = {
   host: string;
   port: number;
   region: string | null;
+  countryCode: string | null;
+  countryName: string | null;
+  verificationStatus: string;
   purchaseCostMinor: number;
   maxSeats: number;
   accessType: "shared" | "single";
@@ -526,6 +529,8 @@ export async function getAdminInventory(input: {
   }
   const result = await db.query<AdminInventoryRow>(
     `select i.id, i.label, i.protocol, i.host, i.port, i.region,
+            i.country_code as "countryCode", i.country_name as "countryName",
+            i.verification_status as "verificationStatus",
             i.purchase_cost_minor as "purchaseCostMinor",
             i.max_seats as "maxSeats", i.access_type as "accessType",
             i.product_slug as "productSlug", i.credential_group as "credentialGroup",
@@ -575,6 +580,8 @@ export async function getAdminInventoryDetail(id: string) {
     }
   >(
     `select i.id, i.label, i.protocol, i.host, i.port, i.region,
+            i.country_code as "countryCode", i.country_name as "countryName",
+            i.verification_status as "verificationStatus",
             i.provider_note as "providerNote", i.admin_notes as "adminNotes",
             i.purchase_cost_minor as "purchaseCostMinor",
             i.max_seats as "maxSeats", i.access_type as "accessType",

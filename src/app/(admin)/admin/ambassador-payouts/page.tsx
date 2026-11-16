@@ -66,13 +66,9 @@ export default async function AmbassadorPayoutsPage() {
               <AdminField label="Qualified referrals required" htmlFor="amb-referrals"><Input id="amb-referrals" name="referralsRequired" type="number" min={1} max={100} defaultValue={data.config.referralsRequired} /></AdminField>
               <AdminField label="Commission per referral (USD)" htmlFor="amb-commission"><Input id="amb-commission" name="commissionUsd" inputMode="decimal" defaultValue={(data.config.commissionCents / 100).toFixed(2)} /></AdminField>
               <AdminField label="Minimum payout (USD)" htmlFor="amb-minimum"><Input id="amb-minimum" name="minimumUsd" inputMode="decimal" min={10} defaultValue={(data.config.withdrawalMinCents / 100).toFixed(2)} /></AdminField>
-              <AdminField label="Qualifying task" htmlFor="amb-task">
-                <Select id="amb-task" name="qualifyingTask" defaultValue={data.config.qualifyingTask}>
-                  <option value="referral_deposit">Qualifying deposit</option>
-                  <option value="referral_first_purchase">First proxy purchase</option>
-                </Select>
-              </AdminField>
-              <AdminField label="Qualifying deposit (NGN)" htmlFor="amb-deposit"><Input id="amb-deposit" name="qualifyingDepositNgn" inputMode="decimal" defaultValue={(data.config.qualifyingDepositMinor / 100).toFixed(2)} /></AdminField>
+              <div className="rounded-[9px] border border-border bg-surface-subtle px-3 py-2.5 text-[9.5px] leading-4 text-muted-foreground">
+                <strong className="text-foreground">Qualifying activity:</strong> a completed proxy purchase of 7 days or more. Wallet deposits alone do not qualify.
+              </div>
               <AdminField label="Next $3 payout batch (payout date, not end date)" htmlFor="amb-payout-date"><Input id="amb-payout-date" name="nextPayoutAt" type="date" defaultValue={lagosDateInput(data.config.nextPayoutAt)} /></AdminField>
               <label className="mt-5 flex items-center gap-2 text-[9.5px] text-muted-foreground">
                 <input type="checkbox" name="enabled" defaultChecked={data.config.enabled} className="h-3.5 w-3.5 accent-foreground" />

@@ -142,6 +142,16 @@ describe("referral rewards", () => {
     expect(rewards.rows[0].count).toBe(1);
   });
 
+  it("qualifies on a 7-day purchase without any wallet deposit", async () => {
+    const referrer = await createTestUser("refnodep");
+    const referee = await createTestUser("refnodepnew");
+    await attach(referrer.id, referee.id, await codeFor(referrer.id));
+    await buyProxy(referee.id, 7);
+    const db = await getDb();
+    const row = await db.query<{ status: string }>(`select status from referrals where referee_id=$1`, [referee.id]);
+    expect(row.rows[0].status).toBe("rewarded");
+  });
+
   it("qualifies a 30-day purchase and rejects a refunded 7-day order", async () => {
     const referrer = await createTestUser("ref30");
     const thirty = await createTestUser("ref30new");

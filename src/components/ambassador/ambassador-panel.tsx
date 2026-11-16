@@ -97,8 +97,8 @@ export function AmbassadorPanel({
             </h2>
             <p className="mt-1 max-w-[620px] text-[10px] leading-4 text-white/45">
               {isAmbassador
-                ? `You earn $${(commissionCents / 100).toFixed(2)} for every referral that completes a ${minProxyDays}-day+ proxy purchase and the qualifying deposit, with no cap. USD earnings stay separate from your naira wallet.`
-                : `Refer ${required} friends who complete a ${minProxyDays}-day+ proxy purchase and the qualifying deposit to unlock Ambassador status and uncapped USD commissions.`}
+                ? `You earn $${(commissionCents / 100).toFixed(2)} for every referral that completes a ${minProxyDays}-day+ proxy purchase, with no cap. USD earnings stay separate from your naira wallet.`
+                : `Refer ${required} friends who complete a ${minProxyDays}-day+ proxy purchase to unlock Ambassador status and uncapped USD commissions.`}
             </p>
           </div>
           <span className="rounded-full border border-white/20 bg-white/[0.04] px-2.5 py-1 text-[9px] font-medium text-white/70">

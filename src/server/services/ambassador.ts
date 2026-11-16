@@ -207,7 +207,6 @@ export async function qualifyReferralForAmbassador(
   );
   const referral = referralResult.rows[0];
   if (!referral) return null;
-  if (config.qualifyingTask === "referral_deposit" && !referral.qualifyingDepositId) return null;
 
   const updated = await tx.query(
     `update referrals

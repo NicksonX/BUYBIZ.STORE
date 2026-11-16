@@ -52,7 +52,7 @@ const groups = [
       },
       {
         q: "How do referrals work?",
-        a: "Every customer has a referral code on Dashboard > Refer and earn. You earn ₦1,000 in BUYBIZ wallet credit after a new customer makes one verified external deposit of at least ₦2,000. Internal transfers, refunds, admin credits and adjustments do not count. There is one reward per referred customer, self-referrals and duplicate-account abuse are rejected, and the reward is internal wallet credit, not cash.",
+        a: "Every customer has a referral code on Dashboard > Refer and earn. You earn ₦1,000 in BUYBIZ wallet credit after a new customer successfully completes a proxy purchase of at least 7 days. A wallet deposit alone does not qualify. There is one reward per referred customer, self-referrals and duplicate-account abuse are rejected, and the reward is internal wallet credit, not cash.",
       },
       {
         q: "What happens if a payment webhook is duplicated?",

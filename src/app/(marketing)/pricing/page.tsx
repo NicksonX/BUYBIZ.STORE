@@ -12,6 +12,8 @@ import { PlanCard } from "@/components/marketplace/plan-card";
 import { Alert } from "@/components/ui/alert";
 import type { PlanAvailability } from "@/lib/db/types";
 import { getPlanAvailability } from "@/server/data/products";
+import { getInventoryCountries } from "@/server/data/countries";
+import { allCountries, countryFlag } from "@/lib/ai/countries";
 
 export const metadata: Metadata = {
   title: "Pricing",
@@ -32,14 +34,34 @@ const comparison = [
   { label: "No-stock wallet refund", values: [true, true, true, true] },
 ];
 
-export default async function PricingPage() {
+export default async function PricingPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const query = await searchParams;
+  const rawCountry = Array.isArray(query.country) ? query.country[0] : query.country;
+  const countryCode = /^[A-Za-z]{2}$/.test(rawCountry ?? "") ? rawCountry!.toUpperCase() : null;
   let plans: PlanAvailability[] = [];
   let error = false;
+  let countries: Awaited<ReturnType<typeof getInventoryCountries>> = [];
   try {
-    plans = await getPlanAvailability();
+    [plans, countries] = await Promise.all([
+      getPlanAvailability(countryCode ?? undefined),
+      getInventoryCountries(),
+    ]);
   } catch {
     error = true;
   }
+  const selectedCountry = countryCode ? countries.find((country) => country.code === countryCode) : null;
+  const countryMissing = countryCode && !selectedCountry;
+  const countryOutOfStock = selectedCountry && selectedCountry.available === 0;
+  const inventoryByCode = new Map(countries.map((country) => [country.code, country]));
+  const countryOptions = allCountries().map((country) => ({
+    ...country,
+    available: inventoryByCode.get(country.code)?.available ?? 0,
+    configured: inventoryByCode.has(country.code),
+  }));
 
   return (
     <>
@@ -95,6 +117,29 @@ export default async function PricingPage() {
               relying on plan availability.
             </Alert>
           ) : null}
+          <section className="mb-5 rounded-[16px] border border-black/[0.06] bg-white p-4">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="text-[9px] font-semibold uppercase tracking-[0.1em] text-[#8C9097]">Choose proxy country</p>
+                <p className="mt-1 text-[10.5px] text-[#6E7178]">Only countries with verified, available inventory can be purchased.</p>
+              </div>
+              <form method="get" action="/pricing">
+                <label className="sr-only" htmlFor="pricing-country">Proxy country</label>
+                <select id="pricing-country" name="country" defaultValue={countryCode ?? ""} className="h-9 rounded-full border border-black/[0.12] bg-white px-3 text-[11px]">
+                  <option value="">All available countries</option>
+                  {countryOptions.map((country) => <option key={country.code} value={country.code}>{country.name} — {!country.configured ? "Country Not Available" : country.available > 0 ? `${country.available} available` : "Currently Out of Stock"}</option>)}
+                </select>
+                <button type="submit" className="ml-2 h-9 rounded-full bg-[#0A0B0D] px-4 text-[10.5px] font-semibold text-white">Apply</button>
+              </form>
+            </div>
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              <Link href="/pricing" className={`rounded-full border px-3 py-1.5 text-[10px] ${!countryCode ? "border-[#0A0B0D] bg-[#0A0B0D] text-white" : "border-black/[0.1] text-[#6E7178]"}`}>All locations</Link>
+              {countries.map((country) => <Link key={country.code} href={`/pricing?country=${country.code}`} className={`rounded-full border px-3 py-1.5 text-[10px] ${countryCode === country.code ? "border-[#0A0B0D] bg-[#0A0B0D] text-white" : "border-black/[0.1] text-[#6E7178]"}`}>{countryFlag(country.code)} {country.name}</Link>)}
+            </div>
+            {countryMissing ? <p className="mt-3 rounded-[8px] border border-[#946200]/20 bg-[#FFF8E8] px-3 py-2 text-[10px] text-[#946200]">Country Not Available — no proxy inventory is configured for this country.</p> : null}
+            {countryOutOfStock ? <p className="mt-3 rounded-[8px] border border-[#946200]/20 bg-[#FFF8E8] px-3 py-2 text-[10px] text-[#946200]">Currently Out of Stock — there are no verified, available proxies for {selectedCountry?.name}.</p> : null}
+            {selectedCountry && selectedCountry.available > 0 ? <p className="mt-3 text-[10px] text-[#16794A]">Selected country: {countryFlag(selectedCountry.code)} {selectedCountry.name} · {selectedCountry.available} available</p> : null}
+          </section>
           <div className="grid gap-4 sm:gap-5 sm:grid-cols-2 lg:grid-cols-2 2xl:grid-cols-4">
             {plans.map((plan) => (
               <PlanCard
@@ -102,6 +147,7 @@ export default async function PricingPage() {
                 product={plan.product}
                 availability={plan}
                 featured={plan.product.slug === "proxy-30-days"}
+                href={`/dashboard/checkout/${plan.product.slug}${countryCode ? `?country=${countryCode}` : ""}`}
               />
             ))}
           </div>

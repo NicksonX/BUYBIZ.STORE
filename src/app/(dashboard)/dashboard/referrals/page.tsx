@@ -65,7 +65,7 @@ export default async function ReferralsPage({
                 <p className="min-w-0 flex-1 truncate rounded-[7px] border border-white/10 bg-white/[0.05] px-3 py-2.5 font-mono text-[10px] text-white/70">{link}</p>
                 <CopyButton value={link} label="Copy link" />
               </div>
-              <p className="mt-4 text-[9.5px] leading-4 text-white/55">Purchase a qualifying proxy subscription to unlock referral rewards. A single verified deposit of ₦2,000 is also required; the proxy purchase is what qualifies the referral.</p>
+              <p className="mt-4 text-[9.5px] leading-4 text-white/55">To qualify for this referral reward, you must successfully purchase a proxy subscription of at least {data.minProxyDays} days.</p>
             </section>
 
             <div className="grid grid-cols-2 gap-2.5">
@@ -96,7 +96,7 @@ export default async function ReferralsPage({
                   <div key={referral.id} className="flex flex-wrap items-center justify-between gap-2 px-4 py-3">
                     <div><p className="text-[11px] font-medium">@{referral.refereeUsername}</p><p className="mt-0.5 text-[9px] text-muted-foreground">Joined {formatDate(referral.createdAt)}</p></div>
                     <div className="text-right">
-                      {referral.status === "rewarded" ? (<><Badge tone="success">1,000 credits earned</Badge><p className="mt-1 text-[8.5px] text-muted-foreground">{referral.rewardedAt ? formatDate(referral.rewardedAt) : ""}</p>{referral.ambassadorQualifiedAt ? <p className="mt-1 text-[8px] text-success">Ambassador task complete</p> : null}</>) : referral.status === "qualified" ? (<Badge tone="info">Qualifying purchase complete</Badge>) : referral.status === "pending" ? (<><Badge tone="warning">{`Purchase ${data.minProxyDays} days+ to unlock`}</Badge><p className="mt-1 text-[8px] text-muted-foreground">Deposit verified</p></>) : referral.status === "registered" ? (<Badge tone="neutral">Registered · purchase required</Badge>) : (<Badge tone="danger">Rejected</Badge>)}
+                      {referral.status === "rewarded" ? (<><Badge tone="success">1,000 credits earned</Badge><p className="mt-1 text-[8.5px] text-muted-foreground">{referral.rewardedAt ? formatDate(referral.rewardedAt) : ""}</p>{referral.ambassadorQualifiedAt ? <p className="mt-1 text-[8px] text-success">Ambassador task complete</p> : null}</>) : referral.status === "qualified" ? (<Badge tone="info">Qualifying purchase complete</Badge>) : referral.status === "pending" ? (<><Badge tone="warning">{`Purchase ${data.minProxyDays} days+ to unlock`}</Badge><p className="mt-1 text-[8px] text-muted-foreground">Purchase required</p></>) : referral.status === "registered" ? (<Badge tone="neutral">Registered · purchase required</Badge>) : (<Badge tone="danger">Rejected</Badge>)}
                     </div>
                   </div>
                 ))}
@@ -106,7 +106,7 @@ export default async function ReferralsPage({
 
           <div className="mt-3 grid gap-2 text-[10px] leading-5 text-muted-foreground sm:grid-cols-3">
             <p className="rounded-[9px] border border-border bg-surface-subtle p-3">One referral per new customer. There is no cap on qualified referrals or wallet rewards.</p>
-            <p className="rounded-[9px] border border-border bg-surface-subtle p-3">The qualifying purchase must be a completed proxy subscription of {data.minProxyDays} days or more. A single verified deposit of ₦2,000 is also required; deposits, transfers and refunds alone never qualify.</p>
+            <p className="rounded-[9px] border border-border bg-surface-subtle p-3">Eligibility is based on a successful proxy purchase of {data.minProxyDays} days or more. A wallet deposit alone never qualifies; failed or refunded purchases do not count.</p>
             <p className="rounded-[9px] border border-border bg-surface-subtle p-3">Self-referrals, duplicate accounts and code abuse are rejected. BUYBIZ may review or reverse rewards tied to abuse.</p>
           </div>
         </>

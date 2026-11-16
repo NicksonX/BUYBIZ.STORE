@@ -8,6 +8,7 @@ import type { Profile } from "@/lib/db/types";
 import { AppError, toUserMessage } from "@/lib/errors";
 import { getRequestMeta, rateLimit } from "@/lib/security/rate-limit";
 import { decryptOptional, encryptOptional } from "@/lib/security/encryption";
+import { countryName } from "@/lib/ai/countries";
 import { parseNairaToKobo } from "@/lib/utils";
 import {
   adjustmentSchema,
@@ -92,6 +93,8 @@ export async function createInventoryAction(
 
   const parsed = inventorySchema.safeParse({
     label: formData.get("label"),
+    countryCode: String(formData.get("countryCode") ?? "").toUpperCase(),
+    verificationStatus: formData.get("verificationStatus") ?? "unverified",
     protocol: formData.get("protocol"),
     host: formData.get("host"),
     port: formData.get("port"),
@@ -158,13 +161,16 @@ export async function createInventoryAction(
       await tx.query(
         `insert into proxy_inventory
            (id, label, protocol, host, port, encrypted_username, encrypted_password,
-            region, provider_note, purchase_cost_minor, currency, max_seats,
+            region, country_code, country_name, verification_status, last_verified_at,
+            provider_note, purchase_cost_minor, currency, max_seats,
             access_type, product_slug, credential_group, rotation_interval_hours,
             next_rotation_at, uploaded_at, upstream_expires_at, expiry_is_estimated,
             status, admin_notes, created_by)
-         values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'NGN',$11,$12,$13,$14,$15,
-                 case when $15::int is not null then now() + make_interval(hours => $15::int) else null end,
-                 now(),$16,$17,'available',$18,$19)`,
+         values ($1,$2,$3::proxy_protocol,$4,$5,$6,$7,$8,$9,$10,$11,
+                 case when $11 = 'verified' then now() else null end,
+                 $12,$13,'NGN',$14,$15,$16,$17,$18,
+                 case when $18::int is not null then now() + make_interval(hours => $18::int) else null end,
+                 now(),$19,$20,'available',$21,$22)`,
         [
           id,
           data.label,
@@ -174,6 +180,9 @@ export async function createInventoryAction(
           encryptedUsername,
           encryptedPassword,
           data.region?.trim() || null,
+          data.countryCode.toUpperCase(),
+          countryName(data.countryCode),
+          data.verificationStatus,
           data.providerNote?.trim() || null,
           costMinor,
           maxSeats,
@@ -197,6 +206,8 @@ export async function createInventoryAction(
           label: data.label,
           protocol: data.protocol,
           region: data.region || null,
+          countryCode: data.countryCode.toUpperCase(),
+          verificationStatus: data.verificationStatus,
           maxSeats,
           accessType: data.accessType,
         },
@@ -1776,8 +1787,8 @@ export async function updateAmbassadorSettingsAction(
   const required = Number(formData.get("referralsRequired") ?? 10);
   const commission = Number(formData.get("commissionUsd") ?? 3);
   const minimum = Number(formData.get("minimumUsd") ?? 10);
-  const task = String(formData.get("qualifyingTask") ?? "referral_deposit");
-  const qualifyingDeposit = Number(formData.get("qualifyingDepositNgn") ?? 2000);
+  const task = String(formData.get("qualifyingTask") ?? "referral_first_purchase");
+  const qualifyingDeposit = Number(formData.get("qualifyingDepositNgn") ?? 0);
   const nextPayoutRaw = String(formData.get("nextPayoutAt") ?? "").trim();
   const nextPayoutAt = nextPayoutRaw ? new Date(`${nextPayoutRaw}T00:00:00+01:00`) : null;
   if (!Number.isInteger(required) || required < 1 || required > 100) {

@@ -185,7 +185,7 @@ export default async function AdminInventoryPage({
                     <div className="min-w-0">
                       <p className="truncate text-[12px] font-medium">{item.label}</p>
                       <p className="mt-0.5 truncate text-[9px] text-muted-foreground">
-                        {item.productSlug ?? "Unassigned"} · Group {item.credentialGroup} · {item.protocol.toUpperCase()} · {item.accessType === "single" ? "Single" : "Shared"} · {item.region ?? "No region"}
+                        {item.productSlug ?? "Unassigned"} · {item.countryCode ? `${item.countryCode}` : "No country"} · {item.protocol.toUpperCase()} · {item.verificationStatus} · {item.accessType === "single" ? "Single" : "Shared"}
                       </p>
                     </div>
                   </div>
