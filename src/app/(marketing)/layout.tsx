@@ -3,6 +3,7 @@ import { SiteFooter } from "@/components/marketing/site-footer";
 import { SiteHeader } from "@/components/marketing/site-header";
 import { MobileSessionRedirect } from "@/components/marketing/mobile-session-redirect";
 import { RouteTransition } from "@/components/ui/route-transition";
+import { MarketingReveal } from "@/components/marketing/scroll-reveal";
 
 export default async function MarketingLayout({
   children,
@@ -14,7 +15,13 @@ export default async function MarketingLayout({
     cookieStore.get("buybiz_marketing_theme")?.value === "dark" ? "dark" : "light";
   return (
     <div className="flex min-h-dvh flex-col bg-[#F4F4F5] text-[#0A0B0D]">
+      <script
+        dangerouslySetInnerHTML={{
+          __html: "document.documentElement.classList.add('reveal-ready')",
+        }}
+      />
       <MobileSessionRedirect />
+      <MarketingReveal />
       <SiteHeader marketingTheme={marketingTheme} />
       <main id="main" className="flex-1">
         <RouteTransition>{children}</RouteTransition>
