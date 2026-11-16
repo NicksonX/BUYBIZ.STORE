@@ -85,6 +85,8 @@ export const getPlanAvailability = cache(async (countryCode?: string): Promise<P
        from products p
        left join proxy_inventory i
          on i.status = 'available'
+        and i.verification_status = 'verified'
+        and i.country_code is not null
         and i.access_type = p.access_type
         and i.archived_at is null
         and ($2::text is null or i.country_code = $2)
