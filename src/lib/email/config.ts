@@ -2,7 +2,7 @@ import "server-only";
 import { getAppUrl, getSupportEmail } from "@/lib/config";
 
 export function getEmailProviderName() {
-  return (process.env.EMAIL_PROVIDER || "resend").trim().toLowerCase();
+  return (process.env.EMAIL_PROVIDER || "brevo").trim().toLowerCase();
 }
 
 export function getEmailApiKey() {
@@ -29,7 +29,9 @@ export function isProviderEnabled(provider: EmailProvider) {
 }
 
 export function getProviderDailyLimit(provider: EmailProvider): number | null {
-  const raw = provider === "brevo" ? process.env.BREVO_DAILY_LIMIT : process.env.RESEND_DAILY_LIMIT;
+  const raw = provider === "brevo"
+    ? process.env.BREVO_DAILY_LIMIT || "300"
+    : process.env.RESEND_DAILY_LIMIT;
   if (!raw) return null;
   const parsed = Number(raw);
   return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : null;
