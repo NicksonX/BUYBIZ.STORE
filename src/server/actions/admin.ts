@@ -116,7 +116,11 @@ export async function createInventoryAction(
     return formError("Check the highlighted fields.", zodFieldErrors(parsed.error));
   }
   const data = parsed.data;
-  const maxSeats = data.accessType === "single" ? 1 : data.maxSeats;
+  const maxSeats = data.accessType === "single"
+    ? 1
+    : data.productSlug === "proxy-7-days"
+      ? Math.max(10, data.maxSeats)
+      : data.maxSeats;
   const rotationHours =
     data.productSlug === "proxy-24-hours"
       ? 24

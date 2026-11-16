@@ -57,7 +57,10 @@ export async function parseAndVerifyProxiesAction(input: {
   if (raw.length < 6) return { ok: false as const, message: "Paste at least one proxy entry." };
   if (raw.length > 300_000) return { ok: false as const, message: "Paste fewer than 300,000 characters at a time." };
   const expiryDays = Math.max(1, Math.min(365, Math.round(Number(input.expiryDays) || 30)));
-  const maxSeats = Math.max(1, Math.min(100, Math.round(Number(input.maxSeats) || 10)));
+  const requestedSeats = Math.max(1, Math.min(100, Math.round(Number(input.maxSeats) || 10)));
+  const maxSeats = input.accessType === "shared" && input.productSlug === "proxy-7-days"
+    ? Math.max(10, requestedSeats)
+    : requestedSeats;
   const accessType = input.accessType === "single" ? "single" : "shared";
   if (accessType === "single" && maxSeats !== 1) {
     return { ok: false as const, message: "Single-access proxies must use 1 seat." };
@@ -212,7 +215,11 @@ export async function saveVerifiedProxiesAction(batchId: string) {
   const settings = row.settings ?? {};
   const expiryDays = Math.max(1, Math.min(365, Number(settings.expiryDays ?? 30)));
   const accessType = settings.accessType === "single" ? "single" : "shared";
-  const maxSeats = accessType === "single" ? 1 : Math.max(1, Math.min(100, Number(settings.maxSeats ?? 10)));
+  const maxSeats = accessType === "single"
+    ? 1
+    : settings.productSlug === "proxy-7-days"
+      ? 10
+      : Math.max(1, Math.min(100, Number(settings.maxSeats ?? 10)));
 
   let saved = 0;
   await db.transaction(async (tx) => {

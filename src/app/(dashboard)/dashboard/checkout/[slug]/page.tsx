@@ -105,7 +105,12 @@ export default async function CheckoutPage({
                 {
                   icon: Users,
                   label: "Allocation",
-                  value: product.accessType === "single" ? "One customer" : "Shared access",
+                  value:
+                    product.accessType === "single"
+                      ? "One customer"
+                      : product.slug === "proxy-7-days"
+                        ? "Shared · up to 10 users"
+                        : "Shared access",
                 },
                 {
                   icon: ShieldCheck,
