@@ -36,7 +36,7 @@ export function getProviderDailyLimit(provider: EmailProvider): number | null {
 }
 
 export function getEmailRotationEnabled() {
-  return (process.env.EMAIL_ROTATION_ENABLED || "true").trim().toLowerCase() !== "false";
+  return (process.env.EMAIL_ROTATION_ENABLED || "false").trim().toLowerCase() === "true";
 }
 
 export function getQuotaDate() {
