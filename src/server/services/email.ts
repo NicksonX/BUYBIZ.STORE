@@ -6,7 +6,9 @@ import {
   getEmailFromAddress,
   getEmailRuntimeStatus,
 } from "@/lib/email/config";
-import { sendEmailViaProvider } from "@/lib/email/client";
+import { sendEmailViaProvider, type ProviderSendResult } from "@/lib/email/client";
+import { recordProviderAttempt, selectEmailProviders } from "@/server/services/email-providers";
+import type { EmailProvider } from "@/lib/email/config";
 import {
   DEFAULT_TEMPLATES,
   EMAIL_TYPES,
@@ -196,7 +198,7 @@ async function sendDeliveryRow(row: {
   subject: string;
   payload: EmailTemplateData;
   user_id: string | null;
-}) {
+}, providers: EmailProvider[]) {
   const type = row.email_type as EmailType;
   if (!EMAIL_TYPES.includes(type)) {
     return { ok: false as const, error: "Unknown email type." };
@@ -239,15 +241,48 @@ async function sendDeliveryRow(row: {
     preferencesUrl: data.preferencesUrl,
     unsubscribeUrl: data.unsubscribeUrl,
   });
-  return sendEmailViaProvider({
-    to: row.recipient,
-    subject: rendered.subject,
-    html: rendered.html,
-    text: rendered.text,
-    replyTo: ctx.supportEmail,
-    fromName: ctx.senderName,
-    fromAddress: ctx.senderEmail,
-  });
+  if (providers.length === 0) {
+    return { ok: false as const, error: "Both email providers are unavailable." };
+  }
+  let last: ProviderSendResult | null = null;
+  for (const provider of providers) {
+    const result = await sendEmailViaProvider(
+      {
+        to: row.recipient,
+        subject: rendered.subject,
+        html: rendered.html,
+        text: rendered.text,
+        replyTo: ctx.supportEmail,
+        fromName: ctx.senderName,
+        fromAddress: ctx.senderEmail,
+      },
+      provider,
+    );
+    last = result;
+    await db.transaction(async (tx) => {
+      await recordProviderAttempt(tx, {
+        deliveryId: row.id,
+        provider,
+        status: result.ok
+          ? "accepted"
+          : result.uncertain
+            ? "uncertain"
+            : "rejected",
+        providerMessageId: result.ok ? result.providerMessageId : null,
+        httpStatus: result.ok ? null : result.statusCode ?? null,
+        errorCategory: result.ok
+          ? null
+          : result.uncertain
+            ? "uncertain"
+            : "provider_rejected",
+        errorMessage: result.ok ? null : result.error,
+      });
+    });
+    if (result.ok) return result;
+    // Do not risk duplicate delivery after an uncertain outcome.
+    if (result.uncertain) return result;
+  }
+  return last ?? { ok: false as const, error: "No eligible email provider." };
 }
 
 /**
@@ -294,46 +329,76 @@ export async function processEmailQueue(options?: {
   let sent = 0;
   let failed = 0;
   for (const id of ids) {
-    const claimed = await db.query<{
-      id: string;
-      recipient: string;
-      email_type: string;
-      subject: string;
-      payload: EmailTemplateData;
-      user_id: string | null;
-    }>(
-      `update email_deliveries
-          set status='sending', attempts=attempts+1, updated_at=now()
-        where id=$1 and status='queued'
-        returning id, recipient, email_type, subject, payload, user_id`,
-      [id],
-    );
-    const row = claimed.rows[0];
-    if (!row) continue;
+    const claim = await db.transaction(async (tx) => {
+      const claimed = await tx.query<{
+        id: string;
+        recipient: string;
+        email_type: string;
+        subject: string;
+        payload: EmailTemplateData;
+        user_id: string | null;
+        attempts: number;
+      }>(
+        `update email_deliveries
+            set status='sending', attempts=attempts+1, updated_at=now()
+          where id=$1 and status='queued' and scheduled_at <= now()
+          returning id, recipient, email_type, subject, payload, user_id, attempts`,
+        [id],
+      );
+      const row = claimed.rows[0];
+      if (!row) return null;
+      const providers = await selectEmailProviders(tx, row.id);
+      return { row, providers };
+    });
+    if (!claim) continue;
+    const { row, providers } = claim;
+    if (providers.length === 0) {
+      await db.query(
+        `update email_deliveries
+            set status='queued', scheduled_at=now() + interval '5 minutes',
+                last_error='Both email providers are unavailable. Retry scheduled.',
+                updated_at=now()
+          where id=$1`,
+        [row.id],
+      );
+      failed += 1;
+      continue;
+    }
     try {
-      const result = await sendDeliveryRow(row);
+      const result = await sendDeliveryRow(row, providers);
       if (result.ok) {
         await db.query(
           `update email_deliveries
               set status='sent', sent_at=now(), provider_message_id=$2,
-                  last_error=null, updated_at=now()
+                  provider=$3, provider_status='accepted', provider_accepted_at=now(),
+                  fallback_used=$4, last_error=null, updated_at=now()
             where id=$1`,
-          [row.id, result.providerMessageId],
+          [row.id, result.providerMessageId, result.provider, providers[0] !== result.provider],
         );
         sent += 1;
       } else {
+        const uncertain = "uncertain" in result && result.uncertain;
+        const retryDelay = Math.min(3600, 60 * 2 ** Math.min(Number(row.attempts ?? 1), 6));
         await db.query(
           `update email_deliveries
-              set status='failed', last_error=$2, updated_at=now()
+              set status=$3, scheduled_at=now() + ($4::int * interval '1 second'),
+                  last_error=$2, provider_status=$5, updated_at=now()
             where id=$1`,
-          [row.id, safeError(result.error)],
+          [
+            row.id,
+            safeError(result.error),
+            uncertain ? "queued" : "failed",
+            uncertain ? retryDelay : 0,
+            uncertain ? "uncertain" : "rejected",
+          ],
         );
         failed += 1;
       }
     } catch (error) {
       await db.query(
         `update email_deliveries
-            set status='failed', last_error=$2, updated_at=now()
+            set status='queued', scheduled_at=now() + interval '10 minutes',
+                last_error=$2, provider_status='uncertain', updated_at=now()
           where id=$1`,
         [row.id, safeError(error instanceof Error ? error.message : String(error))],
       );
@@ -419,19 +484,43 @@ export async function sendOtpEmail(input: {
     );
     deliveryId = inserted.rows[0]?.id;
   }
-  const result = await sendEmailViaProvider({
-    to: input.email,
-    subject: rendered.subject,
-    html: rendered.html,
-    text: rendered.text,
-    replyTo: ctx.supportEmail,
-    fromName: ctx.senderName,
-    fromAddress: ctx.senderEmail,
-  });
+  const providers = deliveryId
+    ? await db.transaction((tx) => selectEmailProviders(tx, deliveryId))
+    : [];
+  let result: ProviderSendResult = { ok: false, provider: "resend", error: "No eligible email provider." };
+  for (const provider of providers) {
+    result = await sendEmailViaProvider(
+      {
+        to: input.email,
+        subject: rendered.subject,
+        html: rendered.html,
+        text: rendered.text,
+        replyTo: ctx.supportEmail,
+        fromName: ctx.senderName,
+        fromAddress: ctx.senderEmail,
+      },
+      provider,
+    );
+    if (deliveryId) {
+      await db.transaction(async (tx) => {
+        await recordProviderAttempt(tx, {
+          deliveryId,
+          provider,
+          status: result.ok ? "accepted" : result.uncertain ? "uncertain" : "rejected",
+          providerMessageId: result.ok ? result.providerMessageId : null,
+          httpStatus: result.ok ? null : result.statusCode ?? null,
+          errorCategory: result.ok ? null : result.uncertain ? "uncertain" : "provider_rejected",
+          errorMessage: result.ok ? null : result.error,
+        });
+      });
+    }
+    if (result.ok || result.uncertain) break;
+  }
   if (deliveryId) {
     await db.query(
       `update email_deliveries
-          set status=$2, provider_message_id=$3, last_error=$4,
+          set status=$2, provider=$5, provider_status=$6, provider_message_id=$3, last_error=$4,
+              provider_accepted_at=case when $2='sent' then now() else null end,
               sent_at=case when $2='sent' then now() else sent_at end,
               updated_at=now()
         where id=$1`,
@@ -440,6 +529,8 @@ export async function sendOtpEmail(input: {
         result.ok ? "sent" : getEmailRuntimeStatus().configured ? "failed" : "not_configured",
         result.ok ? result.providerMessageId : null,
         result.ok ? null : safeError(result.error),
+        result.ok ? result.provider : providers[0] ?? null,
+        result.ok ? "accepted" : result.uncertain ? "uncertain" : "rejected",
       ],
     );
   }
