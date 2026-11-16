@@ -322,6 +322,11 @@ export async function getSwitchOptions(
         and i.access_type = (
           select p.access_type from products p where p.id = $2
         )
+        and i.product_slug in (
+          select p.slug from products p where p.duration_seconds = (
+            select p2.duration_seconds from products p2 where p2.id = $2
+          )
+        )
         and i.upstream_expires_at > $3
         and (
           select count(*) from proxy_allocations a
@@ -377,6 +382,10 @@ export async function switchProxy(input: {
           and i.archived_at is null
           and i.status in ('available','full')
           and i.access_type = (select p.access_type from products p where p.id = $2)
+          and i.product_slug in (
+            select p.slug from products p
+             where p.duration_seconds = (select p2.duration_seconds from products p2 where p2.id = $2)
+          )
         for update`,
       [input.inventoryId, allocation.productId],
     );

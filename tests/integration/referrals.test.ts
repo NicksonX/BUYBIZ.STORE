@@ -6,6 +6,7 @@ import {
   attachReferralForSignup,
   qualifyReferralForPurchase,
 } from "@/server/services/referrals";
+import { qualifyReferralForAmbassador } from "@/server/services/ambassador";
 import { transferWalletFunds } from "@/server/services/transfers";
 import { createTestUser, fundWallet } from "../helpers";
 
@@ -66,9 +67,18 @@ async function buyProxy(userId: string, days: 1 | 7 | 30, status = "completed") 
      values ($1,$2,$3,$4,50000,'NGN',$6,$5,now(),now())`,
     [orderId, `BZ-ELIG-${orderId.slice(0, 8)}`, userId, row.id, `elig-${orderId}`, status],
   );
-  const result = await db.transaction((tx) =>
-    qualifyReferralForPurchase(tx, { refereeId: userId, orderId }),
-  );
+  const result = await db.transaction(async (tx) => {
+    const referral = await qualifyReferralForPurchase(tx, { refereeId: userId, orderId });
+    if (referral) {
+      await qualifyReferralForAmbassador(tx, {
+        refereeId: userId,
+        eventType: "purchase",
+        eventRef: orderId,
+        durationSeconds: row.durationSeconds,
+      });
+    }
+    return referral;
+  });
   return { orderId, result };
 }
 
@@ -82,7 +92,7 @@ async function codeFor(userId: string) {
 }
 
 describe("referral rewards", () => {
-  it("credits ₦1,000 once only after a 7-day proxy purchase, never on deposit alone", async () => {
+  it("credits the normal $3 USD referral reward once after a 7-day purchase", async () => {
     const referrer = await createTestUser("refowner");
     const referee = await createTestUser("refnew");
     await attach(referrer.id, referee.id, await codeFor(referrer.id));
@@ -96,7 +106,7 @@ describe("referral rewards", () => {
       [referee.id],
     );
     expect(pending.rows[0].status).toBe("registered");
-    let referrerBalance = await db.query<{ balance: number }>(
+    const referrerBalance = await db.query<{ balance: number }>(
       `select coalesce(sum(amount_minor),0)::bigint as balance from wallet_ledger where user_id=$1`,
       [referrer.id],
     );
@@ -124,22 +134,20 @@ describe("referral rewards", () => {
       [referee.id],
     );
     expect(rewarded.rows[0].status).toBe("rewarded");
-    expect(Number(rewarded.rows[0].reward)).toBe(100_000);
+    expect(rewarded.rows[0].reward).toBeNull();
 
-    referrerBalance = await db.query<{ balance: number }>(
-      `select coalesce(sum(amount_minor),0)::bigint as balance from wallet_ledger where user_id=$1`,
+    const usdRewards = await db.query<{ count: number; total: number }>(
+      `select count(*)::int as count, coalesce(sum(amount_usd_cents),0)::int as total
+         from ambassador_ledger where user_id=$1 and entry_type='commission'`,
       [referrer.id],
     );
-    expect(Number(referrerBalance.rows[0].balance)).toBe(100_000);
-
-    // A second qualifying deposit must not pay again.
-    await deposit(referee.id, 200_000);
-    const rewards = await db.query<{ count: number }>(
+    expect(usdRewards.rows[0]).toEqual({ count: 1, total: 300 });
+    const walletCredits = await db.query<{ count: number }>(
       `select count(*)::int as count from wallet_ledger
         where user_id=$1 and entry_type='referral_credit'`,
       [referrer.id],
     );
-    expect(rewards.rows[0].count).toBe(1);
+    expect(walletCredits.rows[0].count).toBe(0);
   });
 
   it("qualifies on a 7-day purchase without any wallet deposit", async () => {

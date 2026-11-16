@@ -179,10 +179,9 @@ export async function evaluateCampaignRewards(
   const awards: Array<{ campaignId: string; role: string; rewardId: string; amountCents: number }> = [];
 
   for (const campaign of campaigns) {
-    // The customer must have registered during the campaign. A customer without
-    // a valid referrer can still receive the customer-side reward.
-    if (!inWindow(person.createdAt, campaign)) continue;
-    if (referral && !inWindow(referral.createdAt, campaign)) continue;
+    // Existing and new customers are assessed by their qualifying activity,
+    // not by registration date. A customer without a valid referrer can still
+    // receive the customer-side reward.
     if (referral && referral.referrerId === input.customerId) continue;
 
     let qualifyingDeposit: { id: string } | null = null;
@@ -244,19 +243,7 @@ export async function evaluateCampaignRewards(
         body: `Your qualifying 7-day-or-longer proxy purchase earned ${usd(campaign.customerRewardCents)} in USD rewards. It becomes available for payout on ${formatCampaignDate(campaign.payoutAt)}.`,
         href: "/dashboard/referrals?tab=rewards",
       });
-      await queueEmail(tx, {
-        type: "campaign_customer_reward",
-        userId: input.customerId,
-        recipient: person.email,
-        data: {
-          name: person.displayName ?? person.username,
-          campaignName: campaign.name,
-          rewardLabel: usd(campaign.customerRewardCents),
-          payoutDate: formatCampaignDate(campaign.payoutAt),
-          statusLabel: "Pending payout date",
-        },
-        dedupeKey: `campaign_customer_reward:${campaign.id}:${input.customerId}`,
-      });
+
     }
 
     if (referral && campaign.referrerRewardCents > 0) {
@@ -879,4 +866,82 @@ export function formatCampaignDate(date: Date) {
   return new Intl.DateTimeFormat("en-NG", {
     day: "numeric", month: "long", year: "numeric", timeZone: "Africa/Lagos",
   }).format(date);
+}
+
+
+/**
+ * Settle campaign rewards whose payout time has arrived. This only moves
+ * pending rows to available after the configured payout timestamp; the unique
+ * idempotency keys prevent double credits. The caller flushes the email
+ * outbox after the database transaction commits.
+ */
+export async function settleCampaignRewards() {
+  const db = await getDb();
+  const credited = await db.transaction(async (tx) => {
+    const due = await tx.query<{
+      id: string;
+      campaignName: string;
+      role: "customer" | "referrer";
+      amountCents: number;
+      beneficiaryId: string;
+      customerId: string;
+      payoutAt: Date;
+    }>(
+      `select cr.id, c.name as "campaignName", cr.role,
+              cr.amount_usd_cents as "amountCents", cr.beneficiary_id as "beneficiaryId",
+              cr.customer_id as "customerId", cr.available_at as "payoutAt"
+         from campaign_rewards cr join campaigns c on c.id=cr.campaign_id
+        where cr.status='pending' and cr.available_at <= now()
+        order by cr.available_at asc
+        limit 200
+        for update of cr skip locked`,
+    );
+    let count = 0;
+    for (const reward of due.rows) {
+      const updated = await tx.query(
+        `update campaign_rewards set status='available', updated_at=now()
+          where id=$1 and status='pending' and available_at <= now()
+          returning id`,
+        [reward.id],
+      );
+      if (!updated.rows[0]) continue;
+      const person = await tx.query<{ email: string; name: string; username: string }>(
+        `select email, coalesce(display_name, username) as name, username from profiles where id=$1 limit 1`,
+        [reward.beneficiaryId],
+      );
+      const recipient = person.rows[0];
+      if (!recipient) continue;
+      await queueEmail(tx, {
+        type: reward.role === "customer" ? "campaign_customer_reward" : "campaign_referrer_reward",
+        userId: reward.beneficiaryId,
+        recipient: recipient.email,
+        data: {
+          name: recipient.name,
+          campaignName: reward.campaignName,
+          rewardLabel: usd(reward.amountCents),
+          payoutDate: formatCampaignDate(reward.payoutAt),
+          statusLabel: "Successfully Credited",
+        },
+        dedupeKey: `campaign_credit:${reward.id}`,
+      });
+      await notifyUser(tx, {
+        userId: reward.beneficiaryId,
+        type: "system",
+        title: "Your $10 campaign reward was credited",
+        body: `${usd(reward.amountCents)} was credited to your USD Reward Balance from ${reward.campaignName}.`,
+        href: "/dashboard/referrals?tab=rewards",
+      });
+      await writeAuditLog(tx, {
+        actorUserId: null,
+        actorRole: "system",
+        action: "campaign.reward_credited",
+        entityType: "campaign_reward",
+        entityId: reward.id,
+        metadata: { amountCents: reward.amountCents, role: reward.role, campaignName: reward.campaignName },
+      });
+      count += 1;
+    }
+    return count;
+  });
+  return { credited };
 }

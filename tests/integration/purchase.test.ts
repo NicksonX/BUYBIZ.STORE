@@ -64,6 +64,38 @@ describe("atomic proxy purchase", () => {
     expect(ledger.rows[0].count).toBe(1);
   });
 
+  it("rotates through inventory sequentially and cycles after the last proxy", async () => {
+    const inventories = [];
+    for (let index = 0; index < 5; index += 1) {
+      inventories.push(await createTestInventory({ maxSeats: 10 }));
+    }
+    const users = [];
+    for (let index = 0; index < 6; index += 1) {
+      const user = await createTestUser(`rotate${index}`);
+      await fundWallet(user.id, PRICE);
+      users.push(user);
+    }
+    const assigned = [];
+    for (const user of users) {
+      const result = await purchaseProxy({
+        userId: user.id,
+        productSlug: "proxy-24-hours",
+        idempotencyKey: key(),
+        countryCode: "US",
+      });
+      expect(result.outcome).toBe("allocated");
+      if (result.outcome === "allocated") assigned.push(result.allocationId);
+    }
+    const db = await getDb();
+    const rows = await db.query<{ id: string; inventoryId: string }>(
+      `select id, proxy_inventory_id as "inventoryId" from proxy_allocations where id = any($1::uuid[]) order by activated_at asc, id asc`,
+      [assigned],
+    );
+    const order = rows.rows.map((row) => row.inventoryId);
+    expect(order.slice(0, 5)).toEqual(inventories.map((item) => item.id));
+    expect(order[5]).toBe(inventories[0].id);
+  });
+
   it("assigns only inventory from the selected country", async () => {
     const user = await createTestUser("countrybuy");
     await fundWallet(user.id, PRICE * 2);

@@ -1,7 +1,6 @@
 import "server-only";
 import { getDb } from "@/lib/db";
 import type { SqlTransaction } from "@/lib/db/driver";
-import { AppError } from "@/lib/errors";
 import { writeAuditLog } from "@/server/services/audit";
 import { notifyUser } from "@/server/services/notifications";
 import { queueEmail } from "@/server/services/email";
@@ -299,93 +298,17 @@ export async function qualifyReferralForPurchase(
     },
   });
 
-  await tx.query(
-    `insert into wallet_accounts (user_id) values ($1)
-     on conflict (user_id) do nothing`,
-    [referral.referrerId],
-  );
-  const wallet = await tx.query<{ id: string; email: string; name: string }>(
-    `select w.id, p.email, coalesce(p.display_name,p.username) as name
-       from wallet_accounts w join profiles p on p.id=w.user_id
-      where w.user_id = $1 for update of w`,
-    [referral.referrerId],
-  );
-  if (!wallet.rows[0]) throw new AppError("UNKNOWN", "Referrer wallet not found.");
-
-  const balanceResult = await tx.query<{ balance: unknown }>(
-    `select coalesce(sum(amount_minor),0)::bigint as balance
-       from wallet_ledger where wallet_account_id = $1`,
-    [wallet.rows[0].id],
-  );
-  const balance = Number(balanceResult.rows[0]?.balance ?? 0);
-
   const rewarded = await tx.query<{ id: string }>(
     `update referrals
         set status = 'rewarded',
-            reward_amount_minor = $2,
+            reward_amount_minor = null,
             rewarded_at = now(),
             updated_at = now()
       where id = $1 and status = 'qualified' and rewarded_at is null
       returning id`,
-    [referral.id, settings.rewardMinor],
+    [referral.id],
   );
   if (!rewarded.rows[0]) return null;
-
-  await tx.query(
-    `insert into wallet_ledger
-       (wallet_account_id, user_id, entry_type, amount_minor, balance_after_minor,
-        currency, reference, related_deposit_id, related_order_id, description)
-     values ($1,$2,'referral_credit',$3,$4,'NGN',$5,$6,$7,$8)`,
-    [
-      wallet.rows[0].id,
-      referral.referrerId,
-      settings.rewardMinor,
-      balance + settings.rewardMinor,
-      `referral:${referral.id}`,
-      referral.qualifyingDepositId ?? null,
-      order.id,
-      `Referral reward — qualifying ${Math.round(Number(order.durationSeconds) / 86_400)}-day proxy purchase`,
-    ],
-  );
-
-  const amountLabel = naira(settings.rewardMinor);
-  const referee = await tx.query<{ username: string }>(
-    `select username from profiles where id=$1 limit 1`,
-    [referral.refereeId],
-  );
-  await notifyUser(tx, {
-    userId: referral.referrerId,
-    type: "system",
-    title: "Referral reward credited",
-    body: `Your friend completed a qualifying proxy purchase. ${amountLabel} was added to your BUYBIZ wallet.`,
-    href: "/dashboard/referrals",
-  });
-  await queueEmail(tx, {
-    type: "referral_qualified",
-    userId: referral.referrerId,
-    recipient: wallet.rows[0].email,
-    data: {
-      name: wallet.rows[0].name,
-      referralName: referee.rows[0]?.username ?? "Your friend",
-      amountLabel,
-    },
-    dedupeKey: `referral_qualified:${referral.id}`,
-  });
-  await queueEmail(tx, {
-    type: "referral_reward",
-    userId: referral.referrerId,
-    recipient: wallet.rows[0].email,
-    data: {
-      name: wallet.rows[0].name,
-      amountLabel,
-      balanceLabel: new Intl.NumberFormat("en-NG", {
-        style: "currency",
-        currency: "NGN",
-        minimumFractionDigits: 2,
-      }).format((balance + settings.rewardMinor) / 100),
-    },
-    dedupeKey: `referral_reward:${referral.id}`,
-  });
 
   await writeAuditLog(tx, {
     actorUserId: null,
@@ -399,13 +322,15 @@ export async function qualifyReferralForPurchase(
       depositId: referral.qualifyingDepositId,
       orderId: order.id,
       durationSeconds: order.durationSeconds,
-      rewardMinor: settings.rewardMinor,
+      rewardUsdCents: 300,
+      rewardLedger: "ambassador_ledger",
     },
   });
 
   return {
     referralId: referral.id,
-    rewardMinor: settings.rewardMinor,
+    rewardMinor: 0,
+    rewardUsdCents: 300,
     orderId: order.id,
   };
 }

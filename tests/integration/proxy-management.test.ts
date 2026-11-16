@@ -132,6 +132,19 @@ describe("proxy termination", () => {
 });
 
 describe("proxy switching", () => {
+  it("never offers or accepts a different subscription duration", async () => {
+    const user = await createTestUser("switchduration");
+    await fundWallet(user.id, SEVEN_DAY_PRICE);
+    await createTestInventory({ maxSeats: 10, productSlug: "proxy-7-days" });
+    const short = await createTestInventory({ maxSeats: 10, productSlug: "proxy-24-hours" });
+    const purchase = await buySevenDay(user.id);
+    const options = await getSwitchOptions(user.id, purchase.allocationId);
+    expect(options.map((option) => option.id)).not.toContain(short.id);
+    await expect(
+      switchProxy({ userId: user.id, allocationId: purchase.allocationId, inventoryId: short.id }),
+    ).rejects.toMatchObject({ code: "OUT_OF_STOCK" });
+  });
+
   it("moves the slot without changing the subscription window or charging twice", async () => {
     const user = await createTestUser("switch");
     await fundWallet(user.id, SEVEN_DAY_PRICE);

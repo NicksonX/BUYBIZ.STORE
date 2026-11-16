@@ -157,7 +157,7 @@ export function AmbassadorPanel({
             </div>
           ) : (
             <p className="rounded-[8px] border border-border bg-surface-subtle px-3 py-2.5 text-[9px] leading-4 text-muted-foreground">
-              Your qualifying referrals are counted automatically. You have {total} total referral{total === 1 ? "" : "s"} so far. The programme is separate from the ₦1,000 wallet reward.
+              Your qualifying referrals are counted automatically. You have {total} total referral{total === 1 ? "" : "s"} so far. The programme is separate from your normal $3 USD referral rewards.
             </p>
           )}
 

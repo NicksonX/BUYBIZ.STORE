@@ -32,7 +32,7 @@ export async function getAmbassadorConfig(tx?: SqlTransaction): Promise<Ambassad
   const task = String(map.get("ambassador_qualifying_task") ?? "referral_deposit");
   return {
     enabled: map.get("ambassador_enabled") !== false,
-    referralsRequired: Math.max(1, Math.min(Number(map.get("ambassador_referrals_required") ?? 10), 100)),
+    referralsRequired: Math.max(1, Math.min(Number(map.get("ambassador_referrals_required") ?? 2), 100)),
     commissionCents: Math.max(1, Number(map.get("ambassador_commission_usd_cents") ?? 300)),
     withdrawalMinCents: Math.max(1000, Number(map.get("ambassador_withdrawal_min_usd_cents") ?? 1000)),
     qualifyingTask:
@@ -120,8 +120,8 @@ async function awardCommission(
   await notifyUser(tx, {
     userId: input.ambassadorId,
     type: "system",
-    title: "Ambassador commission earned",
-    body: `${usd(input.commissionCents)} was added to your separate ambassador USD balance for a qualifying referral.`,
+    title: "Referral reward earned",
+    body: `${usd(input.commissionCents)} was added to your separate USD reward balance for a qualifying 7-day+ proxy purchase.`,
     href: "/dashboard/referrals",
   });
   await writeAuditLog(tx, {
@@ -277,10 +277,9 @@ export async function qualifyReferralForAmbassador(
     }
   }
 
-  if (!ambassador.rows[0]) return { promoted: false, qualifiedCount, commissions: 0 };
-
-  // Once someone is an Ambassador, every qualified referral gets exactly one
-  // commission. At promotion, earlier qualified referrals are included too.
+  // Every valid referral earns the normal $3 USD reward, whether or not the
+  // referrer has reached Ambassador status yet. The unique referral_id on
+  // ambassador_commissions prevents duplicate rewards.
   const qualified = await tx.query<{
     id: string;
     refereeName: string;

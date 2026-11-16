@@ -273,10 +273,17 @@ export async function purchaseProxy(input: {
             and ($5::text is null or i.country_code = $5)
             and i.upstream_expires_at >=
                 now() + (($1::int + $2::int) * interval '1 second')
-          order by i.uploaded_at asc, i.id asc
+            and not exists (
+              select 1 from proxy_allocations a
+               where a.proxy_inventory_id = i.id
+                 and a.user_id = $6
+                 and a.status = 'active'
+                 and a.expires_at > now()
+            )
+          order by i.last_assigned_at asc nulls first, i.uploaded_at asc, i.id asc
           limit 25
           for update skip locked`,
-        [product.durationSeconds, settings.safetyBufferSeconds, product.accessType, product.slug, input.countryCode ?? null],
+        [product.durationSeconds, settings.safetyBufferSeconds, product.accessType, product.slug, input.countryCode ?? null, input.userId],
       );
 
       let selectedInventoryId: string | null = null;
@@ -471,7 +478,8 @@ export async function purchaseProxy(input: {
 
       await tx.query(
         `update proxy_inventory i
-            set status = case
+            set last_assigned_at = now(),
+                status = case
               when (
                 select count(*) from proxy_allocations a
                  where a.proxy_inventory_id = i.id

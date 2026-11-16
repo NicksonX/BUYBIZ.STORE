@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Gift, Users, Wallet } from "lucide-react";
+import { BadgeDollarSign, Gift, Users } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -10,7 +10,7 @@ import { getAmbassadorDashboard } from "@/server/services/ambassador";
 import { AmbassadorPanel } from "@/components/ambassador/ambassador-panel";
 import { AmbassadorCampaign } from "@/components/ambassador/ambassador-campaign";
 import { getAppUrl } from "@/lib/config";
-import { formatDate, formatNaira } from "@/lib/utils";
+import { formatDate } from "@/lib/utils";
 import { getFeaturedCampaign, getUsdRewardsDashboard } from "@/server/services/campaigns";
 import { CampaignCard } from "@/components/campaigns/campaign-card";
 import { ReferralTabs, type ReferralTab } from "@/components/referrals/referral-tabs";
@@ -44,7 +44,7 @@ export default async function ReferralsPage({
       <PageHeader
         eyebrow="Referrals"
         title="Invite friends. Build rewards."
-        description="Earn 1,000 BUYBIZ credits when a friend makes a qualifying proxy purchase. A wallet deposit alone never qualifies. Keep progressing toward Ambassador status, and see every USD campaign reward in one place."
+        description="Earn $3 USD for every valid referral. A referral becomes valid after a successful 7-day+ proxy purchase. Two valid referrals unlock Ambassador status."
       />
 
       <div className="mt-4">
@@ -66,14 +66,17 @@ export default async function ReferralsPage({
                 <CopyButton value={link} label="Copy link" />
               </div>
               <p className="mt-4 text-[9.5px] leading-4 text-white/55">To qualify for this referral reward, you must successfully purchase a proxy subscription of at least {data.minProxyDays} days.</p>
+              <p className="mt-2 text-[9.5px] leading-4 text-[#FFB197]">Ambassador progress: {ambassador.qualified}/{ambassador.config.referralsRequired} valid referrals.</p>
             </section>
 
             <div className="grid grid-cols-2 gap-2.5">
               {[
-                { label: "People referred", value: data.stats.total, icon: Users },
-                { label: "Awaiting purchase", value: data.stats.registered + data.stats.pending, icon: Gift },
-                { label: "Rewarded", value: data.stats.rewarded, icon: Gift },
-                { label: "Wallet earned", value: formatNaira(data.stats.earnedMinor), icon: Wallet },
+                { label: "Total referrals", value: data.stats.total, icon: Users },
+                { label: "Valid referrals", value: data.stats.rewarded + data.stats.qualified, icon: Gift },
+                { label: "Pending", value: data.stats.registered + data.stats.pending, icon: Gift },
+                { label: "Invalid", value: data.stats.rejected, icon: Gift },
+                { label: "USD earned", value: `$${(ambassador.earnedCents / 100).toFixed(2)}`, icon: BadgeDollarSign },
+                { label: "USD available", value: `$${(ambassador.availableCents / 100).toFixed(2)}`, icon: BadgeDollarSign },
               ].map((item) => (
                 <div key={item.label} className="surface-card rounded-[12px] p-3.5">
                   <div className="flex items-center justify-between"><p className="text-[9.5px] text-muted-foreground">{item.label}</p><item.icon className="h-3.5 w-3.5 text-muted-foreground" /></div>
@@ -89,14 +92,14 @@ export default async function ReferralsPage({
               <Link href="/marketplace" className="text-[9.5px] text-muted-foreground hover:text-foreground">Marketplace</Link>
             </div>
             {data.referrals.length === 0 ? (
-              <EmptyState icon={Gift} title="No referrals yet" description={`Share your code with someone who has not opened a BUYBIZ account. Your wallet reward appears after their qualifying ${data.minProxyDays}-day+ proxy purchase is verified.`} />
+              <EmptyState icon={Gift} title="No referrals yet" description={`Share your code with someone who has not opened a BUYBIZ account. Your $3 USD reward appears after their qualifying ${data.minProxyDays}-day+ proxy purchase is verified.`} />
             ) : (
               <div className="divide-y divide-border">
                 {data.referrals.map((referral) => (
                   <div key={referral.id} className="flex flex-wrap items-center justify-between gap-2 px-4 py-3">
                     <div><p className="text-[11px] font-medium">@{referral.refereeUsername}</p><p className="mt-0.5 text-[9px] text-muted-foreground">Joined {formatDate(referral.createdAt)}</p></div>
                     <div className="text-right">
-                      {referral.status === "rewarded" ? (<><Badge tone="success">1,000 credits earned</Badge><p className="mt-1 text-[8.5px] text-muted-foreground">{referral.rewardedAt ? formatDate(referral.rewardedAt) : ""}</p>{referral.ambassadorQualifiedAt ? <p className="mt-1 text-[8px] text-success">Ambassador task complete</p> : null}</>) : referral.status === "qualified" ? (<Badge tone="info">Qualifying purchase complete</Badge>) : referral.status === "pending" ? (<><Badge tone="warning">{`Purchase ${data.minProxyDays} days+ to unlock`}</Badge><p className="mt-1 text-[8px] text-muted-foreground">Purchase required</p></>) : referral.status === "registered" ? (<Badge tone="neutral">Registered · purchase required</Badge>) : (<Badge tone="danger">Rejected</Badge>)}
+                      {referral.status === "rewarded" ? (<><Badge tone="success">$3 USD earned</Badge><p className="mt-1 text-[8.5px] text-muted-foreground">{referral.rewardedAt ? formatDate(referral.rewardedAt) : ""}</p>{referral.ambassadorQualifiedAt ? <p className="mt-1 text-[8px] text-success">Ambassador task complete</p> : null}</>) : referral.status === "qualified" ? (<Badge tone="info">Qualifying purchase complete</Badge>) : referral.status === "pending" ? (<><Badge tone="warning">{`Purchase ${data.minProxyDays} days+ to unlock`}</Badge><p className="mt-1 text-[8px] text-muted-foreground">Purchase required</p></>) : referral.status === "registered" ? (<Badge tone="neutral">Registered · purchase required</Badge>) : (<Badge tone="danger">Rejected</Badge>)}
                     </div>
                   </div>
                 ))}
@@ -105,8 +108,8 @@ export default async function ReferralsPage({
           </section>
 
           <div className="mt-3 grid gap-2 text-[10px] leading-5 text-muted-foreground sm:grid-cols-3">
-            <p className="rounded-[9px] border border-border bg-surface-subtle p-3">One referral per new customer. There is no cap on qualified referrals or wallet rewards.</p>
-            <p className="rounded-[9px] border border-border bg-surface-subtle p-3">Eligibility is based on a successful proxy purchase of {data.minProxyDays} days or more. A wallet deposit alone never qualifies; failed or refunded purchases do not count.</p>
+            <p className="rounded-[9px] border border-border bg-surface-subtle p-3">One referral per new customer. There is no cap on valid referrals or $3 USD rewards.</p>
+            <p className="rounded-[9px] border border-border bg-surface-subtle p-3">Eligibility is based on a successful proxy purchase of {data.minProxyDays} days or more. Wallet deposits alone do not qualify; failed or refunded purchases do not count. Each valid referral earns $3 USD.</p>
             <p className="rounded-[9px] border border-border bg-surface-subtle p-3">Self-referrals, duplicate accounts and code abuse are rejected. BUYBIZ may review or reverse rewards tied to abuse.</p>
           </div>
         </>

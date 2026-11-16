@@ -71,7 +71,7 @@ async function qualifyPurchase(refereeId: string, orderId: string) {
 
 
 describe("ambassador promotion and USD commissions", () => {
-  it("promotes after 10 qualified referrals without touching NGN wallet credits", async () => {
+  it("promotes after two qualified referrals and pays $3 per valid referral", async () => {
     const referrer = await createTestUser("amb");
     const db = await getDb();
     let last: Awaited<ReturnType<typeof qualifyReferralForAmbassador>> = null;
@@ -80,12 +80,13 @@ describe("ambassador promotion and USD commissions", () => {
       const prepared = await prepareQualifyingReferral(referrer.id, referee.id);
       const referralId = prepared.referralId;
       last = await qualifyPurchase(referee.id, prepared.orderId);
-      if (index < 9) expect(last?.promoted).toBe(false);
+      if (index === 0) expect(last?.promoted).toBe(false);
+      if (index === 1) expect(last?.promoted).toBe(true);
       expect(referralId).toBeTruthy();
     }
-    expect(last?.promoted).toBe(true);
+    expect(last?.promoted).toBe(false);
     expect(last?.qualifiedCount).toBe(10);
-    expect(last?.commissions).toBe(10);
+    expect(last?.commissions).toBe(1);
 
     const ambassador = await db.query(
       `select 1 from ambassador_profiles where user_id=$1`,

@@ -105,9 +105,9 @@ const DEFAULT_TEMPLATES: Record<
     intro: "You have qualified for the BUYBIZ Ambassador Programme. Your separate USD earnings balance is now active.",
   },
   ambassador_commission: {
-    subject: "You earned an ambassador commission",
-    preheader: "A referral completed the qualifying task.",
-    intro: "A referral has completed the ambassador qualifying task, and your commission has been added to your USD balance.",
+    subject: "Your $3 USD referral reward was credited",
+    preheader: "A referral completed a qualifying 7-day+ purchase.",
+    intro: "A referral completed a qualifying proxy purchase. Your $3 USD referral reward was added to your USD reward balance.",
   },
   payout_requested: {
     subject: "We received your payout request",
@@ -130,12 +130,12 @@ const DEFAULT_TEMPLATES: Record<
     intro: "Your ambassador payout has been sent. The transaction hash is included below for your records.",
   },
   campaign_customer_reward: {
-    subject: "You earned $10 — your BUYBIZ reward is in",
+    subject: "Congratulations! Your $10 BUYBIZ Referral Campaign Reward Has Been Credited",
     preheader: "Your qualifying 7-day+ proxy purchase counted.",
     intro: "Your qualifying 7-day-or-longer proxy purchase earned a campaign reward. It sits in USD Rewards, separate from your BUYBIZ wallet balance.",
   },
   campaign_referrer_reward: {
-    subject: "You both win — your $10 referral reward is in",
+    subject: "Your $10 BUYBIZ Referral Campaign Reward Has Been Credited",
     preheader: "A referral completed both qualifying steps.",
     intro: "Someone you referred completed a 7-day-or-longer proxy purchase during the campaign. Your separate referrer reward has been recorded, and they earned $10 too.",
   },
@@ -420,13 +420,13 @@ export function renderEmail(input: {
       content = `${details([
         ["Referral", data.referralName ?? "Your friend"],
         ["Qualifying purchase", "7-day+ proxy plan"],
-        ["Reward", data.amountLabel ?? "₦1,000"],
+        ["Reward", data.amountLabel ?? "$3.00 USD"],
       ])}
       ${button("See your referrals", `${input.websiteUrl}/dashboard/referrals`)}`;
       break;
     case "referral_reward":
       content = `${details([
-        ["Reward credited", data.amountLabel ?? "₦1,000"],
+        ["Reward credited", data.amountLabel ?? "$3.00 USD"],
         ["Where it went", "Your BUYBIZ wallet"],
         ["Updated balance", data.balanceLabel ?? ""],
       ])}
@@ -444,7 +444,7 @@ export function renderEmail(input: {
       break;
     case "ambassador_commission":
       content = `${details([
-        ["Commission earned", data.commissionLabel ?? "$3.00"],
+        ["Reward credited", data.commissionLabel ?? "$3.00"],
         ["Available balance", data.availableLabel ?? ""],
         ["Referral", data.referralName ?? "Qualifying referral"],
       ])}

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { ArrowUpRight, Flame, X } from "lucide-react";
 
@@ -25,6 +25,7 @@ export function AmbassadorFloat({
   availableCents: number;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [y, setY] = useState<number | null>(null);
   const drag = useRef({
@@ -97,7 +98,7 @@ export function AmbassadorFloat({
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId);
     }
-    if (!drag.current.moved) setOpen((current) => !current);
+    if (!drag.current.moved) router.push("/dashboard/referrals");
   }
 
   return (
