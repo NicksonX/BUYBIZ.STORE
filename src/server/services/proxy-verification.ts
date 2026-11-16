@@ -1,12 +1,30 @@
 import "server-only";
 import dns from "node:dns/promises";
 import https from "node:https";
-import geoip from "geoip-lite";
 import { HttpsProxyAgent } from "https-proxy-agent";
 import { SocksProxyAgent } from "socks-proxy-agent";
 import { isIP } from "node:net";
 import { countryName } from "@/lib/ai/countries";
 import { isPublicIp, type ParsedProxy } from "@/lib/ai/proxy-parser";
+import { resolveIpCountry } from "@/server/services/ip-geolocation";
+
+let serverIpCache: { ip: string; expires: number } | null = null;
+async function directServerIp() {
+  if (serverIpCache && serverIpCache.expires > Date.now()) return serverIpCache.ip;
+  try {
+    const response = await fetch("https://api.ipify.org?format=json", {
+      signal: AbortSignal.timeout(5_000),
+      headers: { Accept: "application/json", "User-Agent": "BUYBIZ-proxy-verifier/1.0" },
+    });
+    if (!response.ok) return null;
+    const body = (await response.json()) as { ip?: string };
+    if (!body.ip) return null;
+    serverIpCache = { ip: body.ip, expires: Date.now() + 30 * 60 * 1000 };
+    return body.ip;
+  } catch {
+    return null;
+  }
+}
 
 export type ProxyVerification = {
   status: "verified" | "failed" | "review_required";
@@ -15,6 +33,8 @@ export type ProxyVerification = {
   countryName: string | null;
   latencyMs: number | null;
   error: string | null;
+  source?: string | null;
+  countryStatus?: "matched" | "mismatch" | "unverified";
 };
 
 async function publicHost(host: string) {
@@ -29,7 +49,8 @@ function requestThroughProxy(proxy: ParsedProxy, timeoutMs: number) {
     const auth = proxy.username
       ? `${encodeURIComponent(proxy.username)}:${encodeURIComponent(proxy.password ?? "")}@`
       : "";
-    const agentUrl = `${proxy.protocol}://${auth}${proxy.host}:${proxy.port}`;
+    const proxyHost = isIP(proxy.host) === 6 ? `[${proxy.host}]` : proxy.host;
+    const agentUrl = `${proxy.protocol}://${auth}${proxyHost}:${proxy.port}`;
     const agent =
       proxy.protocol === "socks4" || proxy.protocol === "socks5"
         ? new SocksProxyAgent(agentUrl, { timeout: timeoutMs })
@@ -83,39 +104,55 @@ export async function verifyProxy(
     } catch {
       exitIp = result.body.trim() || null;
     }
-    if (!exitIp || !isIP(exitIp)) {
-      return { status: "failed", exitIp: null, countryCode: null, countryName: null, latencyMs: result.latencyMs, error: "Proxy did not return a valid exit IP." };
+    if (!exitIp || !isIP(exitIp) || !isPublicIp(exitIp)) {
+      return { status: "failed", exitIp: null, countryCode: null, countryName: null, latencyMs: result.latencyMs, error: "Proxy did not return a valid public exit IP." };
     }
-    const geo = geoip.lookup(exitIp);
-    const countryCode = geo?.country ?? null;
-    if (!countryCode) {
+    const serverIp = await directServerIp();
+    if (serverIp && serverIp === exitIp) {
+      return {
+        status: "failed",
+        exitIp,
+        countryCode: null,
+        countryName: null,
+        latencyMs: result.latencyMs,
+        error: "Verification did not pass through the proxy (exit IP matches the BUYBIZ server).",
+      };
+    }
+    const geo = await resolveIpCountry(exitIp);
+    if (!geo.countryCode) {
       return {
         status: "review_required",
         exitIp,
         countryCode: null,
         countryName: null,
         latencyMs: result.latencyMs,
-        error: "Exit IP country could not be determined. Review manually.",
+        error: geo.note ?? "Country could not be verified.",
+        source: geo.source,
+        countryStatus: "unverified",
       };
     }
-    const expected = expectedCountryCode.toUpperCase();
-    if (countryCode !== expected) {
+    const expected = expectedCountryCode.toUpperCase() === "UK" ? "GB" : expectedCountryCode.toUpperCase();
+    if (geo.countryCode !== expected) {
       return {
         status: "review_required",
         exitIp,
-        countryCode,
-        countryName: countryName(countryCode),
+        countryCode: geo.countryCode,
+        countryName: geo.countryName ?? countryName(geo.countryCode),
         latencyMs: result.latencyMs,
-        error: `Country mismatch: expected ${countryName(expected)}, detected ${countryName(countryCode)}.`,
+        error: `Country mismatch: expected ${countryName(expected)}, detected ${geo.countryName ?? countryName(geo.countryCode)}. ${geo.note ?? ""}`.trim(),
+        source: geo.source,
+        countryStatus: "mismatch",
       };
     }
     return {
       status: "verified",
       exitIp,
-      countryCode,
-      countryName: countryName(countryCode),
+      countryCode: geo.countryCode,
+      countryName: geo.countryName ?? countryName(geo.countryCode),
       latencyMs: result.latencyMs,
-      error: null,
+      error: geo.note,
+      source: geo.source,
+      countryStatus: "matched",
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Proxy verification failed.";

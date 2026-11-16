@@ -15,6 +15,10 @@ describe("proxy credential parser", () => {
     expect(proxy).toMatchObject({ protocol: "socks5", host: "203.0.113.10", port: 1080, error: null });
     expect(parseProxyLine("socks5://u:p@proxy.example.com:1080", 9)?.protocol).toBe("socks5");
   });
+  it("parses bracketed IPv6 proxy entries", () => {
+    const proxy = parseProxyLine("[2001:db8::10]:1080:user:pass", 10, "socks5");
+    expect(proxy).toMatchObject({ host: "2001:db8::10", port: 1080, protocol: "socks5", error: null });
+  });
   it("parses host:port without authentication", () => {
     expect(parseProxyLine("proxy.example.com:8080", 4)).toMatchObject({ host: "proxy.example.com", port: 8080, username: null, password: null });
   });

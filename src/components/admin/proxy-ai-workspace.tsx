@@ -30,7 +30,7 @@ export function ProxyAiWorkspace({
   const [error, setError] = useState<string | null>(null);
   const [rows, setRows] = useState<ProxyPreviewRow[]>([]);
   const [batchId, setBatchId] = useState<string | null>(null);
-  const [summary, setSummary] = useState<{ total: number; parsed: number; verified: number; failed: number; mismatched: number; duplicates: number } | null>(null);
+  const [summary, setSummary] = useState<{ total: number; parsed: number; verified: number; failed: number; mismatched: number; unverified: number; duplicates: number } | null>(null);
   const [savedMessage, setSavedMessage] = useState<string | null>(null);
   const [filter, setFilter] = useState("all");
 
@@ -43,6 +43,7 @@ export function ProxyAiWorkspace({
     if (filter === "verified") return row.status === "verified";
     if (filter === "failed") return row.status === "failed";
     if (filter === "mismatch") return row.status === "review_required";
+    if (filter === "unverified") return row.status === "country_unverified";
     if (filter === "duplicate") return row.duplicate;
     return true;
   });
@@ -134,13 +135,13 @@ export function ProxyAiWorkspace({
       {summary ? (
         <section className="surface-card rounded-[15px] p-4">
           <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
-            {[["Total", summary.total], ["Parsed", summary.parsed], ["Verified", summary.verified], ["Failed", summary.failed], ["Mismatch", summary.mismatched], ["Duplicates", summary.duplicates]].map(([label, value]) => (
+            {[["Total", summary.total], ["Parsed", summary.parsed], ["Verified", summary.verified], ["Failed", summary.failed], ["Mismatch", summary.mismatched], ["Unverified", summary.unverified], ["Duplicates", summary.duplicates]].map(([label, value]) => (
               <div key={String(label)} className="rounded-[9px] border border-border bg-surface-subtle p-2.5"><p className="text-[8.5px] uppercase tracking-[0.08em] text-muted-foreground">{label}</p><p className="tabular mt-1 text-[17px] font-semibold">{value}</p></div>
             ))}
           </div>
           <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
             <div className="flex flex-wrap gap-1.5">
-              {[["all", "All"], ["verified", "Verified"], ["failed", "Failed"], ["mismatch", "Country mismatch"], ["duplicate", "Duplicates"]].map(([key, label]) => (
+              {[["all", "All"], ["verified", "Verified"], ["failed", "Failed"], ["mismatch", "Country mismatch"], ["unverified", "Could not verify"], ["duplicate", "Duplicates"]].map(([key, label]) => (
                 <button key={key} type="button" onClick={() => setFilter(key)} className={cn("rounded-full border px-2.5 py-1 text-[9.5px]", filter === key ? "border-foreground bg-foreground text-background" : "border-border text-muted-foreground")}>{label}</button>
               ))}
             </div>
@@ -150,11 +151,11 @@ export function ProxyAiWorkspace({
           </div>
           <div className="mt-3 overflow-x-auto rounded-[9px] border border-border">
             <table className="w-full min-w-[820px] text-left text-[9.5px]">
-              <thead className="bg-surface-subtle text-[8px] uppercase tracking-[0.08em] text-muted-foreground"><tr>{["Host", "Port", "Username", "Password", "Country", "Protocol", "Latency", "Status"].map((label) => <th key={label} className="px-3 py-2">{label}</th>)}</tr></thead>
+              <thead className="bg-surface-subtle text-[8px] uppercase tracking-[0.08em] text-muted-foreground"><tr>{["Host", "Port", "Username", "Password", "Expected", "Detected", "Protocol", "Latency", "Status"].map((label) => <th key={label} className="px-3 py-2">{label}</th>)}</tr></thead>
               <tbody className="divide-y divide-border">
                 {filtered.map((row) => (
                   <tr key={`${row.fingerprint}-${row.lineNumber}`}>
-                    <td className="px-3 py-2 font-mono">{row.host}</td><td className="px-3 py-2">{row.port || "—"}</td><td className="px-3 py-2">{row.username || "—"}</td><td className="px-3 py-2 font-mono text-muted-foreground">{row.passwordMasked || "—"}</td><td className="px-3 py-2">{row.countryCode ? `${countryFlag(row.countryCode)} ${row.countryName}` : "—"}</td><td className="px-3 py-2 uppercase">{row.protocol}</td><td className="px-3 py-2">{row.latencyMs ? `${row.latencyMs} ms` : "—"}</td><td className="px-3 py-2"><span className={cn("inline-flex items-center gap-1", row.status === "verified" ? "text-success" : row.status === "failed" ? "text-danger" : "text-warning")}>{row.status === "verified" ? <CheckCircle2 className="h-3 w-3" /> : <AlertTriangle className="h-3 w-3" />}{row.status.replace("_", " ")}</span>{row.duplicate ? <p className="mt-0.5 text-[8px] text-warning">Duplicate</p> : null}{row.error ? <p className="mt-0.5 max-w-[180px] text-[8px] text-muted-foreground">{row.error}</p> : null}</td>
+                    <td className="px-3 py-2 font-mono">{row.host}</td><td className="px-3 py-2">{row.port || "—"}</td><td className="px-3 py-2">{row.username || "—"}</td><td className="px-3 py-2 font-mono text-muted-foreground">{row.passwordMasked || "—"}</td><td className="px-3 py-2">{countryFlag(row.expectedCountryCode)} {row.expectedCountryName}</td><td className="px-3 py-2">{row.countryCode ? `${countryFlag(row.countryCode)} ${row.countryName}` : "Could not verify"}</td><td className="px-3 py-2 uppercase">{row.protocol}</td><td className="px-3 py-2">{row.latencyMs ? `${row.latencyMs} ms` : "—"}</td><td className="px-3 py-2"><span className={cn("inline-flex items-center gap-1", row.status === "verified" ? "text-success" : row.status === "failed" ? "text-danger" : "text-warning")}>{row.status === "verified" ? <CheckCircle2 className="h-3 w-3" /> : <AlertTriangle className="h-3 w-3" />}{row.status === "review_required" ? "Country mismatch" : row.status === "country_unverified" ? "Country could not be verified" : row.status === "failed" ? "Verification failed" : row.status === "verified" ? "Verified: country matches" : row.status.replace("_", " ")}</span>{row.duplicate ? <p className="mt-0.5 text-[8px] text-warning">Duplicate</p> : null}{row.error ? <p className="mt-0.5 max-w-[180px] text-[8px] text-muted-foreground">{row.error}</p> : null}</td>
                   </tr>
                 ))}
               </tbody>

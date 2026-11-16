@@ -21,6 +21,10 @@ export type ProxyPreviewRow = {
   exitIp: string | null;
   latencyMs: number | null;
   status: string;
+  countryStatus: "matched" | "mismatch" | "unverified";
+  expectedCountryCode: string;
+  expectedCountryName: string;
+  source: string | null;
   error: string | null;
   fingerprint: string;
   duplicate: boolean;
@@ -93,7 +97,11 @@ export async function parseAndVerifyProxiesAction(input: {
     countryName: verification.countryName ?? (verification.countryCode ? countryName(verification.countryCode) : null),
     exitIp: verification.exitIp,
     latencyMs: verification.latencyMs,
-    status: verification.status,
+    status: verification.countryStatus === "unverified" ? "country_unverified" : verification.status,
+    countryStatus: verification.countryStatus ?? "unverified",
+    expectedCountryCode: countryCode,
+    expectedCountryName: countryName(countryCode),
+    source: verification.source ?? null,
     error: verification.error,
     fingerprint: proxy.fingerprint,
     duplicate: existingSet.has(proxy.fingerprint),
@@ -110,6 +118,10 @@ export async function parseAndVerifyProxiesAction(input: {
     exitIp: null,
     latencyMs: null,
     status: "failed",
+    countryStatus: "unverified",
+    expectedCountryCode: countryCode,
+    expectedCountryName: countryName(countryCode),
+    source: null,
     error: proxy.error,
     fingerprint: proxy.fingerprint,
     duplicate: existingSet.has(proxy.fingerprint),
@@ -131,7 +143,7 @@ export async function parseAndVerifyProxiesAction(input: {
       parsed.parsed.length,
       rows.filter((row) => row.status === "verified").length,
       rows.filter((row) => row.status === "failed").length,
-      rows.filter((row) => row.status === "review_required").length,
+      rows.filter((row) => row.status === "review_required" || row.status === "country_unverified").length,
       [...rows, ...malformed].filter((row) => row.duplicate).length,
       JSON.stringify([...rows, ...malformed]),
       encryptedPayload,
@@ -162,6 +174,7 @@ export async function parseAndVerifyProxiesAction(input: {
       verified: rows.filter((row) => row.status === "verified").length,
       failed: rows.filter((row) => row.status === "failed").length,
       mismatched: rows.filter((row) => row.status === "review_required").length,
+      unverified: rows.filter((row) => row.status === "country_unverified").length,
       duplicates: [...rows, ...malformed].filter((row) => row.duplicate).length,
       malformed: malformed.length,
     },

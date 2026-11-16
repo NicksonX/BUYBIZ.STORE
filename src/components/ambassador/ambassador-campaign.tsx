@@ -68,7 +68,7 @@ export function AmbassadorCampaign({
                 : `Free to join. Qualify ${required} referrals to unlock Ambassador, then earn ${reward} per friend who completes a ${minProxyDays}-day+ proxy purchase.`}
             </p>
             <p className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[8.5px] text-white/60">
-              <span className="inline-flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-[#8EE7B8]" /> Ongoing — no end date</span>
+              <span className="inline-flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-[#8EE7B8]" /> Ongoing, no end date</span>
               {nextPayoutAt ? (
                 <span className="inline-flex items-center gap-1">
                   <span aria-hidden="true">·</span> Next payout:{" "}

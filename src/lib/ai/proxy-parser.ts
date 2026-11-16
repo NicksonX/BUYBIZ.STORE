@@ -73,7 +73,13 @@ export function parseProxyLine(
   let error: string | null = null;
 
   try {
-    if (line.includes("@")) {
+    const ipv6 = line.match(/^\[([0-9a-fA-F:]+)\]:(\d+)(?::([^:]+):(.+))?$/);
+    if (ipv6) {
+      host = ipv6[1];
+      port = Number(ipv6[2]);
+      username = ipv6[3] || null;
+      password = ipv6[4] || null;
+    } else if (line.includes("@")) {
       // user:pass@host:port (or scheme://user:pass@host:port)
       const url = new URL(`${protocol}://${line}`);
       host = url.hostname;

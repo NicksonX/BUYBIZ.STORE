@@ -55,7 +55,7 @@ export default async function CampaignPage({ params }: { params: Promise<{ slug:
             </div>
             <div className="rounded-[10px] bg-[#F4F4F5] p-3.5 text-[10px] leading-5 text-[#6E7178]">
               <p className="font-semibold text-[#0A0B0D]">Both sides earn $10.</p>
-              <p className="mt-1">The qualifying customer earns $10 and the referrer earns $10, each in their separate USD rewards balance. The 7-day+ proxy purchase is a real service purchase, with referral rewards as an added benefit — not an entry fee. If there is no valid referrer, only the customer reward is issued.</p>
+              <p className="mt-1">The qualifying customer earns $10 and the referrer earns $10, each in their separate USD rewards balance. The 7-day+ proxy purchase is a real service purchase, with referral rewards as an added benefit, not an entry fee. If there is no valid referrer, only the customer reward is issued.</p>
               <p className="mt-2">Failed, reversed, refunded or fraudulent transactions do not qualify. One customer reward per qualifying customer.</p>
             </div>
           </div>

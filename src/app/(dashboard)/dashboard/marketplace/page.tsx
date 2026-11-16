@@ -14,6 +14,7 @@ import { getAvailablePlans } from "@/server/data/customer";
 import { getComingSoonProducts } from "@/server/data/products";
 import { getInventoryCountries } from "@/server/data/countries";
 import { allCountries, countryFlag } from "@/lib/ai/countries";
+import { CountrySearchSelect } from "@/components/marketplace/country-search-select";
 import { cn } from "@/lib/utils";
 import type { Product } from "@/lib/db/types";
 
@@ -86,14 +87,7 @@ export default async function MarketplacePage({
             </div>
             <span className="rounded-full border border-border bg-surface-subtle px-2.5 py-1 text-[9px] text-muted-foreground">{countryCode ? countryCode : "All locations"}</span>
           </div>
-          <form method="get" action="/dashboard/marketplace" className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
-            <label htmlFor="marketplace-country" className="sr-only">Select proxy country</label>
-            <select id="marketplace-country" name="country" defaultValue={countryCode ?? ""} className="h-10 w-full rounded-full border border-border bg-surface px-3 text-[11px] sm:max-w-[360px]">
-              <option value="">All available countries</option>
-              {countryOptions.map((country) => <option key={country.code} value={country.code}>{country.name} — {!country.configured ? "Country Not Available" : country.available > 0 ? `${country.available} available` : "Currently Out of Stock"}</option>)}
-            </select>
-            <button type="submit" className="h-10 shrink-0 rounded-full bg-foreground px-5 text-[10.5px] font-semibold text-background">Apply country</button>
-          </form>
+          <div className="mt-3"><CountrySearchSelect basePath="/dashboard/marketplace" selectedCode={countryCode} countries={countryOptions} extraQuery={activeFilter !== "all" ? { category: activeFilter } : {}} /></div>
           <div className="mt-3 flex gap-1.5 overflow-x-auto overscroll-x-contain pb-1 sm:flex-wrap">
             <Link href="/dashboard/marketplace" className={cn("tap-target inline-flex min-h-10 shrink-0 items-center gap-2 rounded-full border px-3 text-[10.5px] font-medium", !countryCode ? "border-foreground bg-foreground text-background" : "border-border bg-surface text-muted-foreground")}>
               🌍 All locations
@@ -102,12 +96,12 @@ export default async function MarketplacePage({
               <Link key={country.code} href={`/dashboard/marketplace?country=${country.code}`} className={cn("tap-target inline-flex min-h-10 shrink-0 items-center gap-2 rounded-full border px-3 text-[10.5px] font-medium", countryCode === country.code ? "border-foreground bg-foreground text-background" : "border-border bg-surface text-muted-foreground")}>
                 <span className="text-[14px]">{countryFlag(country.code)}</span>
                 {country.name}
-                <span className={cn("text-[8.5px]", country.available > 0 ? "text-success" : "text-warning")}>{country.available > 0 ? `${country.available} live` : "No stock"}</span>
+                <span className={cn("text-[8.5px]", country.available > 0 ? "text-success" : "text-warning")}>{country.available > 0 ? "Available" : "Out of Stock"}</span>
               </Link>
             ))}
           </div>
           {selectedCountry && !selectedCountry.configured ? <p className="mt-2 text-[9.5px] text-warning">Sorry, there are currently no proxies available for this location. Please select another country.</p> : null}
-          {selectedCountry && selectedCountry.configured && selectedCountry.available === 0 ? <p className="mt-2 text-[9.5px] text-warning">Currently Out of Stock — there are no verified, available proxies for {selectedCountry.name}.</p> : null}
+          {selectedCountry && selectedCountry.configured && selectedCountry.available === 0 ? <p className="mt-2 text-[9.5px] text-warning">Currently Out of Stock. There are no verified, available proxies for {selectedCountry.name}.</p> : null}
           {!selectedCountry && countries.length === 0 ? <p className="mt-2 text-[9.5px] text-warning">No proxy inventory has been added yet. Check back shortly.</p> : null}
         </section>
 
