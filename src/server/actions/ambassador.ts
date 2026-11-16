@@ -30,7 +30,7 @@ export async function submitAmbassadorAddressAction(
   const address = String(formData.get("address") ?? "").trim();
   try {
     await submitAmbassadorAddress(user.id, address);
-    revalidatePath("/dashboard/referrals");
+    revalidatePath("/dashboard/rewards");
     return formSuccess(
       "Address submitted. An administrator must verify it before you can request a payout.",
     );
@@ -67,7 +67,7 @@ export async function requestAmbassadorPayoutAction(
   }
   try {
     const payout = await requestAmbassadorWithdrawal(user.id, amountCents);
-    revalidatePath("/dashboard/referrals");
+    revalidatePath("/dashboard/rewards");
     await flushEmailQueue(5);
     return formSuccess(
       `Payout request for $${(payout.amountCents / 100).toFixed(2)} submitted. Processing can take up to 3 days.`,
