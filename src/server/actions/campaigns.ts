@@ -24,7 +24,7 @@ export async function requestCampaignPayoutAction(
   }
   try {
     const payout = await requestCampaignPayout(user.id);
-    revalidatePath("/dashboard/referrals");
+    revalidatePath("/dashboard/rewards");
     return formSuccess(
       `Payout request for ${new Intl.NumberFormat("en-US", {
         style: "currency",

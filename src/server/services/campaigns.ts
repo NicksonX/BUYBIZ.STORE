@@ -101,6 +101,16 @@ export async function getCampaignsForAdmin() {
   return result.rows.map(normalizeCampaign);
 }
 
+export async function getPublishedCampaigns() {
+  const db = await getDb();
+  const result = await db.query<Record<string, unknown>>(
+    `select ${CAMPAIGN_SELECT} from campaigns
+      where status in ('published','paused')
+      order by starts_at asc`,
+  );
+  return result.rows.map(normalizeCampaign);
+}
+
 export async function getCampaignBySlug(slug: string, includeUnpublished = false) {
   const db = await getDb();
   const result = await db.query<Record<string, unknown>>(
@@ -241,7 +251,7 @@ export async function evaluateCampaignRewards(
         type: "system",
         title: "You earned a $10 campaign reward",
         body: `Your qualifying 7-day-or-longer proxy purchase earned ${usd(campaign.customerRewardCents)} in USD rewards. It becomes available for payout on ${formatCampaignDate(campaign.payoutAt)}.`,
-        href: "/dashboard/referrals?tab=rewards",
+        href: "/dashboard/rewards",
       });
 
     }
@@ -266,7 +276,7 @@ export async function evaluateCampaignRewards(
           type: "system",
           title: "Your referral earned a $10 campaign reward",
           body: `${person.displayName ?? person.username} completed both qualifying steps. ${usd(campaign.referrerRewardCents)} was added to your USD rewards.`,
-          href: "/dashboard/referrals?tab=rewards",
+          href: "/dashboard/rewards",
         });
       }
     }
@@ -559,7 +569,7 @@ export async function requestCampaignPayout(userId: string) {
       type: "system",
       title: "USD reward payout requested",
       body: `${usd(amountCents)} is pending review. BUYBIZ will send USDT on BEP20 after manual approval.`,
-      href: "/dashboard/referrals?tab=rewards",
+      href: "/dashboard/rewards",
     });
     if (profile.rows[0]) {
       await queueEmail(tx, {
@@ -788,7 +798,7 @@ export async function reviewCampaignPayout(input: {
           : input.decision === "reject"
             ? `Your ${usd(row.amountCents)} payout was rejected: ${input.reason}`
             : `Your ${usd(row.amountCents)} payout is being processed manually.`,
-      href: "/dashboard/referrals?tab=rewards",
+      href: "/dashboard/rewards",
     });
     await writeAuditLog(tx, {
       actorUserId: input.actorId,
@@ -929,7 +939,7 @@ export async function settleCampaignRewards() {
         type: "system",
         title: "Your $10 campaign reward was credited",
         body: `${usd(reward.amountCents)} was credited to your USD Reward Balance from ${reward.campaignName}.`,
-        href: "/dashboard/referrals?tab=rewards",
+        href: "/dashboard/rewards",
       });
       await writeAuditLog(tx, {
         actorUserId: null,

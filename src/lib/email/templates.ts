@@ -508,7 +508,7 @@ export function renderEmail(input: {
         windowLabel: "USD rewards · USDT BEP20 · separate from your naira wallet",
       })}
       <p style="margin:16px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.7;color:#4E5157;">Your $10 USD campaign reward has been successfully credited to your USD Reward Balance. You can view it in Rewards and request a USDT BEP20 payout after ${escapeHtml(data.payoutDate ?? "the scheduled payout date")}.</p>
-      ${button("Open USD Rewards", `${input.websiteUrl}/dashboard/referrals?tab=rewards`)}`;
+      ${button("Open USD Rewards", `${input.websiteUrl}/dashboard/rewards`)}`;
       break;
     case "campaign_referrer_reward":
       content = `${campaignBanner({
@@ -521,8 +521,8 @@ export function renderEmail(input: {
         windowLabel: "The qualifying customer received $10 too — both sides are rewarded.",
       })}
       <p style="margin:16px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.7;color:#4E5157;">Your link is still working. Every new qualifying referral during the campaign earns another $10.</p>
-      ${button("Share your invite link", `${input.websiteUrl}/dashboard/referrals?tab=referrals`)}
-      ${button("Open USD Rewards", `${input.websiteUrl}/dashboard/referrals?tab=rewards`, "light")}`;
+      ${button("Share your invite link", `${input.websiteUrl}/dashboard/referrals`)}
+      ${button("Open USD Rewards", `${input.websiteUrl}/dashboard/rewards`, "light")}`;
       break;
     case "campaign_payout_requested":
       content = `${details([
@@ -558,7 +558,7 @@ export function renderEmail(input: {
         ["Reason", data.reason ?? "Please contact support for details."],
       ])}
       <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.7;color:${BRAND.muted};">The reserved reward has been returned to your available USD rewards. You can review your balance and request a payout again when eligible.</p>
-      ${button("Review USD rewards", `${input.websiteUrl}/dashboard/referrals?tab=rewards`)}`;
+      ${button("Review USD rewards", `${input.websiteUrl}/dashboard/rewards`)}`;
       break;
     case "marketing":
       content = `${campaignBanner({
@@ -576,7 +576,7 @@ export function renderEmail(input: {
         ["3", "You both earn $10 in separate USD rewards."],
       ])}
       <p style="margin:4px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:11px;line-height:1.7;color:${BRAND.muted};">One reward per qualifying customer. Failed, refunded or fraudulent activity never counts. No fake participation numbers — only real qualifying referrals.</p>
-      ${button("Share your invite link", `${input.websiteUrl}/dashboard/referrals?tab=referrals`)}
+      ${button("Share your invite link", `${input.websiteUrl}/dashboard/referrals`)}
       ${button("See campaign rules", `${input.websiteUrl}/campaigns/customer-referrer-10`, "light")}`;
       break;
   }

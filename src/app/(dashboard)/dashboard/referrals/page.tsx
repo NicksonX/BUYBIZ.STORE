@@ -7,52 +7,31 @@ import { CopyButton } from "@/components/ui/copy-button";
 import { requireUserPage } from "@/server/auth/guards";
 import { getReferralDashboard } from "@/server/data/customer";
 import { getAmbassadorDashboard } from "@/server/services/ambassador";
-import { AmbassadorPanel } from "@/components/ambassador/ambassador-panel";
-import { AmbassadorCampaign } from "@/components/ambassador/ambassador-campaign";
+import { getUsdRewardsDashboard } from "@/server/services/campaigns";
 import { getAppUrl } from "@/lib/config";
 import { formatDate } from "@/lib/utils";
-import { getFeaturedCampaign, getUsdRewardsDashboard } from "@/server/services/campaigns";
-import { CampaignCard } from "@/components/campaigns/campaign-card";
-import { ReferralTabs, type ReferralTab } from "@/components/referrals/referral-tabs";
-import { UsdRewardsPanel } from "@/components/referrals/usd-rewards-panel";
+import { ShareReferral } from "@/components/campaigns/share-referral";
 
 export const dynamic = "force-dynamic";
 
-function tabFrom(value: string | string[] | undefined): ReferralTab {
-  const tab = Array.isArray(value) ? value[0] : value;
-  return tab === "campaigns" || tab === "rewards" ? tab : "referrals";
-}
-
-export default async function ReferralsPage({
-  searchParams,
-}: {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-}) {
+export default async function ReferralsPage() {
   const user = await requireUserPage();
-  const params = await searchParams;
-  const tab = tabFrom(params.tab);
-  const [data, ambassador, rewards, campaign] = await Promise.all([
+  const [data, ambassador, rewards] = await Promise.all([
     getReferralDashboard(user.id),
     getAmbassadorDashboard(user.id),
     getUsdRewardsDashboard(user.id),
-    getFeaturedCampaign(),
   ]);
   const link = `${getAppUrl()}/register?ref=${encodeURIComponent(data.code)}`;
 
   return (
     <div>
       <PageHeader
-        eyebrow="Referrals"
-        title="Invite friends. Build rewards."
-        description="Earn $3 USD for every valid referral. A referral becomes valid after a successful 7-day+ proxy purchase. Two valid referrals unlock Ambassador status."
+        eyebrow="Referral programme"
+        title="Your $3 referral programme."
+        description="Share your link and earn $3 USD for every valid referral. This page tracks only the normal BUYBIZ referral programme."
       />
 
-      <div className="mt-4">
-        <ReferralTabs active={tab} />
-      </div>
-
-      {tab === "referrals" ? (
-        <>
+      <>
           <div className="grid gap-3 lg:grid-cols-[1.1fr_0.9fr]">
             <section className="relative overflow-hidden rounded-[16px] bg-[#0A0B0D] p-5 text-white">
               <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-white/40">Your referral code</p>
@@ -64,6 +43,7 @@ export default async function ReferralsPage({
               <div className="mt-1.5 flex flex-wrap items-center gap-2">
                 <p className="min-w-0 flex-1 truncate rounded-[7px] border border-white/10 bg-white/[0.05] px-3 py-2.5 font-mono text-[10px] text-white/70">{link}</p>
                 <CopyButton value={link} label="Copy link" />
+                <ShareReferral value={link} />
               </div>
               <p className="mt-4 text-[9.5px] leading-4 text-white/55">To qualify for this referral reward, you must successfully purchase a proxy subscription of at least {data.minProxyDays} days.</p>
               <p className="mt-2 text-[9.5px] leading-4 text-[#FFB197]">Ambassador progress: {ambassador.qualified}/{ambassador.config.referralsRequired} valid referrals.</p>
@@ -77,6 +57,8 @@ export default async function ReferralsPage({
                 { label: "Invalid", value: data.stats.rejected, icon: Gift },
                 { label: "USD earned", value: `$${(ambassador.earnedCents / 100).toFixed(2)}`, icon: BadgeDollarSign },
                 { label: "USD available", value: `$${(ambassador.availableCents / 100).toFixed(2)}`, icon: BadgeDollarSign },
+                { label: "USD pending", value: `$${(rewards.ambassador.pendingCents / 100).toFixed(2)}`, icon: BadgeDollarSign },
+                { label: "USD paid", value: `$${(rewards.ambassador.paidCents / 100).toFixed(2)}`, icon: BadgeDollarSign },
               ].map((item) => (
                 <div key={item.label} className="surface-card rounded-[12px] p-3.5">
                   <div className="flex items-center justify-between"><p className="text-[9.5px] text-muted-foreground">{item.label}</p><item.icon className="h-3.5 w-3.5 text-muted-foreground" /></div>
@@ -113,68 +95,6 @@ export default async function ReferralsPage({
             <p className="rounded-[9px] border border-border bg-surface-subtle p-3">Self-referrals, duplicate accounts and code abuse are rejected. BUYBIZ may review or reverse rewards tied to abuse.</p>
           </div>
         </>
-      ) : null}
-
-      {tab === "campaigns" ? (
-        <div className="space-y-4">
-          {campaign ? <CampaignCard campaign={campaign} /> : (
-            <div className="surface-card rounded-[14px] p-5 text-[10px] text-muted-foreground">No campaign is published right now.</div>
-          )}
-          {ambassador.config.enabled ? (
-            <AmbassadorCampaign
-              variant="referral"
-              isAmbassador={ambassador.isAmbassador}
-              qualified={ambassador.qualified}
-              required={ambassador.config.referralsRequired}
-              commissionCents={ambassador.config.commissionCents}
-              availableCents={ambassador.availableCents}
-              minWithdrawalCents={ambassador.config.withdrawalMinCents}
-              nextPayoutAt={ambassador.config.nextPayoutAt}
-              minProxyDays={Math.max(1, Math.ceil(ambassador.config.qualifyingProxyDurationSeconds / 86400))}
-            />
-          ) : null}
-          {ambassador.config.nextPayoutAt ? <p className="rounded-[9px] border border-border bg-surface-subtle px-3 py-2 text-[9px] text-muted-foreground">The $3 Ambassador Programme is <strong className="font-medium text-foreground">ongoing with no end date</strong>. Its next payout batch is <strong className="font-medium text-foreground">{new Intl.DateTimeFormat("en-NG", { day: "numeric", month: "long", year: "numeric", timeZone: "Africa/Lagos" }).format(ambassador.config.nextPayoutAt)}</strong>  This is a payout date, not a campaign close date. It is separate from the $10 campaign.</p> : null}
-          <div className="grid gap-2 text-[10px] leading-5 text-muted-foreground sm:grid-cols-2">
-            <p className="rounded-[9px] border border-border bg-surface-subtle p-3"><strong className="text-foreground">Current campaign:</strong> both the qualifying customer and their referrer earn $10 in USD rewards. The customer must complete a proxy purchase of {data.minProxyDays} days or more during the campaign window.</p>
-            <p className="rounded-[9px] border border-border bg-surface-subtle p-3"><strong className="text-foreground">Ambassador programme:</strong> the existing separate programme pays $3 per qualified referral after 10 qualified referrals. Ambassador USD commissions never mix with campaign rewards.</p>
-          </div>
-          {ambassador.isAmbassador ? (
-            <AmbassadorPanel
-              isAmbassador
-              qualified={ambassador.qualified}
-              required={ambassador.config.referralsRequired}
-              total={ambassador.total}
-              pending={ambassador.pending}
-              rejected={ambassador.rejected}
-              availableCents={ambassador.availableCents}
-              earnedCents={ambassador.earnedCents}
-              minWithdrawalCents={ambassador.config.withdrawalMinCents}
-              commissionCents={ambassador.config.commissionCents}
-              address={ambassador.address}
-              openWithdrawal={ambassador.openWithdrawal}
-              withdrawals={ambassador.withdrawals}
-              promotedAt={ambassador.promotedAt}
-              nextPayoutAt={ambassador.config.nextPayoutAt}
-              minProxyDays={Math.max(1, Math.ceil(ambassador.config.qualifyingProxyDurationSeconds / 86400))}
-            />
-          ) : null}
-        </div>
-      ) : null}
-
-      {tab === "rewards" ? (
-        <UsdRewardsPanel
-          totals={rewards.totals}
-          campaign={rewards.campaign}
-          ambassador={rewards.ambassador}
-          campaignRewards={rewards.campaignRewards}
-          ambassadorCommissions={rewards.ambassadorCommissions}
-          payouts={rewards.payouts}
-          address={rewards.address}
-          campaignPayoutAt={rewards.campaignPayoutAt ?? campaign?.payoutAt ?? null}
-          ambassadorNextPayoutAt={rewards.ambassadorNextPayoutAt ?? ambassador.config.nextPayoutAt}
-          isAmbassador={ambassador.isAmbassador}
-        />
-      ) : null}
     </div>
   );
 }

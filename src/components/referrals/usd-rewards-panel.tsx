@@ -39,6 +39,9 @@ const statusLabel: Record<string, string> = {
 };
 
 function usd(cents: number) { return `$${(Number(cents) / 100).toFixed(2)}`; }
+function maskAddress(value: string) {
+  return value.length > 12 ? `${value.slice(0, 6)}…${value.slice(-6)}` : value;
+}
 function date(value: Date | string | null) {
   if (!value) return "Not yet";
   return new Intl.DateTimeFormat("en-NG", { day: "numeric", month: "short", year: "numeric", timeZone: "Africa/Lagos" }).format(new Date(value));
@@ -131,7 +134,7 @@ export function UsdRewardsPanel({
           <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[9px] text-muted-foreground">
             <span>Available {usd(ambassador.availableCents)}</span><span>Pending {usd(ambassador.pendingCents)}</span><span>Paid {usd(ambassador.paidCents)}</span>
           </div>
-          <p className="mt-2 text-[9px] leading-4 text-muted-foreground">{isAmbassador ? "Your Ambassador balance remains separate from campaign rewards." : "Unlock Ambassador status after 10 qualified referrals."} The programme is ongoing with no end date. Next $3 payout batch: {ambassadorNextPayoutAt ? date(ambassadorNextPayoutAt) : "scheduled by BUYBIZ"}.</p>
+          <p className="mt-2 text-[9px] leading-4 text-muted-foreground">{isAmbassador ? "Your Ambassador balance remains separate from campaign rewards." : "Unlock Ambassador status after 2 valid referrals."} The programme is ongoing with no end date. Next $3 payout batch: {ambassadorNextPayoutAt ? date(ambassadorNextPayoutAt) : "scheduled by BUYBIZ"}.</p>
         </section>
       </div>
 
@@ -145,7 +148,7 @@ export function UsdRewardsPanel({
             {address?.status === "verified" ? (
               <div className="mt-2 rounded-[8px] border border-success/20 bg-success-soft px-3 py-2">
                 <p className="flex items-center gap-1 text-[8.5px] font-medium text-success"><ShieldCheck className="h-3 w-3" /> Verified BEP20 address</p>
-                <p className="mt-1 break-all font-mono text-[9px]">{address.address}</p>
+                <p className="mt-1 font-mono text-[9px]">{maskAddress(address.address)}</p>
               </div>
             ) : null}
             {address?.status === "pending" ? <p className="mt-2 rounded-[8px] border border-warning/20 bg-warning-soft px-2.5 py-2 text-[9px] text-warning">Address submitted. Waiting for administrator verification.</p> : null}
@@ -205,7 +208,7 @@ export function UsdRewardsPanel({
             {payouts.map((payout) => (
               <div key={payout.id} className="px-4 py-3">
                 <div className="flex items-start justify-between gap-3"><div><p className="tabular text-[12px] font-semibold">{usd(payout.amountCents)} USDT</p><p className="mt-0.5 text-[8.5px] text-muted-foreground">Requested {date(payout.requestedAt)} · BEP20</p></div><Badge tone={tone(payout.status)}>{statusLabel[payout.status] ?? payout.status}</Badge></div>
-                <p className="mt-1.5 break-all font-mono text-[8px] text-muted-foreground">{payout.walletAddress}</p>
+                <p className="mt-1.5 font-mono text-[8px] text-muted-foreground">{maskAddress(payout.walletAddress)}</p>
                 {payout.transactionHash ? <p className="mt-1 break-all font-mono text-[8px] text-success">Tx: {payout.transactionHash}</p> : null}
                 {payout.rejectionReason ? <p className="mt-1 text-[8.5px] text-danger">{payout.rejectionReason}</p> : null}
               </div>
@@ -215,7 +218,7 @@ export function UsdRewardsPanel({
       </section>
 
       <p className="flex items-start gap-1.5 px-1 text-[8.5px] leading-4 text-muted-foreground"><CheckCircle2 className="mt-0.5 h-3 w-3 shrink-0 text-success" /> USD rewards are separate from BUYBIZ wallet credits and are paid manually in USDT BEP20 after review. BUYBIZ never marks a payout paid without a transaction hash.</p>
-      {!isAmbassador ? <p className="px-1 text-[8.5px] text-muted-foreground"><Link href="/dashboard/referrals?tab=campaigns" className="underline underline-offset-2">View the Ambassador programme</Link> for the existing $3 referral rewards.</p> : null}
+      {!isAmbassador ? <p className="px-1 text-[8.5px] text-muted-foreground"><Link href="/dashboard/referrals" className="underline underline-offset-2">View the Ambassador programme</Link> for the existing $3 referral rewards.</p> : null}
     </div>
   );
 }
