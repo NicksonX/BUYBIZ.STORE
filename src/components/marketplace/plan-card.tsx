@@ -137,7 +137,7 @@ export function PlanCard({
             )}
             aria-disabled="true"
           >
-            No eligible proxy right now
+            No matching stock for this duration
           </div>
         )}
       </div>
