@@ -211,6 +211,7 @@ export default async function AdminInventoryPage({
                     <CalendarClock className="h-3 w-3" />
                     {expiry.expired ? "Expired" : `Expires ${formatDate(item.upstreamExpiresAt)}`}
                     {item.expiryIsEstimated ? <span className="rounded bg-surface-subtle px-1 py-0.5 text-[7.5px]">assumed</span> : null}
+                    {item.lastAssignedAt ? <span className="ml-2 text-[8px] text-muted-foreground">Last assigned {formatDate(item.lastAssignedAt)}</span> : null}
                   </span>
                   <span className={cn("inline-flex items-center gap-1 font-medium text-foreground")}>
                     Manage <ArrowUpRight className="h-3 w-3 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />

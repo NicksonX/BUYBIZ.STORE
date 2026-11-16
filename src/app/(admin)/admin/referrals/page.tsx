@@ -26,7 +26,7 @@ export default async function AdminReferralsPage() {
           ["Referrals", stats.total],
           ["Awaiting purchase", stats.registered + stats.pending],
           ["Rewarded", stats.rewarded],
-          ["Rewards credited", formatNaira(stats.paidMinor, { exact: true })],
+          ["USD referral rewards", `$${(stats.usdRewardsCents / 100).toFixed(2)}`],
         ].map(([label, value]) => (
           <div key={label} className="surface-card rounded-[12px] p-3.5">
             <p className="text-[9.5px] text-muted-foreground">{label}</p>

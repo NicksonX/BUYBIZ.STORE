@@ -59,6 +59,7 @@ export type AdminInventoryRow = {
   activeSeats: number;
   freeSeats: number;
   uploadedAt: Date;
+  lastAssignedAt: Date | null;
   upstreamExpiresAt: Date;
   expiryIsEstimated: boolean;
   status: ProxyStatus;
@@ -540,6 +541,7 @@ export async function getAdminInventory(input: {
             coalesce(s.active,0)::int as "activeSeats",
             greatest(i.max_seats - coalesce(s.active,0),0)::int as "freeSeats",
             i.uploaded_at as "uploadedAt",
+            i.last_assigned_at as "lastAssignedAt",
             i.upstream_expires_at as "upstreamExpiresAt",
             i.expiry_is_estimated as "expiryIsEstimated",
             i.status, i.archived_at as "archivedAt", i.created_at as "createdAt"
@@ -592,6 +594,7 @@ export async function getAdminInventoryDetail(id: string) {
             coalesce(s.active,0)::int as "activeSeats",
             greatest(i.max_seats - coalesce(s.active,0),0)::int as "freeSeats",
             i.uploaded_at as "uploadedAt",
+            i.last_assigned_at as "lastAssignedAt",
             i.upstream_expires_at as "upstreamExpiresAt",
             i.expiry_is_estimated as "expiryIsEstimated",
             i.status, i.archived_at as "archivedAt", i.created_at as "createdAt",
@@ -1283,8 +1286,13 @@ export async function getAdminReferrals() {
     ...row,
     rewardMinor: row.rewardMinor === null ? null : Number(row.rewardMinor),
   }));
+  const usd = await db.query<{ total: unknown }>(
+    `select coalesce(sum(amount_usd_cents),0)::int as total
+       from ambassador_ledger where entry_type='commission'`,
+  );
   return {
     referrals,
+    usdRewardsCents: Number(usd.rows[0]?.total ?? 0),
     stats: {
       total: referrals.length,
       registered: referrals.filter((row) => row.status === "registered").length,
@@ -1292,6 +1300,7 @@ export async function getAdminReferrals() {
       qualified: referrals.filter((row) => row.status === "qualified").length,
       rewarded: referrals.filter((row) => row.status === "rewarded").length,
       rejected: referrals.filter((row) => row.status === "rejected").length,
+      usdRewardsCents: Number(usd.rows[0]?.total ?? 0),
       paidMinor: referrals.reduce((sum, row) => sum + (row.rewardMinor ?? 0), 0),
     },
   };
