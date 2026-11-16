@@ -1,10 +1,11 @@
 "use client";
 
 import { useActionState, type ReactNode } from "react";
-import { CheckCircle2, Loader2 } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 import type { ActionState } from "@/lib/validation/action-state";
 import { initialActionState } from "@/lib/validation/action-state";
 import { cn } from "@/lib/utils";
+import { LoadingDots } from "@/components/ui/loading-dots";
 
 type AdminAction = (
   previous: ActionState,
@@ -66,7 +67,7 @@ export function AdminActionForm({
           buttonClassName,
         )}
       >
-        {pending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
+        {pending ? <LoadingDots /> : null}
         {pending ? (pendingLabel ?? "Saving…") : submitLabel}
       </button>
       {state.message ? (

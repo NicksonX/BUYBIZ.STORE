@@ -4,7 +4,6 @@ import { useActionState, useState } from "react";
 import {
   ArrowLeftRight,
   CheckCircle2,
-  Loader2,
   Network,
   ShieldCheck,
 } from "lucide-react";
@@ -24,6 +23,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { SwitchOption } from "@/server/services/proxy-management";
 import { cn } from "@/lib/utils";
+import { LoadingDots } from "@/components/ui/loading-dots";
 
 export function ProxySwitchDialog({
   allocationId,
@@ -159,7 +159,7 @@ export function ProxySwitchDialog({
                 >
                   {pending ? (
                     <>
-                      <Loader2 className="h-4 w-4 animate-spin" /> Switching…
+                      <LoadingDots /> Switching…
                     </>
                   ) : (
                     "Confirm switch"

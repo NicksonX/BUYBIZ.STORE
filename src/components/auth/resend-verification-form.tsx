@@ -1,10 +1,11 @@
 "use client";
 
 import { useActionState } from "react";
-import { Loader2, Mail } from "lucide-react";
+import { Mail } from "lucide-react";
 import { resendVerificationAction } from "@/server/actions/auth";
 import { initialActionState } from "@/lib/validation/action-state";
 import { Alert } from "@/components/ui/alert";
+import { LoadingDots } from "@/components/ui/loading-dots";
 
 export function ResendVerificationForm({
   email,
@@ -39,7 +40,7 @@ export function ResendVerificationForm({
             className="inline-flex h-9 items-center gap-2 rounded-[8px] border border-black/[0.09] bg-white px-3.5 text-[11px] font-medium text-[#0A0B0D] hover:bg-[#FAFAFA] disabled:opacity-50"
           >
             {pending ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              <LoadingDots />
             ) : (
               <Mail className="h-3.5 w-3.5" />
             )}

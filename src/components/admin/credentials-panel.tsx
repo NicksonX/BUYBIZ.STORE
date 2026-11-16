@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { Eye, KeyRound, Loader2, ShieldAlert } from "lucide-react";
+import { Eye, KeyRound, ShieldAlert } from "lucide-react";
 import {
   revealCredentialsAction,
   rotateCredentialsAction,
@@ -12,6 +12,7 @@ import { CopyButton } from "@/components/ui/copy-button";
 import { Input } from "@/components/ui/input";
 import { AdminNote } from "@/components/admin/field";
 import { Alert } from "@/components/ui/alert";
+import { LoadingDots } from "@/components/ui/loading-dots";
 
 export function CredentialsPanel({
   inventoryId,
@@ -55,7 +56,7 @@ export function CredentialsPanel({
               disabled={revealing}
               className="inline-flex h-8 items-center gap-1.5 rounded-full border border-border bg-surface px-3 text-[10px] font-medium hover:bg-accent disabled:opacity-50"
             >
-              {revealing ? <Loader2 className="h-3 w-3 animate-spin" /> : <Eye className="h-3 w-3" />}
+              {revealing ? <LoadingDots /> : <Eye className="h-3 w-3" />}
               Reveal credentials
             </button>
           </form>
@@ -133,7 +134,7 @@ export function CredentialsPanel({
                 disabled={rotating}
                 className="inline-flex h-8 items-center gap-1.5 rounded-full border border-danger/25 bg-danger-soft px-3 text-[9.5px] font-medium text-danger disabled:opacity-50"
               >
-                {rotating ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
+                {rotating ? <LoadingDots /> : null}
                 {rotationActionLabel}
               </button>
             </form>

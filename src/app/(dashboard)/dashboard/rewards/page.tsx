@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { PageHeader } from "@/components/ui/page-header";
 import { requireUserPage } from "@/server/auth/guards";
-import { getUsdRewardsDashboard } from "@/server/services/campaigns";
+import { getFeaturedCampaign, getUsdRewardsDashboard } from "@/server/services/campaigns";
 import { getAmbassadorDashboard } from "@/server/services/ambassador";
 import { UsdRewardsPanel } from "@/components/referrals/usd-rewards-panel";
 import { AmbassadorPanel } from "@/components/ambassador/ambassador-panel";
@@ -10,10 +10,12 @@ export const dynamic = "force-dynamic";
 
 export default async function RewardsPage() {
   const user = await requireUserPage();
-  const [rewards, ambassador] = await Promise.all([
+  const [rewards, ambassador, campaign] = await Promise.all([
     getUsdRewardsDashboard(user.id),
     getAmbassadorDashboard(user.id),
+    getFeaturedCampaign().catch(() => null),
   ]);
+  const campaignPayoutAt = rewards.campaignPayoutAt ?? campaign?.payoutAt ?? null;
   return (
     <div>
       <PageHeader
@@ -30,10 +32,10 @@ export default async function RewardsPage() {
         ambassadorCommissions={rewards.ambassadorCommissions}
         payouts={rewards.payouts}
         address={rewards.address}
-        campaignPayoutAt={rewards.campaignPayoutAt}
+        campaignPayoutAt={campaignPayoutAt}
         ambassadorNextPayoutAt={rewards.ambassadorNextPayoutAt ?? ambassador.config.nextPayoutAt}
         isAmbassador={ambassador.isAmbassador}
-        payoutDateReached={Boolean(rewards.campaignPayoutAt && new Date(rewards.campaignPayoutAt).getTime() <= Date.now())}
+        payoutDateReached={Boolean(campaignPayoutAt && new Date(campaignPayoutAt).getTime() <= Date.now())}
       />
       {ambassador.isAmbassador ? (
         <AmbassadorPanel

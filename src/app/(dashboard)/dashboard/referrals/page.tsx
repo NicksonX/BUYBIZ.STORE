@@ -40,9 +40,8 @@ export default async function ReferralsPage() {
                 {data.code ? <CopyButton value={data.code} label="Copy code" /> : null}
               </div>
               <p className="mt-5 text-[10px] text-white/40">Your invite link</p>
-              <div className="mt-1.5 flex flex-wrap items-center gap-2">
-                <p className="min-w-0 flex-1 truncate rounded-[7px] border border-white/10 bg-white/[0.05] px-3 py-2.5 font-mono text-[10px] text-white/70">{link}</p>
-                <CopyButton value={link} label="Copy link" />
+              <p className="mt-1.5 w-full break-all rounded-[8px] border border-white/10 bg-white/[0.05] px-3 py-2.5 font-mono text-[10px] leading-4 text-white/70">{link}</p>
+              <div className="mt-2 w-full">
                 <ShareReferral value={link} />
               </div>
               <p className="mt-4 text-[9.5px] leading-4 text-white/55">To qualify for this referral reward, you must successfully purchase a proxy subscription of at least {data.minProxyDays} days.</p>

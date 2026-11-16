@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { useActionState } from "react";
-import { Loader2, LockKeyhole } from "lucide-react";
+import { LockKeyhole } from "lucide-react";
 import { reactivateAccountAction } from "@/server/actions/customer";
 import { initialActionState } from "@/lib/validation/action-state";
 import { Alert } from "@/components/ui/alert";
+import { LoadingDots } from "@/components/ui/loading-dots";
 
 export function ReactivationForm({
   feeMinor,
@@ -41,7 +42,7 @@ export function ReactivationForm({
       >
         {pending ? (
           <>
-            <Loader2 className="h-4 w-4 animate-spin" /> Reactivating…
+            <LoadingDots /> Reactivating…
           </>
         ) : (
           <>

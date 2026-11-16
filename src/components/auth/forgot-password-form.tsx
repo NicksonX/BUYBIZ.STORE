@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { useActionState } from "react";
-import { ArrowLeft, ArrowRight, CheckCircle2, Loader2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle2 } from "lucide-react";
 import { forgotPasswordAction } from "@/server/actions/auth";
 import { initialActionState } from "@/lib/validation/action-state";
 import { Alert } from "@/components/ui/alert";
 import { Field, Input } from "@/components/ui/input";
+import { LoadingDots } from "@/components/ui/loading-dots";
 
 export function ForgotPasswordForm({ demoMode }: { demoMode: boolean }) {
   const [state, formAction, pending] = useActionState(
@@ -86,7 +87,7 @@ export function ForgotPasswordForm({ demoMode }: { demoMode: boolean }) {
           >
             {pending ? (
               <>
-                <Loader2 className="h-4 w-4 animate-spin" /> Sending…
+                <LoadingDots /> Sending…
               </>
             ) : (
               <>

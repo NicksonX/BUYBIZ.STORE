@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { AlertTriangle, Loader2, ShieldAlert, Wallet } from "lucide-react";
+import { AlertTriangle, ShieldAlert, Wallet } from "lucide-react";
 import { terminateProxyAction } from "@/server/actions/customer";
 import { initialActionState } from "@/lib/validation/action-state";
 import {
@@ -16,6 +16,7 @@ import {
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { formatNaira } from "@/lib/utils";
+import { LoadingDots } from "@/components/ui/loading-dots";
 
 export function ProxyTerminationDialog({
   allocationId,
@@ -122,7 +123,7 @@ export function ProxyTerminationDialog({
               >
                 {pending ? (
                   <>
-                    <Loader2 className="h-4 w-4 animate-spin" /> Terminating…
+                    <LoadingDots /> Terminating…
                   </>
                 ) : refundMinor > 0 ? (
                   `Terminate and refund ${formatNaira(refundMinor, { exact: true })}`

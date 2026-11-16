@@ -5,7 +5,6 @@ import { useEffect, useRef, useState } from "react";
 import {
   ArrowDownLeft,
   ArrowUpRight,
-  Loader2,
   RefreshCw,
   Search,
 } from "lucide-react";
@@ -20,6 +19,7 @@ import { CopyButton } from "@/components/ui/copy-button";
 import { loadWalletTransactions } from "@/server/actions/wallet-history";
 import type { WalletTransaction } from "@/server/data/customer";
 import { cn, formatNaira } from "@/lib/utils";
+import { LoadingDots } from "@/components/ui/loading-dots";
 
 type FilterKey = "all" | "deposits" | "purchases" | "refunds";
 
@@ -228,7 +228,7 @@ export function MobileWalletTransactions({
           disabled={loading}
           className="inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-full border border-border bg-surface text-[11px] font-medium text-muted-foreground hover:text-foreground disabled:opacity-60"
         >
-          {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
+          {loading ? <LoadingDots /> : null}
           Load older transactions
         </button>
       ) : null}
@@ -244,7 +244,7 @@ export function MobileWalletTransactions({
 
       {loading && items.length === 0 ? (
         <div className="flex items-center justify-center gap-2 py-6 text-[10.5px] text-muted-foreground">
-          <Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading transactions…
+          <LoadingDots /> Loading transactions…
         </div>
       ) : null}
 

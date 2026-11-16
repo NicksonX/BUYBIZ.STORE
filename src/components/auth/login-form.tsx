@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useActionState, useState } from "react";
-import { ArrowRight, Loader2 } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { loginAction } from "@/server/actions/auth";
 import { initialActionState } from "@/lib/validation/action-state";
 import { Alert } from "@/components/ui/alert";
@@ -10,6 +10,7 @@ import { Field, Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/auth/password-input";
 import { SocialButtons } from "@/components/auth/social-buttons";
 import { DemoAccountFill } from "@/components/auth/demo-account-fill";
+import { LoadingDots } from "@/components/ui/loading-dots";
 
 export function LoginForm({
   next,
@@ -105,7 +106,7 @@ export function LoginForm({
         >
           {pending ? (
             <>
-              <Loader2 className="h-4 w-4 animate-spin" /> Signing in…
+              <LoadingDots /> Signing in…
             </>
           ) : (
             <>

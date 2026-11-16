@@ -1,11 +1,12 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { Loader2, MailCheck } from "lucide-react";
+import { MailCheck } from "lucide-react";
 import { verifyOtpAction } from "@/server/actions/auth";
 import { initialActionState } from "@/lib/validation/action-state";
 import { Alert } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
+import { LoadingDots } from "@/components/ui/loading-dots";
 
 export function OtpForm({ email, next }: { email?: string; next: string }) {
   const [otpEmail, setOtpEmail] = useState(email ?? "");
@@ -47,7 +48,7 @@ export function OtpForm({ email, next }: { email?: string; next: string }) {
         disabled={pending}
         className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-[9px] bg-[#0A0B0D] text-[11.5px] font-semibold text-white hover:bg-[#1A1C1F] disabled:opacity-50"
       >
-        {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <MailCheck className="h-4 w-4" />}
+        {pending ? <LoadingDots /> : <MailCheck className="h-4 w-4" />}
         Verify email
       </button>
       <p className="text-center text-[8.5px] leading-4 text-[#0A0B0D]/35">

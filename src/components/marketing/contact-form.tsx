@@ -1,11 +1,12 @@
 "use client";
 
 import { useActionState } from "react";
-import { ArrowRight, Loader2 } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { contactAction } from "@/server/actions/public";
 import { initialActionState } from "@/lib/validation/action-state";
 import { Alert } from "@/components/ui/alert";
 import { Field, Input, Textarea } from "@/components/ui/input";
+import { LoadingDots } from "@/components/ui/loading-dots";
 
 export function ContactForm() {
   const [state, formAction, pending] = useActionState(
@@ -83,7 +84,7 @@ export function ContactForm() {
           className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-full bg-[#0A0B0D] px-5 text-[11px] font-semibold text-white disabled:opacity-50"
         >
           {pending ? (
-            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            <LoadingDots />
           ) : (
             <ArrowRight className="h-3.5 w-3.5" />
           )}

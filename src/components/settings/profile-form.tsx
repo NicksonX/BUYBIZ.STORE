@@ -1,11 +1,12 @@
 "use client";
 
 import { useActionState } from "react";
-import { Loader2, Save } from "lucide-react";
+import { Save } from "lucide-react";
 import { updateProfileAction } from "@/server/actions/auth";
 import { initialActionState } from "@/lib/validation/action-state";
 import { Alert } from "@/components/ui/alert";
 import { Field, Input } from "@/components/ui/input";
+import { LoadingDots } from "@/components/ui/loading-dots";
 
 export function ProfileForm({
   username,
@@ -63,7 +64,7 @@ export function ProfileForm({
         className="inline-flex h-9 items-center gap-1.5 rounded-full bg-foreground px-4 text-[10.5px] font-semibold text-background disabled:opacity-50"
       >
         {pending ? (
-          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          <LoadingDots />
         ) : (
           <Save className="h-3.5 w-3.5" />
         )}

@@ -6,7 +6,6 @@ import {
   BriefcaseBusiness,
   Database,
   FlaskConical,
-  Loader2,
   Megaphone,
   MoreHorizontal,
   Workflow,
@@ -19,6 +18,7 @@ import { Alert } from "@/components/ui/alert";
 import { Field, Input } from "@/components/ui/input";
 import { TutorialVideo } from "@/components/tutorial/tutorial-video";
 import { cn } from "@/lib/utils";
+import { LoadingDots } from "@/components/ui/loading-dots";
 
 const icons: Record<ProxyUseCase, LucideIcon> = {
   social_media: Megaphone,
@@ -164,7 +164,7 @@ export function OnboardingForm({
         >
           {pending ? (
             <>
-              <Loader2 className="h-4 w-4 animate-spin" /> Preparing your dashboard
+              <LoadingDots /> Preparing your dashboard
             </>
           ) : (
             <>

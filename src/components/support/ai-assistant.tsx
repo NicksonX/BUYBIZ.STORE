@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Bot, Loader2, Send, ShieldCheck } from "lucide-react";
+import { Bot, Send, ShieldCheck } from "lucide-react";
+import { LoadingDots } from "@/components/ui/loading-dots";
 
 type Turn = { role: "user" | "assistant"; content: string };
 
@@ -140,7 +141,7 @@ export function AiSupportAssistant({ configured = true }: { configured?: boolean
         )}
         {pending ? (
           <div className="flex items-center gap-1.5 text-[9.5px] text-muted-foreground">
-            <Loader2 className="h-3 w-3 animate-spin" /> Checking public info…
+            <LoadingDots /> Checking public info…
           </div>
         ) : null}
         {notice ? (
@@ -176,7 +177,7 @@ export function AiSupportAssistant({ configured = true }: { configured?: boolean
             className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-foreground text-background disabled:opacity-40"
             aria-label="Send question"
           >
-            {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+            {pending ? <LoadingDots /> : <Send className="h-4 w-4" />}
           </button>
         </div>
         <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-[8.5px] leading-4 text-muted-foreground">

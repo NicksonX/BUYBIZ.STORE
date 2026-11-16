@@ -1,10 +1,10 @@
 "use client";
 
 import { useActionState } from "react";
-import { Loader2 } from "lucide-react";
 import { oauthAction } from "@/server/actions/auth";
 import { initialActionState } from "@/lib/validation/action-state";
 import { cn } from "@/lib/utils";
+import { LoadingDots } from "@/components/ui/loading-dots";
 
 function GoogleIcon() {
   return (
@@ -51,7 +51,7 @@ export function SocialButtons({
           disabled={!googleEnabled || pending}
           className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-[10px] border border-black/[0.09] bg-white text-[12px] font-medium text-[#0A0B0D] shadow-xs transition-colors hover:bg-[#FAFAFA] disabled:cursor-not-allowed disabled:opacity-45"
         >
-          {pending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <GoogleIcon />}
+          {pending ? <LoadingDots /> : <GoogleIcon />}
           Continue with Google
         </button>
       </form>

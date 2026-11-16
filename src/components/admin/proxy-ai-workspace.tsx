@@ -1,10 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { AlertTriangle, CheckCircle2, ClipboardPaste, Globe2, Loader2, Save, Sparkles } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ClipboardPaste, Globe2, Save, Sparkles } from "lucide-react";
 import { countryFlag, PRIMARY_COUNTRIES } from "@/lib/ai/countries";
 import { parseAndVerifyProxiesAction, saveVerifiedProxiesAction, type ProxyPreviewRow } from "@/server/actions/proxy-ai";
 import { cn } from "@/lib/utils";
+import { LoadingDots } from "@/components/ui/loading-dots";
 
 type Country = { code: string; name: string };
 type Batch = { id: string; countryCode: string; total: number; verified: number; saved: number; createdAt: string; status: string };
@@ -130,7 +131,7 @@ export function ProxyAiWorkspace({
         <p className="mt-2 text-[8.5px] leading-4 text-muted-foreground">Use at least the plan duration plus one day. A 30-day plan needs upstream inventory with more than 30 days remaining to stay sellable for the full subscription.</p>
 
         <button type="button" onClick={() => void parse()} disabled={loading || raw.trim().length < 6} className="mt-4 inline-flex h-10 items-center gap-2 rounded-full bg-foreground px-5 text-[11px] font-semibold text-background disabled:opacity-45">
-          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ClipboardPaste className="h-4 w-4" />} {loading ? "Parsing and verifying…" : "Parse & verify proxies"}
+          {loading ? <LoadingDots /> : <ClipboardPaste className="h-4 w-4" />} {loading ? "Parsing and verifying…" : "Parse & verify proxies"}
         </button>
         {error ? <p className="mt-2 rounded-[8px] border border-danger/20 bg-danger-soft px-3 py-2 text-[10px] text-danger">{error}</p> : null}
         {savedMessage ? <p className="mt-2 rounded-[8px] border border-success/20 bg-success-soft px-3 py-2 text-[10px] text-success">{savedMessage}</p> : null}
@@ -150,7 +151,7 @@ export function ProxyAiWorkspace({
               ))}
             </div>
             <button type="button" onClick={() => void save()} disabled={saving || !batchId || summary.verified === 0} className="inline-flex h-9 items-center gap-1.5 rounded-full bg-foreground px-4 text-[10.5px] font-semibold text-background disabled:opacity-40">
-              {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />} Save verified proxies to inventory
+              {saving ? <LoadingDots /> : <Save className="h-3.5 w-3.5" />} Save verified proxies to inventory
             </button>
           </div>
           <div className="mt-3 overflow-x-auto rounded-[9px] border border-border">

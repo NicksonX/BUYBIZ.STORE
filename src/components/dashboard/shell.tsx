@@ -33,7 +33,7 @@ export function DashboardShell({
         <DashboardTopbar user={user} unread={unread} />
         <main
           id="main"
-          className="mx-auto w-full max-w-[1240px] px-4 pb-32 pt-4 sm:px-6 lg:px-8 lg:pb-10 lg:pt-6"
+          className="mx-auto w-full max-w-[1240px] px-4 pb-44 pt-4 sm:px-6 sm:pb-40 lg:px-8 lg:pb-10 lg:pt-6"
         >
           <div className="space-y-3">
             {demo ? (

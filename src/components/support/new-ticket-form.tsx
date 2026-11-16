@@ -1,11 +1,12 @@
 "use client";
 
 import { useActionState } from "react";
-import { ArrowRight, Loader2 } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { createTicketAction } from "@/server/actions/customer";
 import { initialActionState } from "@/lib/validation/action-state";
 import { Alert } from "@/components/ui/alert";
 import { Field, Input, Select, Textarea } from "@/components/ui/input";
+import { LoadingDots } from "@/components/ui/loading-dots";
 
 export function NewTicketForm() {
   const [state, formAction, pending] = useActionState(
@@ -71,7 +72,7 @@ export function NewTicketForm() {
         >
           {pending ? (
             <>
-              <Loader2 className="h-3.5 w-3.5 animate-spin" /> Opening…
+              <LoadingDots /> Opening…
             </>
           ) : (
             <>
