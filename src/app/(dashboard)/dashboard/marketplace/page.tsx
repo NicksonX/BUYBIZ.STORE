@@ -53,11 +53,13 @@ export default async function MarketplacePage({
   ]);
 
   const inventoryByCode = new Map(countries.map((country) => [country.code, country]));
-  const countryOptions = allCountries().map((country) => ({
-    ...country,
-    available: inventoryByCode.get(country.code)?.available ?? 0,
-    configured: inventoryByCode.has(country.code),
-  }));
+  const countryOptions = allCountries()
+    .map((country) => ({
+      ...country,
+      available: inventoryByCode.get(country.code)?.available ?? 0,
+      configured: inventoryByCode.has(country.code),
+    }))
+    .filter((country) => country.available > 0);
   const selectedCountry = countryCode ? countryOptions.find((country) => country.code === countryCode) : null;
   const countryMissing = Boolean(countryCode && !selectedCountry);
   const showProxy = activeFilter === "all" || activeFilter === "proxy";
@@ -86,13 +88,10 @@ export default async function MarketplacePage({
               <p className="text-[9px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">Proxy location</p>
               <p className="mt-0.5 text-[10px] text-muted-foreground">Choose where your proxy should exit. Availability is live.</p>
             </div>
-            <span className="rounded-full border border-border bg-surface-subtle px-2.5 py-1 text-[9px] text-muted-foreground">{countryCode ? countryCode : "All locations"}</span>
+            <span className="rounded-full border border-border bg-surface-subtle px-2.5 py-1 text-[9px] text-muted-foreground">{countryCode ?? "Available countries"}</span>
           </div>
           <div className="mt-3"><CountrySearchSelect basePath="/dashboard/marketplace" selectedCode={countryCode} countries={countryOptions} extraQuery={activeFilter !== "all" ? { category: activeFilter } : {}} /></div>
           <div className="mt-3 flex gap-1.5 overflow-x-auto overscroll-x-contain pb-1 sm:flex-wrap">
-            <Link href="/dashboard/marketplace" className={cn("tap-target inline-flex min-h-10 shrink-0 items-center gap-2 rounded-full border px-3 text-[10.5px] font-medium", !countryCode ? "border-foreground bg-foreground text-background" : "border-border bg-surface text-muted-foreground")}>
-              🌍 All locations
-            </Link>
             {countries.map((country) => (
               <Link key={country.code} href={`/dashboard/marketplace?country=${country.code}`} className={cn("tap-target inline-flex min-h-10 shrink-0 items-center gap-2 rounded-full border px-3 text-[10.5px] font-medium", countryCode === country.code ? "border-foreground bg-foreground text-background" : "border-border bg-surface text-muted-foreground")}>
                 <span className="text-[14px]">{countryFlag(country.code)}</span>
