@@ -101,6 +101,37 @@ export default async function AdminOverviewPage({
         }
       />
 
+      <section className="relative overflow-hidden rounded-[20px] bg-[#0A0B0D] p-5 text-white shadow-[0_24px_60px_-38px_rgba(0,0,0,0.8)] sm:p-7">
+        <div className="pointer-events-none absolute -right-24 -top-28 h-72 w-72 rounded-full bg-[#B9FF66]/15 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-28 left-1/3 h-64 w-64 rounded-full bg-[#7C5CFF]/15 blur-3xl" />
+        <div className="relative flex flex-wrap items-start justify-between gap-5">
+          <div className="max-w-xl">
+            <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-white/40">BUYBIZ command centre</p>
+            <h2 className="mt-2 text-[25px] font-semibold tracking-[-0.045em] sm:text-[31px]">Your business, in focus.</h2>
+            <p className="mt-2 max-w-md text-[10.5px] leading-5 text-white/50">Verified sales, customers and live infrastructure in one place. Every figure is backed by database records.</p>
+            <div className="mt-5 flex flex-wrap gap-2">
+              <Link href="/admin/users" className="inline-flex h-9 items-center gap-1.5 rounded-full bg-white px-3.5 text-[10px] font-semibold text-[#0A0B0D]">Manage customers <ArrowUpRight className="h-3 w-3" /></Link>
+              <Link href="/admin/analytics" className="inline-flex h-9 items-center gap-1.5 rounded-full border border-white/15 bg-white/[0.06] px-3.5 text-[10px] font-medium text-white/80">Full reports <ArrowUpRight className="h-3 w-3" /></Link>
+            </div>
+          </div>
+          <div className="grid min-w-[260px] flex-1 grid-cols-2 gap-2 sm:max-w-[430px]">
+            <Link href="/admin/users" className="col-span-2 rounded-[13px] border border-white/10 bg-white/[0.06] p-4 transition hover:bg-white/[0.09]">
+              <div className="flex items-center justify-between"><span className="text-[9px] uppercase tracking-[0.12em] text-white/45">Customers</span><Users className="h-4 w-4 text-[#B9FF66]" /></div>
+              <p className="tabular mt-2 text-[32px] font-semibold leading-none tracking-[-0.05em]">{overview.totalUsers.toLocaleString()}</p>
+              <p className="mt-2 text-[8.5px] text-white/45">{overview.frozenAccounts > 0 ? `${overview.frozenAccounts} frozen accounts` : "All customer accounts active"} · {overview.openTickets} open tickets</p>
+            </Link>
+            <div className="rounded-[11px] border border-white/10 bg-white/[0.05] p-3.5">
+              <p className="text-[8.5px] uppercase tracking-[0.1em] text-white/40">Net sales</p>
+              <p className="tabular mt-2 text-[18px] font-semibold leading-tight">{formatNaira(overview.netSales, { exact: true })}</p>
+            </div>
+            <div className="rounded-[11px] border border-white/10 bg-white/[0.05] p-3.5">
+              <p className="text-[8.5px] uppercase tracking-[0.1em] text-white/40">Successful orders</p>
+              <p className="tabular mt-2 text-[18px] font-semibold leading-tight">{overview.successfulProxyOrders.toLocaleString()}</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {(overview.frozenAccounts > 0 || overview.inactivityAtRisk > 0 || overview.rotationDue > 0) ? (
         <div className="flex flex-wrap gap-2">
           {overview.rotationDue > 0 ? (
@@ -148,24 +179,24 @@ export default async function AdminOverviewPage({
           hint="Confirmed refunds against fulfilled sales"
         />
         <StatCard
-          label="Net sales"
-          value={formatNaira(overview.netSales, { exact: true })}
-          icon={BadgeDollarSign}
-          hint="Total sales minus confirmed refunds"
-        />
-        <StatCard
           label="Verified deposits"
           value={formatNaira(overview.totalDeposits, { exact: true })}
           icon={CreditCard}
-          hint="Liability until spent"
+          hint="Wallet funding, separate from sales"
+        />
+        <StatCard
+          label="Wallet liability"
+          value={formatNaira(overview.walletLiability, { exact: true })}
+          icon={Wallet}
+          hint="Outstanding customer balances"
         />
       </div>
 
       <div className="grid grid-cols-2 gap-2.5 xl:grid-cols-4">
         {[
-          { label: "Successful proxy orders", value: String(overview.successfulProxyOrders), icon: TrendingUp, hint: "Fulfilled with assigned inventory" },
-          { label: "Failed orders", value: String(overview.failedOrders), icon: CircleDollarSign, hint: "Failed, cancelled or unfulfilled" },
+          { label: "Customers", value: overview.totalUsers.toLocaleString(), icon: Users, hint: `${overview.frozenAccounts} frozen · ${overview.openTickets} open tickets` },
           { label: "Pending orders", value: String(overview.pendingOrders), icon: CreditCard, hint: "Awaiting payment or fulfillment" },
+          { label: "Failed orders", value: String(overview.failedOrders), icon: CircleDollarSign, hint: "Failed, cancelled or unfulfilled" },
           { label: "Active proxies", value: String(overview.activeAllocations), icon: Network, hint: `${overview.availableSeats} seats available` },
         ].map((item) => (
           <div key={item.label} className="surface-card rounded-[12px] p-3.5">
@@ -179,28 +210,28 @@ export default async function AdminOverviewPage({
       <div className="grid grid-cols-2 gap-2.5 xl:grid-cols-4">
         {[
           {
-            label: "Wallet liability",
-            value: formatNaira(overview.walletLiability, { exact: true }),
-            icon: Wallet,
-            hint: "Outstanding customer balances",
-          },
-          {
             label: "Estimated gross profit",
             value: formatNaira(Math.max(0, grossProfit), { exact: true }),
             icon: BadgeDollarSign,
-            hint: "Sales minus proxy cost and gateway fees",
-          },
-          {
-            label: "Refunds issued",
-            value: formatNaira(overview.totalRefunds, { exact: true }),
-            icon: CircleDollarSign,
-            hint: "Internal wallet credits only",
+            hint: "Net sales minus proxy cost and gateway fees",
           },
           {
             label: "Inventory cost",
             value: formatNaira(overview.inventoryCost, { exact: true }),
             icon: Package,
             hint: "Recorded purchase cost",
+          },
+          {
+            label: "Available seats",
+            value: String(overview.availableSeats),
+            icon: Network,
+            hint: "Unsold capacity across live inventory",
+          },
+          {
+            label: "Open support tickets",
+            value: String(overview.openTickets),
+            icon: LifeBuoy,
+            hint: "Customers waiting for support",
           },
         ].map((item) => (
           <div key={item.label} className="surface-card rounded-[12px] p-3.5">
