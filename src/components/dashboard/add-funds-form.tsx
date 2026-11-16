@@ -1,7 +1,8 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState } from "react";
-import { ArrowRight, Loader2, ShieldCheck } from "lucide-react";
+import { ArrowRight, ShieldCheck } from "lucide-react";
+import { LoadingDots } from "@/components/ui/loading-dots";
 import { initializeDepositAction } from "@/server/actions/customer";
 import { initialActionState } from "@/lib/validation/action-state";
 import { Alert } from "@/components/ui/alert";
@@ -141,7 +142,7 @@ export function AddFundsForm({
       >
         {pending ? (
           <>
-            <Loader2 className="h-4 w-4 animate-spin" /> Preparing payment…
+            <LoadingDots label="Preparing secure payment" /> Preparing payment…
           </>
         ) : (
           <>
@@ -162,7 +163,7 @@ export function AddFundsForm({
         <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center gap-4 bg-[#0A0B0D] text-white">
           <span className="flex h-12 w-12 items-center justify-center rounded-[13px] bg-white text-[22px] font-black text-[#0A0B0D]">B</span>
           <div className="flex items-center gap-2 text-[12px] font-medium text-white/80">
-            <Loader2 className="h-4 w-4 animate-spin" /> Preparing your secure payment…
+            <LoadingDots label="Preparing secure payment" /> Preparing your secure payment…
           </div>
           <p className="text-[10px] text-white/40">You’ll be redirected to complete payment.</p>
         </div>

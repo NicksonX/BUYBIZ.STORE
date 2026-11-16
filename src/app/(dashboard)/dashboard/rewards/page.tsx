@@ -33,6 +33,7 @@ export default async function RewardsPage() {
         campaignPayoutAt={rewards.campaignPayoutAt}
         ambassadorNextPayoutAt={rewards.ambassadorNextPayoutAt ?? ambassador.config.nextPayoutAt}
         isAmbassador={ambassador.isAmbassador}
+        payoutDateReached={Boolean(rewards.campaignPayoutAt && new Date(rewards.campaignPayoutAt).getTime() <= Date.now())}
       />
       {ambassador.isAmbassador ? (
         <AmbassadorPanel
