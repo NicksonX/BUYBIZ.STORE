@@ -5,7 +5,6 @@ import {
   BadgeDollarSign,
   CheckCircle2,
   Clock3,
-  Loader2,
   Send,
   ShieldCheck,
   WalletCards,
@@ -20,6 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { formatDate } from "@/lib/utils";
+import { LoadingDots } from "@/components/ui/loading-dots";
 
 type PayoutRow = {
   id: string;
@@ -193,7 +193,7 @@ export function AmbassadorPanel({
                   ) : null}
                   <Input name="address" required placeholder="0x... USDT BEP20 wallet address" className="h-9 font-mono text-[10px]" />
                   <button type="submit" disabled={addressPending} className="inline-flex h-8 items-center gap-1.5 rounded-full border border-border bg-surface px-3 text-[9.5px] font-medium hover:bg-accent disabled:opacity-50">
-                    {addressPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <WalletCards className="h-3 w-3" />}
+                    {addressPending ? <LoadingDots label="Submitting payment method" /> : <WalletCards className="h-3 w-3" />}
                     Submit address for verification
                   </button>
                 </form>
@@ -224,7 +224,7 @@ export function AmbassadorPanel({
                       aria-label="Payout amount in USD"
                     />
                     <button type="submit" disabled={payoutPending} className="inline-flex h-9 items-center gap-1.5 rounded-full bg-foreground px-3.5 text-[9.5px] font-semibold text-background disabled:opacity-50">
-                      {payoutPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
+                      {payoutPending ? <LoadingDots label="Requesting payout" /> : <Send className="h-3 w-3" />}
                       Request payout
                     </button>
                   </div>

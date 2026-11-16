@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useActionState } from "react";
-import { AlertTriangle, ArrowRight, Loader2, LockKeyhole } from "lucide-react";
+import { AlertTriangle, ArrowRight, LockKeyhole } from "lucide-react";
+import { LoadingDots } from "@/components/ui/loading-dots";
 import { purchaseAction } from "@/server/actions/customer";
 import { initialActionState } from "@/lib/validation/action-state";
 import { Alert } from "@/components/ui/alert";
@@ -92,7 +93,7 @@ export function CheckoutForm({
       >
         {pending ? (
           <>
-            <Loader2 className="h-4 w-4 animate-spin" /> Confirming allocation…
+            <LoadingDots label="Confirming proxy allocation" /> Confirming allocation…
           </>
         ) : (
           <>

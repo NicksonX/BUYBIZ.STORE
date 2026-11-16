@@ -4,6 +4,7 @@ import { DashboardSidebar } from "@/components/dashboard/sidebar";
 import { DashboardTopbar } from "@/components/dashboard/topbar";
 import { DashboardMobileNav } from "@/components/dashboard/mobile-nav";
 import { WalletBalanceAnnouncement } from "@/components/dashboard/balance-announcement";
+import { RouteTransition } from "@/components/ui/route-transition";
 import { AmbassadorFloat } from "@/components/ambassador/ambassador-float";
 import type { Profile } from "@/lib/db/types";
 import { getPaystackMode, isDemoMode } from "@/lib/config";
@@ -81,7 +82,7 @@ export function DashboardShell({
             ) : null}
           </div>
 
-          <div className="mt-5">{children}</div>
+          <div className="mt-5"><RouteTransition>{children}</RouteTransition></div>
 
           <div className="mt-10 flex flex-col gap-2 border-t border-border pt-5 text-[9.5px] text-muted-foreground/70 sm:flex-row sm:items-center sm:justify-end">
             <div className="flex items-center gap-3">
