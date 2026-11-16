@@ -1051,3 +1051,36 @@ h1, h2, h3, h4, p, li, td, th, a, button {
 @media (max-width: 767px) {
   .route-enter { animation-duration: 180ms; }
 }
+
+
+/* Marketing sections reveal once as they enter the viewport. */
+.reveal-ready main section:not(:first-of-type),
+.reveal-ready main [data-reveal] {
+  opacity: 0;
+  transform: translate3d(0, 14px, 0);
+  transition: opacity 520ms var(--motion-ease), transform 520ms var(--motion-ease);
+}
+.reveal-ready main section:not(:first-of-type).is-revealed,
+.reveal-ready main [data-reveal].is-revealed {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+}
+/* Keep direct interactive cards feeling tactile without moving surrounding layout. */
+.marketing-home a.group,
+.marketing-home .surface-card {
+  transition: transform 240ms var(--motion-ease), border-color 240ms ease, background-color 240ms ease, box-shadow 240ms var(--motion-ease);
+}
+@media (hover: hover) and (pointer: fine) {
+  .marketing-home a.group:hover,
+  .marketing-home .surface-card:hover {
+    transform: translateY(-2px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .reveal-ready main section:not(:first-of-type),
+.reveal-ready main [data-reveal] {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
