@@ -21,6 +21,7 @@ import {
   getAdminOverview,
   getAdminRecentDeposits,
   getAdminRecentOrders,
+  getAdminSalesRange,
 } from "@/server/data/admin";
 import { depositStatusMeta, orderStatusMeta } from "@/lib/status";
 import { cn, formatDateTime, formatNaira, percent } from "@/lib/utils";
@@ -39,16 +40,42 @@ function monthSeries(rows: { month: string; totalMinor: number }[]) {
   return result;
 }
 
-export default async function AdminOverviewPage() {
+function rangeFor(value: string | string[] | undefined, from?: string, to?: string) {
+  const key = Array.isArray(value) ? value[0] : value;
+  const now = new Date();
+  const end = new Date(now);
+  const start = new Date(now);
+  if (key === "today") start.setHours(0, 0, 0, 0);
+  else if (key === "yesterday") { start.setDate(start.getDate() - 1); start.setHours(0, 0, 0, 0); end.setHours(0, 0, 0, 0); }
+  else if (key === "7") start.setDate(start.getDate() - 7);
+  else if (key === "month") start.setDate(1), start.setHours(0, 0, 0, 0);
+  else if (key === "custom" && from && to) {
+    const customStart = new Date(`${from}T00:00:00+01:00`);
+    const customEnd = new Date(`${to}T23:59:59+01:00`);
+    if (!Number.isNaN(customStart.getTime()) && !Number.isNaN(customEnd.getTime())) {
+      return { start: customStart, end: customEnd, key: "custom" as const };
+    }
+  } else start.setDate(start.getDate() - 30);
+  return { start, end, key: key === "today" || key === "yesterday" || key === "7" || key === "month" ? key : "30" as const };
+}
+
+export default async function AdminOverviewPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   await requireAdminPage();
-  const [overview, recentOrders, recentDeposits] = await Promise.all([
+  const params = await searchParams;
+  const range = rangeFor(params.range, Array.isArray(params.from) ? params.from[0] : params.from, Array.isArray(params.to) ? params.to[0] : params.to);
+  const [overview, recentOrders, recentDeposits, period] = await Promise.all([
     getAdminOverview(),
     getAdminRecentOrders(6),
     getAdminRecentDeposits(5),
+    getAdminSalesRange(range.start, range.end),
   ]);
 
   const grossProfit =
-    overview.totalSales - overview.directProxyCost - overview.gatewayFees;
+    overview.netSales - overview.directProxyCost - overview.gatewayFees;
 
   return (
     <div className="space-y-4">
@@ -94,12 +121,37 @@ export default async function AdminOverviewPage() {
         </div>
       ) : null}
 
+      <section className="surface-card rounded-[13px] p-3.5">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div><p className="text-[9px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">Sales period</p><p className="mt-1 text-[10px] text-muted-foreground">Only fulfilled proxy orders with an assigned inventory record are sales.</p></div>
+          <div className="flex flex-wrap gap-1.5 text-[9.5px]">
+            {[['today','Today'],['yesterday','Yesterday'],['7','Last 7 days'],['30','Last 30 days'],['month','This month']].map(([key,label]) => <a key={key} href={`/admin?range=${key}`} className={cn("rounded-full border px-2.5 py-1.5", range.key === key ? "border-foreground bg-foreground text-background" : "border-border text-muted-foreground")}>{label}</a>)}
+            <form method="get" action="/admin" className="flex items-center gap-1"><input type="hidden" name="range" value="custom" /><input name="from" type="date" aria-label="From date" className="h-7 rounded border border-border bg-surface px-1 text-[9px]" /><input name="to" type="date" aria-label="To date" className="h-7 rounded border border-border bg-surface px-1 text-[9px]" /><button className="rounded-full border border-border px-2 py-1 text-[9px]">Custom</button></form>
+          </div>
+        </div>
+        <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4 xl:grid-cols-7">
+          {[['Total sales',period.grossSales],['Refunds',period.refunds],['Net sales',period.netSales],['Wallet deposits',period.deposits],['Successful orders',period.successfulOrders],['Failed orders',period.failedOrders],['Pending orders',period.pendingOrders]].map(([label,value]) => <div key={String(label)} className="rounded-[9px] border border-border bg-surface-subtle p-2.5"><p className="text-[8.5px] text-muted-foreground">{label}</p><p className="tabular mt-1 text-[14px] font-semibold">{typeof value === "number" && String(label).includes("orders") ? value : formatNaira(Number(value), { exact: true })}</p></div>)}
+        </div>
+      </section>
+
       <div className="grid grid-cols-2 gap-2.5 xl:grid-cols-4">
         <StatCard
           label="Total sales"
           value={formatNaira(overview.totalSales, { exact: true })}
           icon={TrendingUp}
-          hint={`${overview.totalOrders} orders recorded`}
+          hint={`${overview.successfulProxyOrders} fulfilled proxy orders`}
+        />
+        <StatCard
+          label="Total refunds"
+          value={formatNaira(overview.totalRefunds, { exact: true })}
+          icon={CircleDollarSign}
+          hint="Confirmed refunds against fulfilled sales"
+        />
+        <StatCard
+          label="Net sales"
+          value={formatNaira(overview.netSales, { exact: true })}
+          icon={BadgeDollarSign}
+          hint="Total sales minus confirmed refunds"
         />
         <StatCard
           label="Verified deposits"
@@ -107,18 +159,21 @@ export default async function AdminOverviewPage() {
           icon={CreditCard}
           hint="Liability until spent"
         />
-        <StatCard
-          label="Active proxies"
-          value={overview.activeAllocations}
-          icon={Network}
-          hint={`${overview.availableSeats} seats available`}
-        />
-        <StatCard
-          label="Customers"
-          value={overview.totalUsers}
-          icon={Users}
-          hint={`${overview.openTickets} open support tickets`}
-        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-2.5 xl:grid-cols-4">
+        {[
+          { label: "Successful proxy orders", value: String(overview.successfulProxyOrders), icon: TrendingUp, hint: "Fulfilled with assigned inventory" },
+          { label: "Failed orders", value: String(overview.failedOrders), icon: CircleDollarSign, hint: "Failed, cancelled or unfulfilled" },
+          { label: "Pending orders", value: String(overview.pendingOrders), icon: CreditCard, hint: "Awaiting payment or fulfillment" },
+          { label: "Active proxies", value: String(overview.activeAllocations), icon: Network, hint: `${overview.availableSeats} seats available` },
+        ].map((item) => (
+          <div key={item.label} className="surface-card rounded-[12px] p-3.5">
+            <div className="flex items-center justify-between"><p className="text-[9.5px] text-muted-foreground">{item.label}</p><item.icon className="h-3.5 w-3.5 text-muted-foreground" /></div>
+            <p className="tabular mt-2 text-[18px] font-semibold">{item.value}</p>
+            <p className="mt-1 text-[8.5px] text-muted-foreground">{item.hint}</p>
+          </div>
+        ))}
       </div>
 
       <div className="grid grid-cols-2 gap-2.5 xl:grid-cols-4">

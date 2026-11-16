@@ -507,7 +507,7 @@ export function renderEmail(input: {
         referrerValue: data.payoutDate ?? "24 December 2026",
         windowLabel: "USD rewards · USDT BEP20 · separate from your naira wallet",
       })}
-      <p style="margin:16px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.7;color:#4E5157;">Your qualifying 7-day-or-longer proxy purchase counted. Add and verify a BEP20 address in Rewards, and request your payout after ${escapeHtml(data.payoutDate ?? "the scheduled payout date")}.</p>
+      <p style="margin:16px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.7;color:#4E5157;">Your $10 USD campaign reward has been successfully credited to your USD Reward Balance. You can view it in Rewards and request a USDT BEP20 payout after ${escapeHtml(data.payoutDate ?? "the scheduled payout date")}.</p>
       ${button("Open USD Rewards", `${input.websiteUrl}/dashboard/referrals?tab=rewards`)}`;
       break;
     case "campaign_referrer_reward":

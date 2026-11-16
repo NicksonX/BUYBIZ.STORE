@@ -126,6 +126,10 @@ export type AdminOverview = {
   totalUsers: number;
   totalDeposits: number;
   totalSales: number;
+  netSales: number;
+  successfulProxyOrders: number;
+  failedOrders: number;
+  pendingOrders: number;
   activeAllocations: number;
   availableSeats: number;
   walletLiability: number;
@@ -164,10 +168,13 @@ export async function getAdminOverview(): Promise<AdminOverview> {
       totalUsers: number;
       totalDeposits: number;
       totalSales: number;
+      totalRefunds: number;
+      successfulProxyOrders: number;
+      failedOrders: number;
+      pendingOrders: number;
       activeAllocations: number;
       availableSeats: number;
       walletLiability: number;
-      totalRefunds: number;
       totalExpenses: number;
       gatewayFees: number;
       inventoryCost: number;
@@ -181,7 +188,10 @@ export async function getAdminOverview(): Promise<AdminOverview> {
       `select
          (select count(*)::int from profiles where role = 'customer') as "totalUsers",
          (select coalesce(sum(amount_minor),0)::bigint from deposits where status = 'credited') as "totalDeposits",
-         (select coalesce(sum(amount_minor),0)::bigint from orders where status = 'completed') as "totalSales",
+         (select coalesce(sum(o.amount_minor),0)::bigint
+            from orders o join products p on p.id=o.product_id
+           where o.status='completed' and p.category='proxy'
+             and exists (select 1 from proxy_allocations a where a.order_id=o.id)) as "totalSales",
          (select count(*)::int from proxy_allocations where status = 'active' and expires_at > now()) as "activeAllocations",
          (
            select coalesce(sum(greatest(i.max_seats - coalesce(s.active,0),0)),0)::int
@@ -196,7 +206,17 @@ export async function getAdminOverview(): Promise<AdminOverview> {
               and i.upstream_expires_at > now()
          ) as "availableSeats",
          (select coalesce(sum(amount_minor),0)::bigint from wallet_ledger) as "walletLiability",
-         (select coalesce(sum(amount_minor),0)::bigint from wallet_ledger where entry_type = 'refund_credit') as "totalRefunds",
+         (select coalesce(sum(l.amount_minor),0)::bigint
+            from wallet_ledger l join orders o on o.id=l.related_order_id
+           where l.entry_type='refund_credit' and o.status='completed'
+             and exists (select 1 from proxy_allocations a where a.order_id=o.id)) as "totalRefunds",
+         (select count(*)::int from orders o join products p on p.id=o.product_id
+           where o.status='completed' and p.category='proxy'
+             and exists (select 1 from proxy_allocations a where a.order_id=o.id)) as "successfulProxyOrders",
+         (select count(*)::int from orders o
+           where o.status in ('refunded','cancelled','unfulfilled')
+              or (o.status='completed' and not exists (select 1 from proxy_allocations a where a.order_id=o.id))) as "failedOrders",
+         (select count(*)::int from orders where status='pending') as "pendingOrders",
          (select coalesce(sum(amount_minor),0)::bigint from expenses) as "totalExpenses",
          (select coalesce(sum(gateway_fee_minor),0)::bigint from deposits where status = 'credited') as "gatewayFees",
          (select coalesce(sum(purchase_cost_minor),0)::bigint from proxy_inventory) as "inventoryCost",
@@ -220,16 +240,18 @@ export async function getAdminOverview(): Promise<AdminOverview> {
     db.query<{ month: string; totalMinor: number }>(
       `select to_char(date_trunc('month', created_at), 'YYYY-MM') as month,
               coalesce(sum(amount_minor),0)::bigint as "totalMinor"
-         from orders
-        where status = 'completed'
-          and created_at >= date_trunc('month', current_date) - interval '5 months'
+         from orders o join products p on p.id=o.product_id
+        where o.status = 'completed' and p.category='proxy'
+          and exists (select 1 from proxy_allocations a where a.order_id=o.id)
+          and o.created_at >= date_trunc('month', current_date) - interval '5 months'
         group by 1 order by 1`,
     ),
     db.query<{ name: string; count: number; totalMinor: number }>(
       `select p.name, count(o.id)::int as count,
               coalesce(sum(o.amount_minor),0)::bigint as "totalMinor"
          from orders o join products p on p.id = o.product_id
-        where o.status = 'completed'
+        where o.status = 'completed' and p.category='proxy'
+          and exists (select 1 from proxy_allocations a where a.order_id=o.id)
         group by p.name order by count desc`,
     ),
     db.query<AdminOverview["inventoryUtilization"][number]>(
@@ -261,6 +283,10 @@ export async function getAdminOverview(): Promise<AdminOverview> {
     totalUsers: Number(m?.totalUsers ?? 0),
     totalDeposits: amount(m?.totalDeposits),
     totalSales: amount(m?.totalSales),
+    netSales: amount(m?.totalSales) - amount(m?.totalRefunds),
+    successfulProxyOrders: Number(m?.successfulProxyOrders ?? 0),
+    failedOrders: Number(m?.failedOrders ?? 0),
+    pendingOrders: Number(m?.pendingOrders ?? 0),
     activeAllocations: Number(m?.activeAllocations ?? 0),
     availableSeats: Number(m?.availableSeats ?? 0),
     walletLiability: amount(m?.walletLiability),
@@ -1087,15 +1113,25 @@ export async function getAdminAnalytics(days: number) {
         walletLiability: number;
       }>(
         `select
-           (select coalesce(sum(amount_minor),0)::bigint from orders
-             where status in ('completed','refunded')
-               and created_at >= now() - ($1 || ' days')::interval) as "grossPurchaseVolume",
-           (select coalesce(sum(amount_minor),0)::bigint from orders
-             where status = 'completed'
-               and created_at >= now() - ($1 || ' days')::interval) as "netSales",
-           (select coalesce(sum(amount_minor),0)::bigint from wallet_ledger
-             where entry_type = 'refund_credit'
-               and created_at >= now() - ($1 || ' days')::interval) as "refunds",
+           (select coalesce(sum(o.amount_minor),0)::bigint
+              from orders o join products p on p.id=o.product_id
+             where o.status='completed' and p.category='proxy'
+               and exists (select 1 from proxy_allocations a where a.order_id=o.id)
+               and o.created_at >= now() - ($1 || ' days')::interval) as "grossPurchaseVolume",
+           (select (coalesce(sum(o.amount_minor),0)::bigint - coalesce((
+              select sum(l.amount_minor) from wallet_ledger l join orders ro on ro.id=l.related_order_id
+               where l.entry_type='refund_credit' and ro.status='completed'
+                 and exists (select 1 from proxy_allocations a where a.order_id=ro.id)
+                 and l.created_at >= now() - ($1 || ' days')::interval),0)::bigint)
+              from orders o join products p on p.id=o.product_id
+             where o.status='completed' and p.category='proxy'
+               and exists (select 1 from proxy_allocations a where a.order_id=o.id)
+               and o.created_at >= now() - ($1 || ' days')::interval) as "netSales",
+           (select coalesce(sum(l.amount_minor),0)::bigint
+              from wallet_ledger l join orders o on o.id=l.related_order_id
+             where l.entry_type='refund_credit' and o.status='completed'
+               and exists (select 1 from proxy_allocations a where a.order_id=o.id)
+               and l.created_at >= now() - ($1 || ' days')::interval) as "refunds",
            (select coalesce(sum(amount_minor),0)::bigint from deposits
              where status = 'credited'
                and created_at >= now() - ($1 || ' days')::interval) as "deposits",
@@ -1111,10 +1147,14 @@ export async function getAdminAnalytics(days: number) {
              )) as "directProxyCost",
            (select coalesce(sum(amount_minor),0)::bigint from expenses
              where expense_date >= (now() - ($1 || ' days')::interval)::date) as "operatingExpenses",
-           (select count(*)::int from orders where status = 'completed'
-             and created_at >= now() - ($1 || ' days')::interval) as "completedOrders",
-           (select count(*)::int from orders where status = 'refunded'
-             and created_at >= now() - ($1 || ' days')::interval) as "refundedOrders",
+           (select count(*)::int from orders o join products p on p.id=o.product_id
+             where o.status='completed' and p.category='proxy'
+               and exists (select 1 from proxy_allocations a where a.order_id=o.id)
+               and o.created_at >= now() - ($1 || ' days')::interval) as "completedOrders",
+           (select count(*)::int from orders o
+             where (o.status in ('refunded','cancelled','unfulfilled')
+                or (o.status='completed' and not exists (select 1 from proxy_allocations a where a.order_id=o.id)))
+               and o.created_at >= now() - ($1 || ' days')::interval) as "refundedOrders",
            (select coalesce(sum(amount_minor),0)::bigint from wallet_ledger) as "walletLiability"`,
         [days],
       ),
@@ -1127,8 +1167,9 @@ export async function getAdminAnalytics(days: number) {
            ) as month
          )
          select to_char(months.month, 'YYYY-MM') as month,
-                coalesce((select sum(o.amount_minor) from orders o
-                   where o.status = 'completed'
+                coalesce((select sum(o.amount_minor) from orders o join products p on p.id=o.product_id
+                   where o.status = 'completed' and p.category='proxy'
+                     and exists (select 1 from proxy_allocations a where a.order_id=o.id)
                      and date_trunc('month', o.created_at) = months.month),0)::bigint as sales,
                 coalesce((select sum(l.amount_minor) from wallet_ledger l
                    where l.entry_type = 'refund_credit'
@@ -1139,7 +1180,8 @@ export async function getAdminAnalytics(days: number) {
         `select p.name, count(o.id)::int as count,
                 coalesce(sum(o.amount_minor),0)::bigint as "totalMinor"
            from orders o join products p on p.id = o.product_id
-          where o.status = 'completed'
+          where o.status = 'completed' and p.category='proxy'
+            and exists (select 1 from proxy_allocations a where a.order_id=o.id)
             and o.created_at >= now() - ($1 || ' days')::interval
           group by p.name order by count desc`,
         [days],
@@ -1482,5 +1524,63 @@ export async function getInactivityOverview() {
       balanceMinor: amount(row.balanceMinor),
     })),
     history: history.rows,
+  };
+}
+
+export type AdminSalesRange = {
+  grossSales: number;
+  refunds: number;
+  netSales: number;
+  deposits: number;
+  successfulOrders: number;
+  failedOrders: number;
+  pendingOrders: number;
+};
+
+export async function getAdminSalesRange(start: Date, end: Date): Promise<AdminSalesRange> {
+  const db = await getDb();
+  const result = await db.query<{
+    grossSales: unknown;
+    refunds: unknown;
+    deposits: unknown;
+    successfulOrders: number;
+    failedOrders: number;
+    pendingOrders: number;
+  }>(
+    `select
+       (select coalesce(sum(o.amount_minor),0)::bigint
+          from orders o join products p on p.id=o.product_id
+         where o.status='completed' and p.category='proxy'
+           and o.created_at between $1 and $2
+           and exists (select 1 from proxy_allocations a where a.order_id=o.id)) as "grossSales",
+       (select coalesce(sum(l.amount_minor),0)::bigint
+          from wallet_ledger l join orders o on o.id=l.related_order_id
+         where l.entry_type='refund_credit' and o.status='completed'
+           and l.created_at between $1 and $2
+           and exists (select 1 from proxy_allocations a where a.order_id=o.id)) as "refunds",
+       (select coalesce(sum(d.amount_minor),0)::bigint
+          from deposits d where d.status='credited' and d.created_at between $1 and $2) as "deposits",
+       (select count(*)::int from orders o join products p on p.id=o.product_id
+         where o.status='completed' and p.category='proxy'
+           and o.created_at between $1 and $2
+           and exists (select 1 from proxy_allocations a where a.order_id=o.id)) as "successfulOrders",
+       (select count(*)::int from orders o
+         where (o.status in ('refunded','cancelled','unfulfilled')
+            or (o.status='completed' and not exists (select 1 from proxy_allocations a where a.order_id=o.id)))
+           and o.created_at between $1 and $2) as "failedOrders",
+       (select count(*)::int from orders where status='pending' and created_at between $1 and $2) as "pendingOrders"`,
+    [start, end],
+  );
+  const row = result.rows[0];
+  const gross = amount(row?.grossSales);
+  const refunds = amount(row?.refunds);
+  return {
+    grossSales: gross,
+    refunds,
+    netSales: gross - refunds,
+    deposits: amount(row?.deposits),
+    successfulOrders: Number(row?.successfulOrders ?? 0),
+    failedOrders: Number(row?.failedOrders ?? 0),
+    pendingOrders: Number(row?.pendingOrders ?? 0),
   };
 }
