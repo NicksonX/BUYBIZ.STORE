@@ -89,8 +89,8 @@ export const getPlanAvailability = cache(async (countryCode?: string): Promise<P
         and i.country_code is not null
         and i.access_type = p.access_type
         and i.archived_at is null
-        and ($2::text is null or i.country_code = $2)
-        and i.upstream_expires_at >= now() + (p.duration_seconds + $1::int) * interval '1 second'
+        and ($1::text is null or i.country_code = $1)
+        and i.upstream_expires_at >= now() + p.duration_seconds * interval '1 second'
        left join lateral (
          select count(*)::int as active_seats
            from proxy_allocations a
@@ -101,7 +101,7 @@ export const getPlanAvailability = cache(async (countryCode?: string): Promise<P
       where p.category = 'proxy' and p.is_active = true and p.is_coming_soon = false
       group by p.id
       order by p.sort_order asc`,
-    [buffer, countryCode ?? null],
+    [countryCode ?? null],
   );
 
   const byId = new Map(

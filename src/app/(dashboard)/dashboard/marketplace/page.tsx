@@ -59,6 +59,7 @@ export default async function MarketplacePage({
     configured: inventoryByCode.has(country.code),
   }));
   const selectedCountry = countryCode ? countryOptions.find((country) => country.code === countryCode) : null;
+  const countryMissing = Boolean(countryCode && !selectedCountry);
   const showProxy = activeFilter === "all" || activeFilter === "proxy";
   const showComing = activeFilter === "all" || activeFilter === "coming-soon";
 
@@ -100,6 +101,7 @@ export default async function MarketplacePage({
               </Link>
             ))}
           </div>
+          {countryMissing ? <p className="mt-2 text-[9.5px] text-warning">This country has no verified, available proxy inventory right now. Choose an available country.</p> : null}
           {selectedCountry && !selectedCountry.configured ? <p className="mt-2 text-[9.5px] text-warning">Sorry, there are currently no proxies available for this location. Please select another country.</p> : null}
           {selectedCountry && selectedCountry.configured && selectedCountry.available === 0 ? <p className="mt-2 text-[9.5px] text-warning">Currently Out of Stock. There are no verified, available proxies for {selectedCountry.name}.</p> : null}
           {!selectedCountry && countries.length === 0 ? <p className="mt-2 text-[9.5px] text-warning">No proxy inventory has been added yet. Check back shortly.</p> : null}

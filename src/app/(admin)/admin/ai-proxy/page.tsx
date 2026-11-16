@@ -12,8 +12,8 @@ export default async function AdminAiProxyPage() {
   await requireAdminPage();
   const db = await getDb();
   const [products, batches, totals, byCountry] = await Promise.all([
-    db.query<{ slug: string; name: string; accessType: string }>(
-      `select slug, name, access_type as "accessType" from products
+    db.query<{ slug: string; name: string; accessType: string; durationSeconds: number }>(
+      `select slug, name, access_type as "accessType", duration_seconds as "durationSeconds" from products
         where category='proxy' and is_active=true and is_coming_soon=false
         order by sort_order asc`,
     ),

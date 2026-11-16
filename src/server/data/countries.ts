@@ -18,6 +18,7 @@ export async function getInventoryCountries(): Promise<InventoryCountry[]> {
        from proxy_inventory
       where archived_at is null and country_code is not null
       group by country_code
+      having count(*) filter (where status = 'available' and verification_status = 'verified') > 0
       order by country_code`,
   );
   const rows = result.rows.map((row) => ({

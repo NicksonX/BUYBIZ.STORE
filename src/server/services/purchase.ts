@@ -268,22 +268,22 @@ export async function purchaseProxy(input: {
             and i.status in ('available','full')
             and i.verification_status = 'verified'
             and i.country_code is not null
-            and i.access_type = $3
-            and i.product_slug = $4
-            and ($5::text is null or i.country_code = $5)
+            and i.access_type = $2
+            and i.product_slug = $3
+            and ($4::text is null or i.country_code = $4)
             and i.upstream_expires_at >=
-                now() + (($1::int + $2::int) * interval '1 second')
+                now() + ($1::int * interval '1 second')
             and not exists (
               select 1 from proxy_allocations a
                where a.proxy_inventory_id = i.id
-                 and a.user_id = $6
+                 and a.user_id = $5
                  and a.status = 'active'
                  and a.expires_at > now()
             )
           order by i.last_assigned_at asc nulls first, i.uploaded_at asc, i.id asc
           limit 25
           for update skip locked`,
-        [product.durationSeconds, settings.safetyBufferSeconds, product.accessType, product.slug, input.countryCode ?? null, input.userId],
+        [product.durationSeconds, product.accessType, product.slug, input.countryCode ?? null, input.userId],
       );
 
       let selectedInventoryId: string | null = null;
