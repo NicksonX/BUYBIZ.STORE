@@ -3,6 +3,7 @@ import { AdminSidebar } from "@/components/admin/sidebar";
 import { AdminTopbar } from "@/components/admin/topbar";
 import { getPaystackMode, isDemoMode } from "@/lib/config";
 import type { Profile } from "@/lib/db/types";
+import { RouteTransition } from "@/components/ui/route-transition";
 
 export function AdminShell({
   user,
@@ -51,7 +52,7 @@ export function AdminShell({
               </div>
             ) : null}
           </div>
-          <div className="mt-5">{children}</div>
+          <div className="mt-5"><RouteTransition>{children}</RouteTransition></div>
           <div className="mt-10 flex flex-col gap-1.5 border-t border-border pt-4 text-[9px] text-muted-foreground/60 sm:flex-row sm:items-center sm:justify-between">
             <p>BUYBIZ admin console. Financial actions are recorded in the audit log.</p>
             <p>Deposits are liabilities, not revenue.</p>
