@@ -30,7 +30,7 @@ export default async function CampaignDetailPage({ params }: { params: Promise<{
   const paid = rows.filter((row) => row.status === "paid").length;
   const available = rows.filter((row) => row.status === "available").length;
   const phase = campaignPhase(campaign);
-  const link = `${getAppUrl()}/register?ref=${encodeURIComponent(referral.code)}&campaign=${encodeURIComponent(campaign.slug)}`;
+  const link = `${getAppUrl()}/register?ref=${encodeURIComponent(referral.code)}`;
   const canParticipate = phase === "active";
 
   return (
@@ -59,20 +59,20 @@ export default async function CampaignDetailPage({ params }: { params: Promise<{
             <div className="flex items-start gap-2"><CalendarDays className="mt-0.5 h-3.5 w-3.5 text-muted-foreground" /><div><p className="text-[8.5px] text-muted-foreground">Ends</p><p className="mt-0.5 font-medium">{formatCampaignDate(campaign.endsAt)}</p></div></div>
             <div className="flex items-start gap-2"><Gift className="mt-0.5 h-3.5 w-3.5 text-muted-foreground" /><div><p className="text-[8.5px] text-muted-foreground">Payout</p><p className="mt-0.5 font-medium">{formatCampaignDate(campaign.payoutAt)}</p></div></div>
           </div>
-          <p className="mt-3 text-[8.5px] text-muted-foreground">All dates use {campaign.timezone}. The admin configuration is authoritative.</p>
+          <p className="mt-3 text-[8.5px] text-muted-foreground">Dates are shown in the campaign schedule. Check the campaign window before sharing.</p>
         </section>
       </div>
 
       <div className="mt-3 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
         {[
-          ["Reward records", total], ["Qualified", qualified], ["Pending", pending], ["Paid", paid],
+          ["Referred users", referral.referrals.length], ["Reward records", total], ["Qualified", qualified], ["Paid rewards", paid],
         ].map(([label,value]) => <div key={String(label)} className="surface-card rounded-[12px] p-3.5"><p className="text-[9px] text-muted-foreground">{label}</p><p className="tabular mt-2 text-[20px] font-semibold">{value}</p></div>)}
       </div>
 
       <div className="mt-3 grid items-start gap-3 lg:grid-cols-[1.2fr_0.8fr]">
         <section className="surface-card rounded-[14px] p-4">
           <h2 className="text-[12px] font-semibold">Your campaign link</h2>
-          <p className="mt-1 text-[9.5px] leading-4 text-muted-foreground">This uses your existing BUYBIZ referral attribution with this campaign attached. Only purchases made during the campaign window qualify.</p>
+          <p className="mt-1 text-[9.5px] leading-4 text-muted-foreground">Your normal BUYBIZ referral link is used for this campaign too. Share it with people who have not opened an account yet. Only qualifying purchases during the campaign window count.</p>
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <p className="min-w-0 flex-1 truncate rounded-[8px] border border-border bg-surface-subtle px-3 py-2.5 font-mono text-[9.5px] text-muted-foreground">{link}</p>
             <ShareReferral value={link} />

@@ -389,7 +389,7 @@ export async function getUsdRewardsDashboard(userId: string) {
       `select
          coalesce(sum(amount_usd_cents) filter (where status not in ('rejected','void')),0)::int as earned,
          coalesce(sum(amount_usd_cents) filter (
-           where status = 'available' or (status = 'pending' and available_at <= now())
+           where status in ('available','pending') and available_at <= now()
          ),0)::int as available,
          coalesce(sum(amount_usd_cents) filter (
            where status = 'reserved' or (status = 'pending' and available_at > now())
@@ -531,7 +531,7 @@ export async function requestCampaignPayout(userId: string) {
       `select id, amount_usd_cents as "amountCents"
          from campaign_rewards
         where beneficiary_id=$1
-          and ((status='available') or (status='pending' and available_at <= now()))
+          and status in ('available','pending') and available_at <= now()
         order by earned_at asc
         for update`,
       [userId],

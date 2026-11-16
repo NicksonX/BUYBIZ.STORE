@@ -171,7 +171,7 @@ describe("$10 customer + $10 referrer campaign", () => {
       [customer.id],
     );
     // Make the reward available for this payout test, independent of the real payout date.
-    await db.query(`update campaign_rewards set status='available' where id=$1`, [reward.rows[0].id]);
+    await db.query(`update campaign_rewards set status='available', available_at=now() - interval '1 minute' where id=$1`, [reward.rows[0].id]);
     await db.query(`update profiles set role='admin' where id=$1`, [admin.id]);
     await submitAmbassadorAddress(customer.id, "0x1234567890abcdef1234567890abcdef12345678");
     const address = await db.query<{ id: string }>(`select id from ambassador_wallet_addresses where user_id=$1 and status='pending' order by created_at desc limit 1`, [customer.id]);

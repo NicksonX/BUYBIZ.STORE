@@ -83,7 +83,8 @@ export function UsdRewardsPanel({
   const [addressState, addressAction, addressPending] = useActionState(submitAmbassadorAddressAction, initialActionState);
   const [payoutState, payoutAction, payoutPending] = useActionState(requestCampaignPayoutAction, initialActionState);
   const openPayout = payouts.find((p) => ["pending_review", "approved", "processing"].includes(p.status));
-  const campaignCanRequest = campaign.availableCents > 0 && address?.status === "verified" && !openPayout;
+  const payoutDateReached = Boolean(campaignPayoutAt && new Date(campaignPayoutAt).getTime() <= Date.now());
+  const campaignCanRequest = payoutDateReached && campaign.availableCents > 0 && address?.status === "verified" && !openPayout;
   const history = [
     ...campaignRewards.map((row) => ({
       id: `campaign-${row.id}`, source: row.role === "customer" ? "Customer Campaign" : "Referrer Campaign",
@@ -154,7 +155,7 @@ export function UsdRewardsPanel({
             {address?.status === "pending" ? <p className="mt-2 rounded-[8px] border border-warning/20 bg-warning-soft px-2.5 py-2 text-[9px] text-warning">Address submitted. Waiting for administrator verification.</p> : null}
             {address?.status === "rejected" ? <p className="mt-2 rounded-[8px] border border-danger/20 bg-danger-soft px-2.5 py-2 text-[9px] text-danger">Address rejected{address.rejectionReason ? `: ${address.rejectionReason}` : "."} Submit a corrected address.</p> : null}
             <details className="mt-2">
-              <summary className="cursor-pointer text-[9px] font-medium text-muted-foreground hover:text-foreground">{address?.status === "verified" ? "Update address" : "Add / update address"}</summary>
+              <summary className="inline-flex h-9 cursor-pointer list-none items-center rounded-full border border-border bg-surface px-3 text-[9.5px] font-medium hover:bg-accent [&::-webkit-details-marker]:hidden">{address?.status === "verified" ? "Update payment method" : "Set up payment method"}</summary>
               <form action={addressAction} className="mt-2 flex flex-col gap-2 sm:flex-row">
                 <Input name="address" required placeholder="0x... USDT BEP20 address" className="h-9 min-w-0 flex-1 font-mono text-[10px]" />
                 <button type="submit" disabled={addressPending} className="inline-flex h-9 items-center justify-center gap-1.5 rounded-full border border-border bg-surface px-3 text-[9.5px] font-medium hover:bg-accent disabled:opacity-50">{addressPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <WalletCards className="h-3 w-3" />} Submit for verification</button>
@@ -172,19 +173,25 @@ export function UsdRewardsPanel({
         {payoutState.message ? <Alert tone={payoutState.status === "success" ? "success" : "danger"} className="mt-2 text-[9.5px]">{payoutState.message}</Alert> : null}
         {openPayout ? (
           <div className="mt-3 rounded-[8px] border border-warning/20 bg-warning-soft px-3 py-2 text-[9px] text-warning"><Clock3 className="mr-1 inline h-3 w-3" /> {statusLabel[openPayout.status] ?? openPayout.status}: {usd(openPayout.amountCents)}. We will email you when the status changes.</div>
-        ) : campaignCanRequest ? (
-          <form action={payoutAction} className="mt-3">
-            <label className="flex items-start gap-2 text-[8.5px] leading-4 text-muted-foreground">
-              <input type="checkbox" name="confirm" required className="mt-0.5 h-3 w-3 accent-foreground" />
-              I confirm the verified BEP20 address is correct and understand payouts are processed manually.
-            </label>
-            <button type="submit" disabled={payoutPending} className="mt-2 inline-flex h-9 items-center gap-1.5 rounded-full bg-foreground px-4 text-[9.5px] font-semibold text-background disabled:opacity-50">{payoutPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <BadgeDollarSign className="h-3 w-3" />} Request {usd(campaign.availableCents)} payout</button>
-          </form>
-        ) : (
-          <p className="mt-3 rounded-[8px] border border-border bg-surface-subtle px-3 py-2.5 text-[9px] text-muted-foreground">
-            {campaign.availableCents <= 0 ? "No campaign rewards are available yet. Rewards become available on the scheduled payout date." : address?.status !== "verified" ? "Verify a BEP20 address before requesting a payout." : "A payout request is already in progress."}
-          </p>
-        )}
+        ) : null}
+        <div className="mt-3 rounded-[9px] border border-border bg-surface-subtle p-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div><p className="text-[9.5px] font-medium">Request payout</p><p className="mt-0.5 text-[8.5px] text-muted-foreground">{campaignPayoutAt ? `Scheduled for ${date(campaignPayoutAt)}` : "Payout date not configured"}</p></div>
+            <button type="button" disabled={!campaignCanRequest || payoutPending} className="inline-flex h-9 items-center gap-1.5 rounded-full bg-foreground px-4 text-[9.5px] font-semibold text-background disabled:cursor-not-allowed disabled:opacity-40">
+              <BadgeDollarSign className="h-3.5 w-3.5" /> Request Payout
+            </button>
+          </div>
+          {!payoutDateReached ? <p className="mt-2 text-[8.5px] text-warning">Request payouts will be available on the scheduled payout date.</p> : null}
+          {payoutDateReached && campaign.availableCents <= 0 ? <p className="mt-2 text-[8.5px] text-muted-foreground">No eligible USD rewards are available yet.</p> : null}
+          {payoutDateReached && campaign.availableCents > 0 && address?.status !== "verified" ? <p className="mt-2 text-[8.5px] text-warning">Set up and verify a USDT BEP20 payment method first.</p> : null}
+          {payoutDateReached && campaign.availableCents > 0 && address?.status === "verified" && !openPayout ? (
+            <form action={payoutAction} className="mt-2 border-t border-border pt-2">
+              <label className="flex items-start gap-2 text-[8.5px] leading-4 text-muted-foreground"><input type="checkbox" name="confirm" required className="mt-0.5 h-3 w-3 accent-foreground" /> I confirm the verified BEP20 address is correct and understand payouts are processed manually.</label>
+              <button type="submit" disabled={payoutPending} className="mt-2 inline-flex h-8 items-center gap-1.5 rounded-full bg-foreground px-3 text-[9px] font-semibold text-background disabled:opacity-50">{payoutPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <BadgeDollarSign className="h-3 w-3" />} Confirm request for {usd(campaign.availableCents)}</button>
+            </form>
+          ) : null}
+          {openPayout ? <p className="mt-2 text-[8.5px] text-muted-foreground">You already have a payout request in progress.</p> : null}
+        </div>
       </section>
 
       <section className="surface-card overflow-hidden rounded-[14px]">

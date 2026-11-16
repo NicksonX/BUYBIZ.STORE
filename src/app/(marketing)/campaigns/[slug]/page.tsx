@@ -65,7 +65,7 @@ export default async function CampaignPage({ params }: { params: Promise<{ slug:
 
         <div className="mt-7 flex flex-wrap gap-2">
           <Link href="/register" className="inline-flex h-11 items-center gap-2 rounded-full bg-[#0A0B0D] px-5 text-[12px] font-semibold text-white transition-colors hover:bg-[#25272b]">Create your account <ArrowRight className="h-3.5 w-3.5" /></Link>
-          <Link href="/dashboard/campaigns" className="inline-flex h-11 items-center rounded-full border border-black/10 bg-white px-5 text-[12px] font-medium text-[#0A0B0D]/70 hover:bg-[#FAFAFA]">Open referral centre</Link>
+          <Link href="/dashboard/campaigns" className="inline-flex h-11 items-center rounded-full border border-black/10 bg-white px-5 text-[12px] font-medium text-[#0A0B0D]/70 hover:bg-[#FAFAFA]">View campaign dashboard</Link>
         </div>
       </div>
     </div>
