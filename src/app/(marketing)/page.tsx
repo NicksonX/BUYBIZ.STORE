@@ -338,7 +338,7 @@ export default async function HomePage() {
             </Link>
           </div>
 
-          <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="home-stagger mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {popularServices.map((service) => (
               <Link
                 key={service.name}
@@ -408,7 +408,7 @@ export default async function HomePage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 sm:gap-4">
+            <div className="home-stagger grid grid-cols-2 gap-3 sm:gap-4">
               {benefits.map((benefit) => (
                 <div
                   key={benefit.title}
@@ -449,7 +449,7 @@ export default async function HomePage() {
             }
           />
 
-          <div className="mt-7 grid grid-cols-2 gap-2 sm:mt-10 sm:gap-3 xl:grid-cols-4">
+          <div className="home-stagger mt-7 grid grid-cols-2 gap-2 sm:mt-10 sm:gap-3 xl:grid-cols-4">
             {steps.map((step, index) => (
               <div
                 key={step.number}
@@ -505,7 +505,7 @@ export default async function HomePage() {
               An administrator has not published any proxy plans. Check back soon.
             </Alert>
           ) : (
-            <div className="mt-6 grid gap-4 sm:mt-8 sm:gap-5 sm:grid-cols-2 lg:mt-9 lg:grid-cols-2 2xl:grid-cols-4">
+            <div className="home-stagger mt-6 grid gap-4 sm:mt-8 sm:gap-5 sm:grid-cols-2 lg:mt-9 lg:grid-cols-2 2xl:grid-cols-4">
               {plans.map((plan) => (
                 <div key={plan.product.id}>
                   <PlanCard
@@ -558,7 +558,7 @@ export default async function HomePage() {
             }
           />
 
-          <div className="mt-9 grid gap-3 lg:grid-cols-2">
+          <div className="home-stagger mt-9 grid gap-3 lg:grid-cols-2">
             {[
               {
                 name: "Virtual phone numbers",
@@ -635,7 +635,7 @@ export default async function HomePage() {
               </Link>
             </div>
 
-            <div className="divide-y divide-black/[0.07] border-y border-black/[0.07]">
+            <div className="home-stagger divide-y divide-black/[0.07] border-y border-black/[0.07]">
               {faqs.map((faq) => (
                 <details key={faq.q} className="group py-4">
                   <summary className="flex cursor-pointer list-none items-start justify-between gap-4 text-[13px] font-medium text-[#0A0B0D] [&::-webkit-details-marker]:hidden">

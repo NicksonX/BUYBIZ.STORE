@@ -1023,8 +1023,10 @@ button:not(:disabled):not([data-no-press]) {
   transition-duration: var(--motion-fast);
   transition-timing-function: ease-out;
 }
-button:not(:disabled):not([data-no-press]):active {
-  transform: scale(0.985);
+button:not(:disabled):not([data-no-press]):active,
+[role="button"]:not([aria-disabled="true"]):active,
+summary:active {
+  animation: buybiz-press 240ms var(--motion-ease);
 }
 @media (hover: hover) and (pointer: fine) {
   button:not(:disabled):not([data-no-press]):hover {
@@ -1065,6 +1067,30 @@ h1, h2, h3, h4, p, li, td, th, a, button {
   opacity: 1;
   transform: translate3d(0, 0, 0);
 }
+/* Staggered card entrances inside revealed homepage sections. */
+.reveal-ready main section[data-reveal] .home-stagger > * {
+  opacity: 0;
+  transform: translate3d(0, 18px, 0);
+  transition: opacity 480ms var(--motion-ease), transform 480ms var(--motion-ease);
+}
+.reveal-ready main section[data-reveal].is-revealed .home-stagger > * {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+}
+.reveal-ready main section[data-reveal] .home-stagger > *:nth-child(2) { transition-delay: 70ms; }
+.reveal-ready main section[data-reveal] .home-stagger > *:nth-child(3) { transition-delay: 140ms; }
+.reveal-ready main section[data-reveal] .home-stagger > *:nth-child(4) { transition-delay: 210ms; }
+.reveal-ready main section[data-reveal] .home-stagger > *:nth-child(5) { transition-delay: 280ms; }
+.reveal-ready main section[data-reveal] .home-stagger > *:nth-child(6) { transition-delay: 350ms; }
+.reveal-ready main section[data-reveal] .home-stagger > *:nth-child(n + 7) { transition-delay: 420ms; }
+@media (prefers-reduced-motion: reduce) {
+  .reveal-ready main section[data-reveal] .home-stagger > * {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
 /* Keep direct interactive cards feeling tactile without moving surrounding layout. */
 .marketing-home a.group,
 .marketing-home .surface-card {
@@ -1083,4 +1109,10 @@ h1, h2, h3, h4, p, li, td, th, a, button {
     transform: none !important;
     transition: none !important;
   }
+}
+
+@keyframes buybiz-press {
+  0% { transform: scale(1); }
+  40% { transform: scale(0.965); }
+  100% { transform: scale(1); }
 }
