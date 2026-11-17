@@ -27,7 +27,7 @@ type Payout = { id: string; amountCents: number; status: string; walletAddress: 
 type Address = { id: string; address: string; status: string; rejectionReason: string | null; createdAt: Date };
 
 const statusLabel: Record<string, string> = {
-  pending: "Pending",
+  pending: "Confirmed — awaiting payout",
   available: "Available",
   reserved: "Pending review",
   paid: "Paid",

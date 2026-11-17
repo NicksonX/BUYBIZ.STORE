@@ -4,6 +4,7 @@ import { ArrowLeft, CalendarDays, CheckCircle2, Clock3, Gift, ShieldCheck } from
 import { PageHeader } from "@/components/ui/page-header";
 import { Badge } from "@/components/ui/badge";
 import { ShareReferral } from "@/components/campaigns/share-referral";
+import { SeasonRewardsArt } from "@/components/campaigns/season-rewards-art";
 import { requireUserPage } from "@/server/auth/guards";
 import { getCampaignBySlug, campaignPhase, formatCampaignDate, getUsdRewardsDashboard } from "@/server/services/campaigns";
 import { getReferralDashboard } from "@/server/data/customer";
@@ -41,6 +42,8 @@ export default async function CampaignDetailPage({ params }: { params: Promise<{
         description="Campaign tracking is separate from your normal referral programme. Rewards and eligibility here follow this campaign only."
         actions={<Link href="/dashboard/campaigns" className="inline-flex h-9 items-center gap-1.5 rounded-full border border-border bg-surface px-3 text-[10px] font-medium"><ArrowLeft className="h-3.5 w-3.5" /> All campaigns</Link>}
       />
+
+      <div className="mt-4 overflow-hidden rounded-[17px]"><SeasonRewardsArt /></div>
 
       <div className="mt-4 grid gap-3 lg:grid-cols-[1.25fr_0.75fr]">
         <section className="relative overflow-hidden rounded-[17px] bg-[#0A0B0D] p-5 text-white">

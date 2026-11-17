@@ -50,7 +50,7 @@ export default async function AdminCampaignsPage() {
   const data = await getCampaignAdminData();
   return (
     <div className="space-y-4">
-      <PageHeader eyebrow="Finance" title="Campaigns & USD rewards" description="The $10 customer + $10 referrer campaign is separate from the $3 Ambassador ledger and the NGN wallet. Rewards are server-evaluated and payouts are manual, audited USDT BEP20 transfers." />
+      <PageHeader eyebrow="Finance" title="Campaigns & USD rewards" description="BUYBIZ Season of Rewards is separate from the $3 referral ledger and the NGN wallet. Rewards are server-evaluated and payouts are manual, audited USDT BEP20 transfers." />
       <div className="grid grid-cols-2 gap-2.5 xl:grid-cols-4">
         <StatCard label="Campaign liability" value={usd(data.totals.totalCents)} icon={Gift} hint="All current rewards" />
         <StatCard label="Customer rewards" value={usd(data.totals.customerCents)} icon={Users} hint="Qualifying customers" />
