@@ -22,6 +22,7 @@ export type EmailType =
   | "campaign_payout_rejected"
   | "proxy_expiry_reminder"
   | "giveaway_live"
+  | "giveaway_winner_paid"
   | "marketing";
 
 export type EmailTemplateData = {
@@ -41,6 +42,7 @@ export type EmailTemplateData = {
   expiryLabel?: string;
   proxyLabel?: string;
   giveawayTitle?: string;
+  network?: string;
   requestedAt?: string;
   campaignSubject?: string;
   campaignMessage?: string;
@@ -168,6 +170,11 @@ const DEFAULT_TEMPLATES: Record<
     subject: "Ready to try BUYBIZ?",
     preheader: "Your account is set up. Your first deposit is the next step.",
     intro: "You are all set up. When you are ready, add funds to your wallet and choose the proxy plan that fits your work.",
+  },
+  giveaway_winner_paid: {
+    subject: "Congratulations! Your BUYBIZ Giveaway Reward Has Been Paid",
+    preheader: "Your giveaway reward is confirmed on-chain.",
+    intro: "Your BUYBIZ giveaway reward has been sent and confirmed on the blockchain.",
   },
   giveaway_live: {
     subject: "A New BUYBIZ Giveaway Is Live!",
@@ -411,6 +418,15 @@ export function renderEmail(input: {
         <p style="margin:9px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:${BRAND.muted};">This code expires in ${escapeHtml(String(data.expiresMinutes ?? 10))} minutes.</p>
       </div>
       <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.7;color:${BRAND.muted};">If you did not create a BUYBIZ account, you can safely ignore this email. Never share this code with anyone.</p>`;
+      break;
+    case "giveaway_winner_paid":
+      content = `<p style="margin:16px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.75;color:#4E5157;">Your giveaway reward has been sent and confirmed on-chain.</p>
+      ${details([
+        ["Reward", data.amountLabel ?? ""],
+        ["Network", data.network ?? "BEP20"],
+        ["Transaction", data.txHash ?? ""],
+      ])}
+      ${button("Visit BUYBIZ", `${input.websiteUrl}/dashboard/giveaways`)}`;
       break;
     case "giveaway_live":
       content = `<p style="margin:16px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.75;color:#4E5157;">A new BUYBIZ giveaway is now live.</p>
