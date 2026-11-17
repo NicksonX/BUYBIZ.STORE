@@ -45,16 +45,26 @@ export async function selectEmailProviders(
     `select next_provider as "nextProvider" from email_provider_rotation where id=1 for update`,
   );
   const pointer = rotation.rows[0]?.nextProvider ?? "resend";
-  const primary = getEmailRotationEnabled() ? pointer : (getEmailProviderName() === "brevo" ? "brevo" : "resend");
+  const settings = await tx.query<{ key: string; value: unknown }>(
+    `select key, value from app_settings where key in ('email_primary_provider','email_rotation_enabled')`,
+  );
+  const settingMap = new Map(settings.rows.map((row) => [row.key, row.value]));
+  const configuredPrimary = String(settingMap.get("email_primary_provider") ?? "").toLowerCase();
+  const primary: EmailProvider = configuredPrimary === "brevo" || configuredPrimary === "resend"
+    ? configuredPrimary
+    : (getEmailProviderName() === "brevo" ? "brevo" : "resend");
+  const dbRotation = settingMap.get("email_rotation_enabled");
+  const rotationEnabled = dbRotation === false ? false : getEmailRotationEnabled();
+  const selectedPrimary = rotationEnabled ? pointer : primary;
   const candidates: EmailProvider[] = [];
-  if (await eligible(tx, primary)) candidates.push(primary);
-  const secondary = otherProvider(primary);
+  if (await eligible(tx, selectedPrimary)) candidates.push(selectedPrimary);
+  const secondary = otherProvider(selectedPrimary);
   if (await eligible(tx, secondary)) candidates.push(secondary);
 
   if (candidates.length > 0) {
     await tx.query(
       `update email_provider_rotation set next_provider=$1, updated_at=now() where id=1`,
-      [otherProvider(primary)],
+      [otherProvider(selectedPrimary)],
     );
     await tx.query(
       `update email_deliveries

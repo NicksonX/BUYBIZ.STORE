@@ -10,6 +10,7 @@ beforeAll(async () => { await getDb(); });
 async function reset() {
   const db = await getDb();
   await db.query(`update email_provider_rotation set next_provider='resend', updated_at=now() where id=1`);
+  await db.query(`insert into app_settings (key,value) values ('email_primary_provider','"resend"'::jsonb), ('email_rotation_enabled','true'::jsonb) on conflict (key) do update set value=excluded.value`);
   await db.query(`delete from email_provider_usage`);
   await db.query(`delete from email_provider_attempts`);
   await db.query(`delete from email_deliveries where dedupe_key like 'rotation:%'`);
