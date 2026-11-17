@@ -144,8 +144,6 @@ export async function evaluateCampaignRewards(
   const campaignsResult = await tx.query<Record<string, unknown>>(
     `select ${CAMPAIGN_SELECT} from campaigns
       where status = 'published'
-        and now() >= starts_at
-        and now() <= ends_at
       order by starts_at asc`,
   );
   const campaigns = campaignsResult.rows.map(normalizeCampaign);
@@ -213,21 +211,13 @@ export async function evaluateCampaignRewards(
       `select o.id
          from orders o join products p on p.id = o.product_id
         where o.user_id = $1 and o.status = 'completed'
-          and o.completed_at between $2 and $3
-          and p.duration_seconds >= $6
+          and exists (select 1 from proxy_allocations a where a.order_id = o.id)
           and (
-            ($4::int = 0 and p.category = 'proxy')
-            or p.slug = any($5::text[])
+            ($2::int = 0 and p.category = 'proxy')
+            or p.slug = any($3::text[])
           )
         order by o.completed_at asc limit 1`,
-      [
-        input.customerId,
-        campaign.startsAt,
-        campaign.endsAt,
-        eligible.length,
-        eligible,
-        campaign.qualifyingProxyDurationSeconds,
-      ],
+      [input.customerId, eligible.length, eligible],
     );
     const qualifyingOrder = order.rows[0];
     if (!qualifyingOrder) continue;
@@ -250,8 +240,21 @@ export async function evaluateCampaignRewards(
         userId: input.customerId,
         type: "system",
         title: "You earned a $10 campaign reward",
-        body: `Your qualifying 7-day-or-longer proxy purchase earned ${usd(campaign.customerRewardCents)} in USD rewards. It becomes available for payout on ${formatCampaignDate(campaign.payoutAt)}.`,
+        body: `Your qualifying proxy purchase earned ${usd(campaign.customerRewardCents)} in USD rewards. It becomes available for payout on ${formatCampaignDate(campaign.payoutAt)}.`,
         href: "/dashboard/rewards",
+      });
+      await queueEmail(tx, {
+        type: "campaign_customer_reward",
+        userId: input.customerId,
+        recipient: person.email,
+        data: {
+          name: person.displayName ?? person.username,
+          campaignName: campaign.name,
+          rewardLabel: usd(campaign.customerRewardCents),
+          payoutDate: formatCampaignDate(campaign.payoutAt),
+          statusLabel: "Confirmed — awaiting payout",
+        },
+        dedupeKey: `campaign_activation:${campaign.id}:customer:${input.customerId}`,
       });
 
     }
@@ -275,8 +278,21 @@ export async function evaluateCampaignRewards(
           userId: referral.referrerId,
           type: "system",
           title: "Your referral earned a $10 campaign reward",
-          body: `${person.displayName ?? person.username} completed both qualifying steps. ${usd(campaign.referrerRewardCents)} was added to your USD rewards.`,
+          body: `${person.displayName ?? person.username} completed a qualifying proxy purchase. ${usd(campaign.referrerRewardCents)} was added to your USD rewards.`,
           href: "/dashboard/rewards",
+        });
+        await queueEmail(tx, {
+          type: "campaign_referrer_reward",
+          userId: referral.referrerId,
+          recipient: referral.referrerEmail,
+          data: {
+            name: referral.referrerName,
+            campaignName: campaign.name,
+            rewardLabel: usd(campaign.referrerRewardCents),
+            payoutDate: formatCampaignDate(campaign.payoutAt),
+            statusLabel: "Confirmed — awaiting payout",
+          },
+          dedupeKey: `campaign_activation:${campaign.id}:referrer:${input.customerId}`,
         });
       }
     }
@@ -954,4 +970,70 @@ export async function settleCampaignRewards() {
     return count;
   });
   return { credited };
+}
+
+/** Read-only dry-run report for the Season of Rewards historical backfill. */
+export async function buildCampaignBackfillReport(slug = "customer-referrer-10") {
+  const db = await getDb();
+  const campaign = await getCampaignBySlug(slug);
+  if (!campaign) return null;
+  const customers = await db.query<{
+    userId: string;
+    username: string;
+    email: string;
+    orderId: string;
+    completedAt: Date;
+  }>(
+    `select p.id as "userId", p.username, p.email, o.id as "orderId", o.completed_at as "completedAt"
+       from profiles p
+       join orders o on o.user_id = p.id
+      where p.role = 'customer' and p.status = 'active'
+        and o.status = 'completed'
+        and exists (select 1 from proxy_allocations a where a.order_id = o.id)
+        and not exists (
+          select 1 from campaign_rewards cr
+           where cr.campaign_id = $1 and cr.customer_id = p.id and cr.role = 'customer'
+        )
+      order by lower(p.username) asc`,
+    [campaign.id],
+  );
+  const referrers = await db.query<{
+    referrerId: string;
+    refereeId: string;
+    referrerName: string;
+    refereeName: string;
+    orderId: string;
+    completedAt: Date;
+  }>(
+    `select r.referrer_id as "referrerId", r.referee_id as "refereeId",
+            coalesce(rp.display_name, rp.username) as "referrerName",
+            coalesce(fp.display_name, fp.username) as "refereeName",
+            o.id as "orderId", o.completed_at as "completedAt"
+       from referrals r
+       join profiles rp on rp.id = r.referrer_id
+       join profiles fp on fp.id = r.referee_id
+       join orders o on o.user_id = r.referee_id
+      where r.status <> 'rejected'
+        and rp.status = 'active' and fp.status = 'active'
+        and rp.id <> r.referee_id
+        and o.status = 'completed'
+        and exists (select 1 from proxy_allocations a where a.order_id = o.id)
+        and not exists (
+          select 1 from campaign_rewards cr
+           where cr.campaign_id = $1 and cr.customer_id = r.referee_id and cr.role = 'referrer'
+        )
+      order by lower(rp.username) asc`,
+    [campaign.id],
+  );
+  const customerIds = new Set(customers.rows.map((row) => row.userId));
+  const refereeIds = new Set(referrers.rows.map((row) => row.refereeId));
+  return {
+    campaign: { id: campaign.id, name: campaign.name, startsAt: campaign.startsAt, endsAt: campaign.endsAt, payoutAt: campaign.payoutAt },
+    customerCandidates: customerIds.size,
+    customerRewardCents: customerIds.size * campaign.customerRewardCents,
+    referrerCandidates: refereeIds.size,
+    referrerRewardCents: refereeIds.size * campaign.referrerRewardCents,
+    customerSamples: customers.rows.slice(0, 20).map((row) => ({ username: row.username, email: row.email, orderId: row.orderId, completedAt: row.completedAt })),
+    referrerSamples: referrers.rows.slice(0, 20).map((row) => ({ referrer: row.referrerName, referee: row.refereeName, orderId: row.orderId, completedAt: row.completedAt })),
+  };
 }

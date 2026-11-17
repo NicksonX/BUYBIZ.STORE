@@ -133,12 +133,12 @@ const DEFAULT_TEMPLATES: Record<
     intro: "Your ambassador payout has been sent. The transaction hash is included below for your records.",
   },
   campaign_customer_reward: {
-    subject: "Congratulations! Your $10 BUYBIZ Referral Campaign Reward Has Been Credited",
+    subject: "Congratulations! Your $10 BUYBIZ Campaign Reward Has Been Activated",
     preheader: "Your qualifying 7-day+ proxy purchase counted.",
     intro: "Your qualifying 7-day-or-longer proxy purchase earned a campaign reward. It sits in USD Rewards, separate from your BUYBIZ wallet balance.",
   },
   campaign_referrer_reward: {
-    subject: "Your $10 BUYBIZ Referral Campaign Reward Has Been Credited",
+    subject: "Your $10 BUYBIZ Referral Campaign Reward Has Been Activated",
     preheader: "A referral completed both qualifying steps.",
     intro: "Someone you referred completed a 7-day-or-longer proxy purchase during the campaign. Your separate referrer reward has been recorded, and they earned $10 too.",
   },
@@ -524,8 +524,9 @@ export function renderEmail(input: {
         referrerValue: data.payoutDate ?? "24 December 2026",
         windowLabel: "USD rewards · USDT BEP20 · separate from your naira wallet",
       })}
-      <p style="margin:16px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.7;color:#4E5157;">Your $10 USD campaign reward has been successfully credited to your USD Reward Balance. You can view it in Rewards and request a USDT BEP20 payout after ${escapeHtml(data.payoutDate ?? "the scheduled payout date")}.</p>
-      ${button("Open USD Rewards", `${input.websiteUrl}/dashboard/rewards`)}`;
+      <p style="margin:16px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.7;color:#4E5157;">Your $10 USD campaign reward has been successfully activated and confirmed. It is scheduled to become available for payout on ${escapeHtml(data.payoutDate ?? "the scheduled payout date")}.</p>
+      <p style="margin:8px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.7;color:#4E5157;">Make sure your USDT BEP20 payout wallet address is set up and correct before the payout date.</p>
+      ${button("View My Rewards", `${input.websiteUrl}/dashboard/rewards`)}`;
       break;
     case "campaign_referrer_reward":
       content = `${campaignBanner({

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { CalendarDays, Gift, Users } from "lucide-react";
+import { SeasonRewardsArt } from "@/components/campaigns/season-rewards-art";
 import {
   campaignPhase,
   formatCampaignDate,
@@ -35,11 +36,12 @@ export function CampaignCard({
 
   return (
     <section className="relative overflow-hidden rounded-[22px] border border-black/[0.08] bg-white text-[#0A0B0D] shadow-[0_24px_60px_-48px_rgba(0,0,0,0.35)]">
-      <div className="pointer-events-none absolute -right-24 -top-28 h-72 w-72 rounded-full border border-black/[0.045]" />
+      <SeasonRewardsArt compact={compact} />
+      <div className="pointer-events-none absolute -right-24 -top-28 hidden h-72 w-72 rounded-full border border-black/[0.045]" />
       <div className={`relative ${compact ? "p-6 sm:p-8" : "p-7 sm:p-10"}`}>
         <p className="flex items-center gap-2.5 text-[12px] font-medium uppercase tracking-[0.18em] text-[#6E7178]">
           <Gift className="h-5 w-5" strokeWidth={1.7} />
-          Referral campaign
+          BUYBIZ Season of Rewards
         </p>
 
         <h2
@@ -99,7 +101,7 @@ export function CampaignCard({
           </p>
           <p className="flex items-center gap-3">
             <Users className="h-5 w-5 shrink-0 text-[#7A7D83]" strokeWidth={1.8} />
-            Fund and purchase at least an eligible {campaign.qualifyingProxyDays}-day + proxy plan.
+            Fund your wallet and complete a successful proxy purchase. A deposit alone does not qualify.
           </p>
         </div>
       </div>

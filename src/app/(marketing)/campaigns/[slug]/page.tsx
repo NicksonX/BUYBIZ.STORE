@@ -5,6 +5,7 @@ import { ArrowRight, CalendarDays, CheckCircle2, Gift, ShieldCheck } from "lucid
 import { getCurrentUser } from "@/server/auth/session";
 import { getCampaignBySlug } from "@/server/services/campaigns";
 import { campaignPhase, formatCampaignDate } from "@/server/services/campaigns";
+import { SeasonRewardsArt } from "@/components/campaigns/season-rewards-art";
 
 export const dynamic = "force-dynamic";
 
@@ -29,6 +30,7 @@ export default async function CampaignPage({ params }: { params: Promise<{ slug:
   return (
     <div className="bg-[#F4F4F5] py-10 text-[#0A0B0D] sm:py-16">
       <div className="mx-auto w-full max-w-[1000px] px-5 sm:px-8">
+        <div className="overflow-hidden rounded-[20px]"><SeasonRewardsArt /></div>
         <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-[#8C9097]">Referral campaign</p>
         <h1 className="mt-3 max-w-[760px] text-[36px] font-semibold leading-[1.02] tracking-[-0.05em] sm:text-[56px]">{item.name}</h1>
         <p className="mt-4 max-w-[680px] text-[13px] leading-6 text-[#6E7178] sm:text-[14px]">{item.description}</p>

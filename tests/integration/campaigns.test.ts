@@ -9,7 +9,7 @@ import {
   requestCampaignPayout,
   reviewCampaignPayout,
 } from "@/server/services/campaigns";
-import { createTestUser } from "../helpers";
+import { createTestInventory, createTestUser } from "../helpers";
 
 beforeAll(async () => { await getDb(); });
 
@@ -29,8 +29,8 @@ async function productId(days: 1 | 7 = 7) {
 
 async function setupCampaign(overrides: Partial<{ slug: string; startsAt: Date; endsAt: Date; payoutAt: Date }> = {}) {
   const db = await getDb();
-  // Isolate this test campaign from campaigns created by earlier tests.
-  await db.query(`update campaigns set status='paused' where slug like 'test-campaign-%' or slug like 'low-%'`);
+  // Isolate from every previously published campaign.
+  await db.query(`update campaigns set status='paused'`);
   const id = randomUUID();
   const slug = overrides.slug ?? `test-campaign-${id.slice(0, 8)}`;
   const startsAt = overrides.startsAt ?? new Date(Date.now() - 60 * 60 * 1000);
@@ -75,6 +75,12 @@ async function qualifyCustomer(options: {
     `insert into orders (id,order_number,user_id,product_id,amount_minor,currency,status,idempotency_key,created_at,completed_at)
      values ($1,$2,$3,$4,50000,'NGN','completed',$5,$6,$6)`,
     [orderId, `BZ-CAMP-${orderId.slice(0, 8)}`, customer.id, pid, `camp-${orderId}`, options.orderedAt ?? new Date()],
+  );
+  const inventory = await createTestInventory({ productSlug: options.durationDays === 1 ? "proxy-24-hours" : "proxy-7-days", expiresInSeconds: 40 * 86400 });
+  await db.query(
+    `insert into proxy_allocations (user_id,proxy_inventory_id,order_id,product_id,status,activated_at,expires_at)
+     values ($1,$2,$3,$4,'active',now(),now() + interval '30 days')`,
+    [customer.id, inventory.id, orderId, pid],
   );
   await db.transaction((tx) => evaluateCampaignRewards(tx, { customerId: customer.id }));
   return { customer, orderId };
@@ -141,7 +147,7 @@ describe("$10 customer + $10 referrer campaign", () => {
     expect(low.rows[0].count).toBe(2);
   });
 
-  it("does not reward a 24-hour proxy purchase", async () => {
+  it("rewards any fulfilled proxy purchase, including 24-hour plans", async () => {
     await setupCampaign();
     const { customer } = await qualifyCustomer({ durationDays: 1 });
     const db = await getDb();
@@ -149,15 +155,15 @@ describe("$10 customer + $10 referrer campaign", () => {
       `select count(*)::int as count from campaign_rewards where customer_id=$1`,
       [customer.id],
     );
-    expect(count.rows[0].count).toBe(0);
+    expect(count.rows[0].count).toBe(1);
   });
 
-  it("refuses activity outside the campaign window", async () => {
+  it("rewards historical fulfilled purchases outside the campaign window", async () => {
     await setupCampaign({ startsAt: new Date(Date.now() - 3 * 86400_000), endsAt: new Date(Date.now() - 2 * 86400_000), payoutAt: new Date(Date.now() - 86400_000) });
     const { customer } = await qualifyCustomer({ depositedAt: new Date(Date.now() - 4 * 86400_000), orderedAt: new Date(Date.now() - 4 * 86400_000) });
     const db = await getDb();
     const count = await db.query<{ count: number }>(`select count(*)::int as count from campaign_rewards where customer_id=$1`, [customer.id]);
-    expect(count.rows[0].count).toBe(0);
+    expect(count.rows[0].count).toBe(1);
   });
 
   it("keeps campaign rewards separate and pays only with a transaction hash", async () => {

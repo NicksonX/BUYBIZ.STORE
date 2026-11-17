@@ -1067,6 +1067,11 @@ h1, h2, h3, h4, p, li, td, th, a, button {
   opacity: 1;
   transform: translate3d(0, 0, 0);
 }
+/* Season of Rewards coins float gently; reduced-motion users get static coins. */
+.season-coin { animation: buybiz-float 7s ease-in-out infinite; }
+.season-coin:nth-of-type(2) { animation-delay: -2.2s; }
+.season-coin:nth-of-type(3) { animation-delay: -4.1s; }
+
 /* Staggered card entrances inside revealed homepage sections. */
 .reveal-ready main section[data-reveal] .home-stagger > * {
   opacity: 0;
