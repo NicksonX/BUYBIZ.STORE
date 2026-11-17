@@ -31,6 +31,8 @@ export default async function AdminSupportPage({
   await requireStaffPage();
   const params = await searchParams;
   const q = (first(params.q) ?? "").trim().toLowerCase();
+  const statusFilter = first(params.status) ?? "all";
+  const priorityFilter = first(params.priority) ?? "all";
   const db = await getDb();
   const [allTickets, contactMessages, aiConversations, aiSetting] = await Promise.all([
     getAdminTickets(),
@@ -39,16 +41,16 @@ export default async function AdminSupportPage({
     db.query<{ enabled: unknown }>(`select value as enabled from app_settings where key='ai_support_enabled' limit 1`),
   ]);
   const aiEnabled = aiSetting.rows[0]?.enabled !== false;
-  const tickets = q
-    ? allTickets.filter(
-        (ticket) =>
-          ticket.subject.toLowerCase().includes(q) ||
-          ticket.username.toLowerCase().includes(q) ||
-          ticket.ticketNumber.toLowerCase().includes(q),
-      )
-    : allTickets;
+  const tickets = allTickets.filter((ticket) => {
+    const matchesQuery = !q || ticket.subject.toLowerCase().includes(q) || ticket.username.toLowerCase().includes(q) || ticket.ticketNumber.toLowerCase().includes(q);
+    const matchesStatus = statusFilter === "all" || ticket.status === statusFilter;
+    const matchesPriority = priorityFilter === "all" || ticket.priority === priorityFilter;
+    return matchesQuery && matchesStatus && matchesPriority;
+  });
   const open = allTickets.filter((ticket) => ticket.status === "open").length;
   const pending = allTickets.filter((ticket) => ticket.status === "pending").length;
+  const resolved = allTickets.filter((ticket) => ["resolved", "closed"].includes(ticket.status)).length;
+  const highPriority = allTickets.filter((ticket) => ticket.priority === "high" && !["resolved", "closed"].includes(ticket.status)).length;
   const newMessages = contactMessages.filter((message) => message.status === "new").length;
 
   return (
@@ -59,11 +61,13 @@ export default async function AdminSupportPage({
         description="Customer tickets and public contact messages. Replies are recorded against the ticket and shown in the customer dashboard."
       />
 
-      <div className="mt-4 grid grid-cols-3 gap-2.5">
+      <div className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-5">
         {[
-          { label: "Open tickets", value: open, icon: LifeBuoy },
+          { label: "Open", value: open, icon: LifeBuoy },
           { label: "Awaiting customer", value: pending, icon: MessageSquare },
-          { label: "New contact messages", value: newMessages, icon: Mail },
+          { label: "High priority", value: highPriority, icon: LifeBuoy },
+          { label: "Resolved", value: resolved, icon: MessageSquare },
+          { label: "New contact", value: newMessages, icon: Mail },
         ].map((item) => (
           <div key={item.label} className="surface-card rounded-[11px] p-3">
             <div className="flex items-center justify-between">
@@ -75,12 +79,18 @@ export default async function AdminSupportPage({
         ))}
       </div>
 
-      <form method="get" className="surface-card mt-3 flex gap-2 rounded-[12px] p-3">
-        <div className="relative flex-1">
+      <form method="get" className="surface-card mt-3 flex flex-wrap gap-2 rounded-[12px] p-3">
+        <div className="relative min-w-[180px] flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-          <Input name="q" defaultValue={q} placeholder="Search subject, username or ticket number" className="h-9 pl-8 text-[11.5px]" aria-label="Search tickets" />
+          <Input name="q" defaultValue={q} placeholder="Search subject, username or ticket" className="h-9 pl-8 text-[11.5px]" aria-label="Search tickets" />
         </div>
-        <button type="submit" className="h-9 rounded-full bg-foreground px-4 text-[10.5px] font-semibold text-background">Search</button>
+        <select name="status" defaultValue={statusFilter} aria-label="Filter by status" className="h-9 rounded-full border border-border bg-surface px-3 text-[10px]">
+          <option value="all">All statuses</option><option value="open">Open</option><option value="pending">Awaiting customer</option><option value="resolved">Resolved</option><option value="closed">Closed</option>
+        </select>
+        <select name="priority" defaultValue={priorityFilter} aria-label="Filter by priority" className="h-9 rounded-full border border-border bg-surface px-3 text-[10px]">
+          <option value="all">All priorities</option><option value="high">High</option><option value="normal">Normal</option><option value="low">Low</option>
+        </select>
+        <button type="submit" className="h-9 rounded-full bg-foreground px-4 text-[10.5px] font-semibold text-background">Apply</button>
         <Link href="/admin/support" className="inline-flex h-9 items-center rounded-full border border-border px-3 text-[10px] text-muted-foreground">Reset</Link>
       </form>
 

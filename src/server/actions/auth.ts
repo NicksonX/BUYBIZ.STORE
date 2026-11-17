@@ -2,6 +2,7 @@
 
 import { createHash, randomBytes } from "node:crypto";
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { getDb } from "@/lib/db";
 import type { Profile } from "@/lib/db/types";
@@ -757,6 +758,20 @@ export async function oauthAction(
 ): Promise<ActionState> {
   const provider = String(formData.get("provider") ?? "");
   const next = safeNextPath(String(formData.get("next") ?? "/dashboard"));
+  const referralCode = String(formData.get("referralCode") ?? "").trim().toUpperCase();
+  if (referralCode) {
+    if (!/^[A-Z0-9]{4,24}$/.test(referralCode)) {
+      return formError("That referral code is not valid.");
+    }
+    const cookieStore = await cookies();
+    cookieStore.set("buybiz_pending_referral", referralCode, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 30,
+    });
+  }
   if (provider !== "google") {
     return formError("Unsupported sign-in provider.");
   }

@@ -15,6 +15,7 @@ import {
 } from "@/server/actions/admin";
 import { ticketStatusMeta, titleCase } from "@/lib/status";
 import { formatDateTime } from "@/lib/utils";
+import { SupportAutoRefresh } from "@/components/support/auto-refresh";
 
 export const dynamic = "force-dynamic";
 
@@ -49,6 +50,7 @@ export default async function AdminSupportDetailPage({
         }
       />
 
+      <SupportAutoRefresh />
       <div className="mt-4 grid items-start gap-3 xl:grid-cols-[1.3fr_0.7fr]">
         <section className="surface-card flex min-h-[520px] flex-col overflow-hidden rounded-[14px]">
           <div className="flex items-center justify-between border-b border-border px-4 py-3">

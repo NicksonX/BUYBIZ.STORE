@@ -4,6 +4,7 @@ import { createSupabaseCallbackClient } from "@/lib/supabase/route-client";
 import { safeNextPath } from "@/lib/utils";
 import { getDb } from "@/lib/db";
 import { queueWelcomeEmail, flushEmailQueue } from "@/server/services/email";
+import { attachReferralForSignup } from "@/server/services/referrals";
 
 export const dynamic = "force-dynamic";
 
@@ -41,10 +42,22 @@ export async function GET(request: NextRequest) {
     // Send OAuth users who have not chosen a username to onboarding.
     try {
       const db = await getDb();
-      const profile = await db.query<{ onboardingComplete: boolean }>(
-        `select onboarding_complete as "onboardingComplete" from profiles where id = $1`,
+      const profile = await db.query<{ onboardingComplete: boolean; createdAt: Date }>(
+        `select onboarding_complete as "onboardingComplete", created_at as "createdAt" from profiles where id = $1`,
         [data.user.id],
       );
+      const pendingReferral = request.cookies.get("buybiz_pending_referral")?.value;
+      if (pendingReferral && profile.rows[0]) {
+        const ageMinutes = (Date.now() - new Date(profile.rows[0].createdAt).getTime()) / 60_000;
+        const existing = await db.query(`select 1 from referrals where referee_id=$1 limit 1`, [data.user.id]);
+        if (ageMinutes <= 10 && !existing.rows[0]) {
+          try {
+            await db.transaction((tx) => attachReferralForSignup(tx, data.user!.id, pendingReferral));
+          } catch (error) {
+            console.error("[buybiz/auth] oauth referral attach failed", error);
+          }
+        }
+      }
       await db.query(
         `update profiles set email_verified=true, updated_at=now()
           where id=$1 and email_verified=false`,
@@ -53,14 +66,16 @@ export async function GET(request: NextRequest) {
       await queueWelcomeEmail(data.user.id);
       await flushEmailQueue(5);
       if (profile.rows[0] && !profile.rows[0].onboardingComplete) {
-        return callback.apply(
-          NextResponse.redirect(new URL("/onboarding", origin)),
-        );
+        const response = NextResponse.redirect(new URL("/onboarding", origin));
+        response.cookies.delete("buybiz_pending_referral");
+        return callback.apply(response);
       }
     } catch (error) {
       console.error("[buybiz/auth] callback profile check failed", error);
     }
   }
 
-  return callback.apply(NextResponse.redirect(new URL(next, origin)));
+  const response = NextResponse.redirect(new URL(next, origin));
+  response.cookies.delete("buybiz_pending_referral");
+  return callback.apply(response);
 }

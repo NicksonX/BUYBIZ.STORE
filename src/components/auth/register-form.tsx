@@ -190,6 +190,7 @@ export function RegisterForm({
 
       <SocialButtons
         next={next}
+        referralCode={referralCode}
         googleEnabled={googleEnabled}
         className="mt-6"
       />
