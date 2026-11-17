@@ -92,7 +92,7 @@ export default async function AdminSettingsPage() {
                   <Input id="referral-min-days" name="referralMinProxyDurationDays" type="number" min={1} max={365} defaultValue={settings.referralMinProxyDurationDays} />
                 </AdminField>
                 <AdminField label="Default maximum seats" htmlFor="default-seats" hint="1-10">
-                  <Input id="default-seats" name="inventoryDefaultMaxSeats" type="number" min={1} max={10} defaultValue={settings.inventoryDefaultMaxSeats} />
+                  <Input id="default-seats" name="inventoryDefaultMaxSeats" type="number" min={1} max={15} defaultValue={settings.inventoryDefaultMaxSeats} />
                 </AdminField>
                 <AdminField label="Safety buffer (minutes)" htmlFor="safety-buffer">
                   <Input id="safety-buffer" name="allocationSafetyBufferMinutes" type="number" min={0} max={10080} defaultValue={Math.round(settings.allocationSafetyBufferSeconds / 60)} />

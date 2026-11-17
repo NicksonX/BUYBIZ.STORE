@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Bot, Send, ShieldCheck } from "lucide-react";
 import { LoadingDots } from "@/components/ui/loading-dots";
 
@@ -21,6 +21,17 @@ export function AiSupportAssistant({ configured = true }: { configured?: boolean
   const [notice, setNotice] = useState<string | null>(null);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [restored, setRestored] = useState(false);
+  const [typing, setTyping] = useState(false);
+  const [retryText, setRetryText] = useState<string | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const stickToBottom = useRef(true);
+  const startedAtRef = useRef(0);
+
+  useEffect(() => {
+    const node = scrollRef.current;
+    if (!node) return;
+    if (stickToBottom.current) node.scrollTop = node.scrollHeight;
+  }, [turns, typing]);
 
   useEffect(() => {
     let cancelled = false;
@@ -39,9 +50,14 @@ export function AiSupportAssistant({ configured = true }: { configured?: boolean
 
   async function send(text: string) {
     const clean = text.trim();
-    if (!clean || pending) return;
+    if (!clean || pending || typing) return;
     setPending(true);
+    setTyping(true);
     setNotice(null);
+    setRetryText(null);
+    // The timer starts when the user submits, not during render.
+    // eslint-disable-next-line react-hooks/purity
+    startedAtRef.current = performance.now();
     const history = turns.slice(-6);
     setTurns((current) => [...current, { role: "user", content: clean }]);
     setMessage("");
@@ -60,17 +76,23 @@ export function AiSupportAssistant({ configured = true }: { configured?: boolean
       };
       if (!response.ok || !payload.reply) {
         setNotice(payload.message ?? "The assistant could not reply. Please open a ticket.");
+        setRetryText(clean);
         return;
       }
       setConversationId(payload.conversationId ?? conversationId);
+      // eslint-disable-next-line react-hooks/purity
+      const minimum = 2000 - (performance.now() - startedAtRef.current);
+      if (minimum > 0) await new Promise((resolve) => setTimeout(resolve, minimum));
       setTurns((current) => [
         ...current,
         { role: "assistant", content: payload.reply! },
       ]);
     } catch {
       setNotice("The assistant is unavailable right now. Please open a support ticket.");
+      setRetryText(clean);
     } finally {
       setPending(false);
+      setTyping(false);
     }
   }
 
@@ -93,7 +115,7 @@ export function AiSupportAssistant({ configured = true }: { configured?: boolean
         </span>
       </div>
 
-      <div className="max-h-[340px] space-y-3 overflow-y-auto p-4">
+      <div ref={scrollRef} className="max-h-[340px] space-y-3 overflow-y-auto p-4" onScroll={(event) => { const node = event.currentTarget; stickToBottom.current = node.scrollHeight - node.scrollTop - node.clientHeight < 48; }}>
         {!configured ? (
           <p className="rounded-[8px] border border-warning/20 bg-warning-soft px-2.5 py-2 text-[9.5px] leading-4 text-warning">
             The AI assistant is not connected on this deployment yet. Open a
@@ -139,15 +161,20 @@ export function AiSupportAssistant({ configured = true }: { configured?: boolean
             </div>
           ))
         )}
-        {pending ? (
-          <div className="flex items-center gap-1.5 text-[9.5px] text-muted-foreground">
-            <LoadingDots /> Checking public info…
+        {typing ? (
+          <div className="flex justify-start">
+            <div className="flex items-center gap-2 rounded-[11px] rounded-bl-[3px] border border-border bg-surface-subtle px-3 py-2.5">
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-foreground text-[8px] text-background"><Bot className="h-3 w-3" /></span>
+              <span className="text-[9px] font-medium text-muted-foreground">BUYBIZ AI Support is typing</span>
+              <LoadingDots label="BUYBIZ AI Support is typing" />
+            </div>
           </div>
         ) : null}
         {notice ? (
           <p className="rounded-[8px] border border-warning/20 bg-warning-soft px-2.5 py-2 text-[9.5px] leading-4 text-warning">
             {notice}{" "}
-            <Link href="/dashboard/support/new" className="font-semibold underline">
+            {retryText ? <button type="button" onClick={() => void send(retryText)} className="ml-1 font-semibold underline">Retry</button> : null}
+            <Link href="/dashboard/support/new" className="ml-1 font-semibold underline">
               Open a ticket
             </Link>
           </p>
@@ -165,7 +192,13 @@ export function AiSupportAssistant({ configured = true }: { configured?: boolean
           <textarea
             value={message}
             onChange={(event) => setMessage(event.target.value)}
-            placeholder="Ask a support question…"
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
+                event.preventDefault();
+                if (message.trim()) void send(message);
+              }
+            }}
+            placeholder="Ask a support question… Enter to send, Shift+Enter for a new line"
             maxLength={1200}
             rows={2}
             className="min-h-11 flex-1 resize-none rounded-[9px] border border-border bg-surface px-3 py-2.5 text-[11px] outline-none focus:border-foreground/25"

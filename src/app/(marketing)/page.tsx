@@ -32,6 +32,7 @@ import type { PlanAvailability } from "@/lib/db/types";
 import { getPlanAvailability } from "@/server/data/products";
 import { getFeaturedCampaign } from "@/server/services/campaigns";
 import { CampaignCard } from "@/components/campaigns/campaign-card";
+import { ProxyUseCases } from "@/components/marketing/proxy-use-cases";
 
 export const dynamic = "force-dynamic";
 
@@ -374,6 +375,8 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+
+      <ProxyUseCases />
 
       {/* ---------------------------------------------------------------- */}
       {/* Why BUYBIZ                                                       */}

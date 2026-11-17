@@ -221,7 +221,7 @@ export const roleUpdateSchema = z.object({
 });
 
 export const settingsSchema = z.object({
-  inventoryDefaultMaxSeats: z.coerce.number().int().min(1).max(10),
+  inventoryDefaultMaxSeats: z.coerce.number().int().min(1).max(15),
   referralMinProxyDurationDays: z.coerce.number().int().min(1).max(365),
   allocationSafetyBufferMinutes: z.coerce.number().int().min(0).max(10080),
   stockExpiryDefaultDays: z.coerce.number().int().min(1).max(365),

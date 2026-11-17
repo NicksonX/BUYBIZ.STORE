@@ -4,11 +4,13 @@ import { getDb } from "@/lib/db";
 import type { AppSettings } from "@/lib/db/types";
 
 const DEFAULTS: AppSettings = {
-  inventoryDefaultMaxSeats: 10,
+  inventoryDefaultMaxSeats: 15,
   referralMinProxyDurationDays: 7,
   allocationSafetyBufferSeconds: 3600,
   stockExpiryDefaultDays: 30,
   depositMinMinor: 200_000,
+  depositScheduledMinMinor: 300_000,
+  depositScheduledAt: "2026-11-20T00:00:00+01:00",
   depositMaxMinor: 100_000_000,
   maintenanceMode: false,
   supportEmail: "",
@@ -24,6 +26,23 @@ const DEFAULTS: AppSettings = {
   adminReminderTime: "08:00",
   adminTimezone: "Africa/Lagos",
 };
+
+export function computeDepositMinMinor(
+  now: Date,
+  rawMin: unknown,
+  rawScheduledMinor: unknown,
+  rawScheduledAt: unknown,
+) {
+  const number = (value: unknown, fallback: number) => {
+    const parsed = typeof value === "string" ? Number(value) : typeof value === "number" ? value : fallback;
+    return Number.isFinite(parsed) ? parsed : fallback;
+  };
+  const scheduledMinor = Math.max(200_000, number(rawScheduledMinor, 300_000));
+  const scheduledRaw = typeof rawScheduledAt === "string" ? rawScheduledAt : "";
+  const scheduledAt = scheduledRaw ? new Date(scheduledRaw) : null;
+  const scheduledDue = scheduledAt !== null && !Number.isNaN(scheduledAt.getTime()) && now.getTime() >= scheduledAt.getTime();
+  return Math.max(200_000, scheduledDue ? scheduledMinor : number(rawMin, 200_000));
+}
 
 export const getAppSettings = cache(async (): Promise<AppSettings> => {
   try {
@@ -52,7 +71,7 @@ export const getAppSettings = cache(async (): Promise<AppSettings> => {
     const channels = map.get("paystack_channels");
     return {
       inventoryDefaultMaxSeats: Math.min(
-        10,
+        15,
         Math.max(1, num("inventory_default_max_seats", DEFAULTS.inventoryDefaultMaxSeats)),
       ),
       referralMinProxyDurationDays: Math.min(
@@ -75,7 +94,14 @@ export const getAppSettings = cache(async (): Promise<AppSettings> => {
         1,
         num("stock_expiry_default_days", DEFAULTS.stockExpiryDefaultDays),
       ),
-      depositMinMinor: Math.max(200_000, num("deposit_min_minor", DEFAULTS.depositMinMinor)),
+      depositMinMinor: computeDepositMinMinor(
+        new Date(),
+        num("deposit_min_minor", DEFAULTS.depositMinMinor),
+        num("deposit_scheduled_min_minor", DEFAULTS.depositScheduledMinMinor),
+        str("deposit_scheduled_at", DEFAULTS.depositScheduledAt ?? ""),
+      ),
+      depositScheduledMinMinor: Math.max(200_000, num("deposit_scheduled_min_minor", DEFAULTS.depositScheduledMinMinor)),
+      depositScheduledAt: str("deposit_scheduled_at", DEFAULTS.depositScheduledAt ?? ""),
       depositMaxMinor: Math.max(
         num("deposit_min_minor", DEFAULTS.depositMinMinor),
         num("deposit_max_minor", DEFAULTS.depositMaxMinor),

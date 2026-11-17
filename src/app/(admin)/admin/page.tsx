@@ -118,7 +118,7 @@ export default async function AdminOverviewPage({
             <Link href="/admin/users" className="col-span-2 rounded-[13px] border border-white/10 bg-white/[0.06] p-4 transition hover:bg-white/[0.09]">
               <div className="flex items-center justify-between"><span className="text-[9px] uppercase tracking-[0.12em] text-white/45">Customers</span><Users className="h-4 w-4 text-[#B9FF66]" /></div>
               <p className="tabular mt-2 text-[32px] font-semibold leading-none tracking-[-0.05em]">{overview.totalUsers.toLocaleString()}</p>
-              <p className="mt-2 text-[8.5px] text-white/45">{overview.frozenAccounts > 0 ? `${overview.frozenAccounts} frozen accounts` : "All customer accounts active"} · {overview.openTickets} open tickets</p>
+              <p className="mt-2 text-[8.5px] text-white/45">{overview.depositedUsers.toLocaleString()} have deposited · {overview.frozenAccounts > 0 ? `${overview.frozenAccounts} frozen` : "0 frozen"} · {overview.openTickets} open tickets</p>
             </Link>
             <div className="rounded-[11px] border border-white/10 bg-white/[0.05] p-3.5">
               <p className="text-[8.5px] uppercase tracking-[0.1em] text-white/40">Net sales</p>
@@ -160,8 +160,8 @@ export default async function AdminOverviewPage({
             <form method="get" action="/admin" className="flex items-center gap-1"><input type="hidden" name="range" value="custom" /><input name="from" type="date" aria-label="From date" className="h-7 rounded border border-border bg-surface px-1 text-[9px]" /><input name="to" type="date" aria-label="To date" className="h-7 rounded border border-border bg-surface px-1 text-[9px]" /><button className="rounded-full border border-border px-2 py-1 text-[9px]">Custom</button></form>
           </div>
         </div>
-        <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4 xl:grid-cols-7">
-          {[['Total sales',period.grossSales],['Refunds',period.refunds],['Net sales',period.netSales],['Wallet deposits',period.deposits],['Successful orders',period.successfulOrders],['Failed orders',period.failedOrders],['Pending orders',period.pendingOrders]].map(([label,value]) => <div key={String(label)} className="rounded-[9px] border border-border bg-surface-subtle p-2.5"><p className="text-[8.5px] text-muted-foreground">{label}</p><p className="tabular mt-1 text-[14px] font-semibold">{typeof value === "number" && String(label).includes("orders") ? value : formatNaira(Number(value), { exact: true })}</p></div>)}
+        <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4 xl:grid-cols-8">
+          {[['Total sales',period.grossSales],['Refunds',period.refunds],['Net sales',period.netSales],['Wallet deposits',period.deposits],['Users who deposited',period.depositedUsers],['Successful orders',period.successfulOrders],['Failed orders',period.failedOrders],['Pending orders',period.pendingOrders]].map(([label,value]) => <div key={String(label)} className="rounded-[9px] border border-border bg-surface-subtle p-2.5"><p className="text-[8.5px] text-muted-foreground">{label}</p><p className="tabular mt-1 text-[14px] font-semibold">{typeof value === "number" && String(label).includes("orders") ? value : formatNaira(Number(value), { exact: true })}</p></div>)}
         </div>
       </section>
 
@@ -207,7 +207,7 @@ export default async function AdminOverviewPage({
         ))}
       </div>
 
-      <div className="grid grid-cols-2 gap-2.5 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2.5 xl:grid-cols-2">
         {[
           {
             label: "Estimated gross profit",
@@ -220,18 +220,6 @@ export default async function AdminOverviewPage({
             value: formatNaira(overview.inventoryCost, { exact: true }),
             icon: Package,
             hint: "Recorded purchase cost",
-          },
-          {
-            label: "Available seats",
-            value: String(overview.availableSeats),
-            icon: Network,
-            hint: "Unsold capacity across live inventory",
-          },
-          {
-            label: "Open support tickets",
-            value: String(overview.openTickets),
-            icon: LifeBuoy,
-            hint: "Customers waiting for support",
           },
         ].map((item) => (
           <div key={item.label} className="surface-card rounded-[12px] p-3.5">

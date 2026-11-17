@@ -267,6 +267,8 @@ export interface AppSettings {
   allocationSafetyBufferSeconds: number;
   stockExpiryDefaultDays: number;
   depositMinMinor: number;
+  depositScheduledMinMinor: number;
+  depositScheduledAt: string | null;
   depositMaxMinor: number;
   maintenanceMode: boolean;
   supportEmail: string;

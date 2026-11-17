@@ -1,5 +1,12 @@
 {
   "crons": [
-    { "path": "/api/cron/campaign-payouts", "schedule": "15 0 * * *" }
+    {
+      "path": "/api/cron/campaign-payouts",
+      "schedule": "15 0 * * *"
+    },
+    {
+      "path": "/api/cron/proxy-expiry",
+      "schedule": "15 0 * * *"
+    }
   ]
 }
