@@ -10,6 +10,7 @@ import {
   Gift,
   Megaphone,
   BadgeDollarSign,
+  PartyPopper,
   type LucideIcon,
 } from "lucide-react";
 
@@ -29,6 +30,7 @@ export const customerNav: DashboardNavItem[] = [
   { href: "/dashboard/referrals", label: "Referral", icon: Gift },
   { href: "/dashboard/campaigns", label: "Campaigns", icon: Megaphone },
   { href: "/dashboard/rewards", label: "Rewards", icon: BadgeDollarSign },
+  { href: "/dashboard/giveaways", label: "Giveaways", icon: PartyPopper },
   { href: "/dashboard/transactions", label: "Transactions", icon: ArrowLeftRight },
   { href: "/dashboard/support", label: "Support", icon: LifeBuoy },
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
