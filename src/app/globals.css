@@ -1121,3 +1121,63 @@ h1, h2, h3, h4, p, li, td, th, a, button {
   40% { transform: scale(0.965); }
   100% { transform: scale(1); }
 }
+
+/* Payment state: monochrome, slow and non-flashing. */
+.payment-visual {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 124px;
+  height: 124px;
+  margin-inline: auto;
+}
+.payment-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  border: 2px solid #0a0b0d;
+  border-right-color: transparent;
+  border-bottom-color: #d9dadd;
+  animation: buybiz-payment-ring 2.8s linear infinite;
+}
+.payment-mark {
+  display: grid;
+  place-items: center;
+  width: 84px;
+  height: 84px;
+  border-radius: 24px;
+  background: #0a0b0d;
+  color: #fff;
+  animation: buybiz-payment-mark 3.2s ease-in-out infinite;
+}
+.payment-mark svg { width: 46px; height: 46px; }
+.payment-badge {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  border: 2px solid #fff;
+  background: #0a0b0d;
+  color: #fff;
+}
+.payment-visual[data-state="success"] .payment-ring,
+.payment-visual[data-state="failed"] .payment-ring { animation: none; border-color: #0a0b0d; }
+.payment-visual[data-state="success"] .payment-mark,
+.payment-visual[data-state="failed"] .payment-mark { animation: none; }
+.payment-dots, .payment-pulse-dots { display: inline-flex; align-items: center; gap: 3px; }
+.payment-dots i, .payment-pulse-dots i { display: block; width: 3px; height: 3px; border-radius: 999px; background: currentColor; animation: buybiz-payment-dot 1.25s ease-in-out infinite; }
+.payment-dots i:nth-child(2), .payment-pulse-dots i:nth-child(2) { animation-delay: 180ms; }
+.payment-dots i:nth-child(3), .payment-pulse-dots i:nth-child(3) { animation-delay: 360ms; }
+.payment-pulse-dots { color: #0a0b0d; }
+.payment-pulse-dots i { width: 7px; height: 7px; }
+@keyframes buybiz-payment-ring { to { transform: rotate(360deg); } }
+@keyframes buybiz-payment-mark { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.025); } }
+@keyframes buybiz-payment-dot { 0%, 70%, 100% { opacity: .22; transform: translateY(0); } 35% { opacity: 1; transform: translateY(-2px); } }
+@media (prefers-reduced-motion: reduce) {
+  .payment-ring, .payment-mark, .payment-dots i, .payment-pulse-dots i { animation: none !important; }
+  .payment-ring { border-color: #0a0b0d; }
+}

@@ -2,12 +2,9 @@ import Link from "next/link";
 import {
   ArrowLeft,
   ArrowRight,
-  CheckCircle2,
-  Clock3,
   FlaskConical,
   RefreshCw,
   ShieldAlert,
-  XCircle,
 } from "lucide-react";
 import { requireUserPage } from "@/server/auth/guards";
 import { verifyAndCreditDeposit } from "@/server/services/deposits";
@@ -18,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { depositStatusMeta } from "@/lib/status";
 import { AppError } from "@/lib/errors";
 import { formatDateTime, formatNaira } from "@/lib/utils";
+import { PaymentVisual, type PaymentVisualState } from "@/components/wallet/payment-loader";
 
 export async function PaymentStatusView({ reference }: { reference?: string }) {
   const user = await requireUserPage();
@@ -123,23 +121,7 @@ export async function PaymentStatusView({ reference }: { reference?: string }) {
         </div>
 
         <div className="p-5 text-center sm:p-7">
-          <span
-            className={`mx-auto flex h-12 w-12 items-center justify-center rounded-full border ${
-              credited
-                ? "border-success/25 bg-success-soft text-success"
-                : pending
-                  ? "border-warning/25 bg-warning-soft text-warning"
-                  : "border-danger/20 bg-danger-soft text-danger"
-            }`}
-          >
-            {credited ? (
-              <CheckCircle2 className="h-6 w-6" />
-            ) : pending ? (
-              <Clock3 className="h-6 w-6" />
-            ) : (
-              <XCircle className="h-6 w-6" />
-            )}
-          </span>
+          <PaymentVisual state={(credited ? "success" : pending ? "processing" : "failed") as PaymentVisualState} label={credited ? "Payment successful" : pending ? "Payment pending" : "Payment failed"} />
 
           <h1 className="mt-4 text-[22px] font-semibold tracking-[-0.035em]">
             {credited

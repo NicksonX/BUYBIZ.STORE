@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useRef, useState } from "react";
 import { ArrowRight, ShieldCheck } from "lucide-react";
 import { LoadingDots } from "@/components/ui/loading-dots";
+import { PaymentProcessingOverlay } from "@/components/wallet/payment-loader";
 import { initializeDepositAction } from "@/server/actions/customer";
 import { initialActionState } from "@/lib/validation/action-state";
 import { Alert } from "@/components/ui/alert";
@@ -159,15 +160,7 @@ export function AddFundsForm({
           : "Server-side verification · idempotent wallet credit"}
       </p>
 
-      {paying || pending ? (
-        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center gap-4 bg-[#0A0B0D] text-white">
-          <span className="flex h-12 w-12 items-center justify-center rounded-[13px] bg-white text-[22px] font-black text-[#0A0B0D]">B</span>
-          <div className="flex items-center gap-2 text-[12px] font-medium text-white/80">
-            <LoadingDots label="Preparing secure payment" /> Preparing your secure payment…
-          </div>
-          <p className="text-[10px] text-white/40">You’ll be redirected to complete payment.</p>
-        </div>
-      ) : null}
+      {paying || pending ? <PaymentProcessingOverlay /> : null}
     </form>
   );
 }
