@@ -1049,13 +1049,13 @@ export async function backfillCampaignRewards(slug = "customer-referrer-10") {
   const campaign = await getCampaignBySlug(slug);
   if (!campaign) return { processed: 0, customerRewards: 0, referrerRewards: 0 };
   const customers = await db.query<{ userId: string }>(
-    `select distinct p.id as "userId"
+    `select distinct p.id as "userId", lower(p.username) as "sortKey"
        from profiles p
        join orders o on o.user_id = p.id
       where p.role = 'customer' and p.status = 'active'
         and o.status = 'completed'
         and exists (select 1 from proxy_allocations a where a.order_id = o.id)
-      order by lower(p.username) asc`,
+      order by "sortKey" asc`,
   );
   let customerRewards = 0;
   let referrerRewards = 0;
