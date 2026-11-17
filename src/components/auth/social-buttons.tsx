@@ -19,10 +19,12 @@ function GoogleIcon() {
 
 export function SocialButtons({
   next,
+  referralCode,
   googleEnabled,
   className,
 }: {
   next?: string;
+  referralCode?: string;
   googleEnabled: boolean;
   className?: string;
 }) {
@@ -46,6 +48,7 @@ export function SocialButtons({
       <form action={formAction}>
         <input type="hidden" name="provider" value="google" />
         {next ? <input type="hidden" name="next" value={next} /> : null}
+        {referralCode ? <input type="hidden" name="referralCode" value={referralCode} /> : null}
         <button
           type="submit"
           disabled={!googleEnabled || pending}

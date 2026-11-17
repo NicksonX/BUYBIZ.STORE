@@ -13,6 +13,7 @@ import { requireUserPage } from "@/server/auth/guards";
 import { getTicketForUser } from "@/server/data/customer";
 import { ticketStatusMeta, titleCase } from "@/lib/status";
 import { formatDateTime } from "@/lib/utils";
+import { SupportAutoRefresh } from "@/components/support/auto-refresh";
 
 export const dynamic = "force-dynamic";
 
@@ -47,6 +48,7 @@ export default async function SupportTicketPage({
         }
       />
 
+      <SupportAutoRefresh />
       <div className="mt-5 grid gap-4 lg:grid-cols-[1.3fr_0.7fr]">
         <section className="surface-card flex min-h-[480px] flex-col overflow-hidden rounded-[15px]">
           <div className="flex items-center justify-between border-b border-border px-4 py-3">
