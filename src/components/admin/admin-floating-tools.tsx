@@ -9,8 +9,8 @@ import { Web3WalletPanel } from "@/components/admin/web3-wallet-panel";
 type Kind = "wallet" | "ai";
 type WindowState = { x: number; y: number; width: number; height: number; minimized: boolean; maximized: boolean };
 const DEFAULTS: Record<Kind, WindowState> = {
-  wallet: { x: 28, y: 110, width: 390, height: 570, minimized: false, maximized: false },
-  ai: { x: 440, y: 110, width: 430, height: 580, minimized: false, maximized: false },
+  wallet: { x: 28, y: 110, width: 390, height: 510, minimized: false, maximized: false },
+  ai: { x: 440, y: 110, width: 450, height: 560, minimized: false, maximized: false },
 };
 const STORAGE = "buybiz_admin_floating_windows_v1";
 
@@ -37,14 +37,15 @@ function useWindowState(kind: Kind) {
   return [state, setState] as const;
 }
 
-function FloatingWindow({ title, icon, state, setState, onClose, children }: {
-  title: string; icon: React.ReactNode; state: WindowState;
+function FloatingWindow({ title, icon, z, onFocus, state, setState, onClose, children }: {
+  title: string; icon: React.ReactNode; z: number; onFocus: () => void; state: WindowState;
   setState: React.Dispatch<React.SetStateAction<WindowState>>; onClose: () => void; children: React.ReactNode;
 }) {
   const drag = useRef<{ dx: number; dy: number } | null>(null);
   const resize = useRef<{ x: number; y: number; w: number; h: number } | null>(null);
 
   function onPointerDown(e: React.PointerEvent) {
+    if ((e.target as HTMLElement).closest("button, a, input, textarea, select")) return;
     if (window.innerWidth < 768 || state.maximized) return;
     drag.current = { dx: e.clientX - state.x, dy: e.clientY - state.y };
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
@@ -65,13 +66,12 @@ function FloatingWindow({ title, icon, state, setState, onClose, children }: {
     setState((s) => ({ ...s, width: Math.max(320, resize.current!.w + e.clientX - resize.current!.x), height: Math.max(260, resize.current!.h + e.clientY - resize.current!.y) }));
   }
 
-  if (state.minimized) return null;
   const mobile = typeof window !== "undefined" && window.innerWidth < 768;
   const style = state.maximized || mobile
     ? { left: 8, right: 8, bottom: 8, top: mobile ? "auto" : 8, height: mobile ? "72dvh" : "auto", width: "auto" }
     : { left: state.x, top: state.y, width: state.width, height: state.height };
   return (
-    <section className="fixed z-[70] flex flex-col overflow-hidden rounded-[14px] border border-white/10 bg-[#0A0B0D] text-white shadow-[0_30px_90px_-30px_rgba(0,0,0,0.9)]" style={style} aria-label={title}>
+    <section onPointerDown={onFocus} className={`fixed flex flex-col overflow-hidden rounded-[14px] border border-white/10 bg-[#0A0B0D] text-white shadow-[0_30px_90px_-30px_rgba(0,0,0,0.9)] ${state.minimized ? "hidden" : ""}`} style={{ ...style, zIndex: z }} aria-label={title}>
       <header className="flex cursor-grab items-center gap-2 border-b border-white/10 px-3 py-2.5 active:cursor-grabbing" onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={endDrag} onPointerCancel={endDrag}>
         <span className="flex h-6 w-6 items-center justify-center rounded-[6px] bg-white/10">{icon}</span>
         <p className="min-w-0 flex-1 truncate text-[10px] font-semibold uppercase tracking-[0.1em] text-white/80">{title}</p>
@@ -111,6 +111,7 @@ function TreasurySnapshot() {
 
 export function AdminFloatingTools() {
   const [open, setOpen] = useState<{ wallet: boolean; ai: boolean }>({ wallet: false, ai: false });
+  const [front, setFront] = useState<"wallet" | "ai">("ai");
   const [walletState, setWalletState] = useWindowState("wallet");
   const [aiState, setAiState] = useWindowState("ai");
   return (
@@ -119,8 +120,8 @@ export function AdminFloatingTools() {
         <button type="button" onClick={() => setOpen((s) => ({ ...s, wallet: !s.wallet }))} aria-label="Open Treasury Wallet" title="Treasury Wallet" className="flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-[#0A0B0D] text-white shadow-float transition-transform hover:scale-105 active:scale-95"><Wallet className="h-5 w-5" /></button>
         <button type="button" onClick={() => setOpen((s) => ({ ...s, ai: !s.ai }))} aria-label="Open AI Command Centre" title="AI Command Centre" className="flex h-11 w-11 items-center justify-center rounded-full border border-[#B9FF66]/30 bg-[#0A0B0D] text-[#B9FF66] shadow-float transition-transform hover:scale-105 active:scale-95"><Bot className="h-5 w-5" /></button>
       </div>
-      {open.wallet ? <FloatingWindow title="Treasury Wallet" icon={<Wallet className="h-3.5 w-3.5" />} state={walletState} setState={setWalletState} onClose={() => setOpen((s) => ({ ...s, wallet: false }))}><TreasurySnapshot /></FloatingWindow> : null}
-      {open.ai ? <FloatingWindow title="BUYBIZ AI Command Centre" icon={<Bot className="h-3.5 w-3.5" />} state={aiState} setState={setAiState} onClose={() => setOpen((s) => ({ ...s, ai: false }))}><AiCommandConsole /></FloatingWindow> : null}
+      {open.wallet ? <FloatingWindow title="Treasury Wallet" icon={<Wallet className="h-3.5 w-3.5" />} z={front === "wallet" ? 72 : 71} onFocus={() => setFront("wallet")} state={walletState} setState={setWalletState} onClose={() => setOpen((s) => ({ ...s, wallet: false }))}><TreasurySnapshot /></FloatingWindow> : null}
+      {open.ai ? <FloatingWindow title="BUYBIZ AI Command Centre" icon={<Bot className="h-3.5 w-3.5" />} z={front === "ai" ? 72 : 71} onFocus={() => setFront("ai")} state={aiState} setState={setAiState} onClose={() => setOpen((s) => ({ ...s, ai: false }))}><AiCommandConsole /></FloatingWindow> : null}
     </>
   );
 }
