@@ -1037,3 +1037,36 @@ export async function buildCampaignBackfillReport(slug = "customer-referrer-10")
     referrerSamples: referrers.rows.slice(0, 20).map((row) => ({ referrer: row.referrerName, referee: row.refereeName, orderId: row.orderId, completedAt: row.completedAt })),
   };
 }
+
+/**
+ * Safe, idempotent historical backfill. For every customer with a fulfilled
+ * proxy order, run the normal evaluator; existing idempotency keys prevent
+ * duplicates and it queues activation emails only for newly created rewards.
+ * Safe to run repeatedly as new candidates appear.
+ */
+export async function backfillCampaignRewards(slug = "customer-referrer-10") {
+  const db = await getDb();
+  const campaign = await getCampaignBySlug(slug);
+  if (!campaign) return { processed: 0, customerRewards: 0, referrerRewards: 0 };
+  const customers = await db.query<{ userId: string }>(
+    `select distinct p.id as "userId"
+       from profiles p
+       join orders o on o.user_id = p.id
+      where p.role = 'customer' and p.status = 'active'
+        and o.status = 'completed'
+        and exists (select 1 from proxy_allocations a where a.order_id = o.id)
+      order by lower(p.username) asc`,
+  );
+  let customerRewards = 0;
+  let referrerRewards = 0;
+  let processed = 0;
+  for (const row of customers.rows) {
+    const awards = await db.transaction((tx) => evaluateCampaignRewards(tx, { customerId: row.userId }));
+    processed += 1;
+    for (const award of awards) {
+      if (award.role === "customer") customerRewards += 1;
+      if (award.role === "referrer") referrerRewards += 1;
+    }
+  }
+  return { processed, customerRewards, referrerRewards };
+}
