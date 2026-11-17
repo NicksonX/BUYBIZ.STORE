@@ -255,6 +255,7 @@ export async function evaluateCampaignRewards(
           statusLabel: "Confirmed — awaiting payout",
         },
         dedupeKey: `campaign_activation:${campaign.id}:customer:${input.customerId}`,
+        scheduledAt: new Date(Math.max(Date.now(), campaign.startsAt.getTime())),
       });
 
     }
@@ -293,6 +294,7 @@ export async function evaluateCampaignRewards(
             statusLabel: "Confirmed — awaiting payout",
           },
           dedupeKey: `campaign_activation:${campaign.id}:referrer:${input.customerId}`,
+          scheduledAt: new Date(Math.max(Date.now(), campaign.startsAt.getTime())),
         });
       }
     }
