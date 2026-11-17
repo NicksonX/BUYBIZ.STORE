@@ -4,6 +4,7 @@ import { AdminTopbar } from "@/components/admin/topbar";
 import { getPaystackMode, isDemoMode } from "@/lib/config";
 import type { Profile } from "@/lib/db/types";
 import { RouteTransition } from "@/components/ui/route-transition";
+import { AdminFloatingTools } from "@/components/admin/admin-floating-tools";
 
 export function AdminShell({
   user,
@@ -59,6 +60,7 @@ export function AdminShell({
           </div>
         </main>
       </div>
+      <AdminFloatingTools />
     </div>
   );
 }
