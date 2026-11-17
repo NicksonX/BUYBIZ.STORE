@@ -189,16 +189,16 @@ export async function signupAction(
     action: "auth:signup:email",
     identifier: `${ip}:${emailKey}`,
     limit: 20,
-    windowSeconds: 900,
+    windowSeconds: 300,
   });
-  if (!emailLimit.allowed) return tooMany(emailLimit.retryAfterSeconds);
+  if (!emailLimit.allowed) return formError("Too many signup attempts. Please try again in 5 minutes.");
   const ipLimit = await rateLimit({
     action: "auth:signup:ip",
     identifier: ip,
     limit: 100,
-    windowSeconds: 900,
+    windowSeconds: 300,
   });
-  if (!ipLimit.allowed) return tooMany(ipLimit.retryAfterSeconds);
+  if (!ipLimit.allowed) return formError("Too many signup attempts. Please try again in 5 minutes.");
 
   const db = await getDb();
   const duplicates = await db.query<{ username: string; email: string }>(
