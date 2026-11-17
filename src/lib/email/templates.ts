@@ -415,7 +415,7 @@ export function renderEmail(input: {
       ${button("Buy a new proxy", `${input.websiteUrl}/marketplace`)}`;
       break;
     case "welcome":
-      content = `<p style="margin:16px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.75;color:#4E5157;">Your account is ready. Add funds from ₦2,000, choose a proxy plan, and your connection details will appear in My Proxies.</p>
+      content = `<p style="margin:16px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.75;color:#4E5157;">Your account is ready. Add funds from ₦2,500, choose a proxy plan, and your connection details will appear in My Proxies.</p>
       ${button("Open your dashboard", `${input.websiteUrl}/dashboard`)}
       <p style="margin:8px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.7;color:${BRAND.muted};">Not sure which plan fits? Reply to this email and a real person will help you choose.</p>`;
       break;

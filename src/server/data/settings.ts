@@ -8,7 +8,7 @@ const DEFAULTS: AppSettings = {
   referralMinProxyDurationDays: 7,
   allocationSafetyBufferSeconds: 3600,
   stockExpiryDefaultDays: 30,
-  depositMinMinor: 200_000,
+  depositMinMinor: 250_000,
   depositScheduledMinMinor: 300_000,
   depositScheduledAt: "2026-11-20T00:00:00+01:00",
   depositMaxMinor: 100_000_000,
@@ -37,11 +37,11 @@ export function computeDepositMinMinor(
     const parsed = typeof value === "string" ? Number(value) : typeof value === "number" ? value : fallback;
     return Number.isFinite(parsed) ? parsed : fallback;
   };
-  const scheduledMinor = Math.max(200_000, number(rawScheduledMinor, 300_000));
+  const scheduledMinor = Math.max(250_000, number(rawScheduledMinor, 300_000));
   const scheduledRaw = typeof rawScheduledAt === "string" ? rawScheduledAt : "";
   const scheduledAt = scheduledRaw ? new Date(scheduledRaw) : null;
   const scheduledDue = scheduledAt !== null && !Number.isNaN(scheduledAt.getTime()) && now.getTime() >= scheduledAt.getTime();
-  return Math.max(200_000, scheduledDue ? scheduledMinor : number(rawMin, 200_000));
+  return Math.max(250_000, scheduledDue ? scheduledMinor : number(rawMin, 250_000));
 }
 
 export const getAppSettings = cache(async (): Promise<AppSettings> => {
@@ -100,7 +100,7 @@ export const getAppSettings = cache(async (): Promise<AppSettings> => {
         num("deposit_scheduled_min_minor", DEFAULTS.depositScheduledMinMinor),
         str("deposit_scheduled_at", DEFAULTS.depositScheduledAt ?? ""),
       ),
-      depositScheduledMinMinor: Math.max(200_000, num("deposit_scheduled_min_minor", DEFAULTS.depositScheduledMinMinor)),
+      depositScheduledMinMinor: Math.max(250_000, num("deposit_scheduled_min_minor", DEFAULTS.depositScheduledMinMinor)),
       depositScheduledAt: str("deposit_scheduled_at", DEFAULTS.depositScheduledAt ?? ""),
       depositMaxMinor: Math.max(
         num("deposit_min_minor", DEFAULTS.depositMinMinor),

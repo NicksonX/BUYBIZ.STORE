@@ -1273,7 +1273,7 @@ export async function updateSettingsAction(
     maxMinor < minMinor
   ) {
     return formError("Check the deposit limits.", {
-      depositMin: "The minimum deposit is ₦2,000 and cannot be lowered.",
+      depositMin: "The minimum deposit is ₦2,500 and cannot be lowered.",
       depositMax: "Maximum must be greater than the minimum.",
     });
   }
