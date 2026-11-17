@@ -125,7 +125,7 @@ export function TutorialVideo({
                 </span>
               </div>
               <p className="relative mt-3 text-[10px] leading-4 text-white/55">
-                Account, OTP, wallet, proxy access, referrals and Ambassador rewards.
+                Account setup, wallet funding, proxy purchases, Referral, Campaigns, Rewards and AI support.
               </p>
             </button>
           )}
@@ -135,7 +135,7 @@ export function TutorialVideo({
           <DialogHeader className="sr-only">
             <DialogTitle>{title}</DialogTitle>
             <DialogDescription>
-              A 90-second voiceover walkthrough of accounts, wallet funding, proxy access, referrals and Ambassador rewards.
+              A short walkthrough of registration, wallet funding, proxy purchases, the separate Referral, Campaigns and Rewards sections, USDT payouts and AI support.
             </DialogDescription>
           </DialogHeader>
           {open ? (

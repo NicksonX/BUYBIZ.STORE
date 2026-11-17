@@ -20,6 +20,7 @@ export type EmailType =
   | "campaign_payout_approved"
   | "campaign_payout_paid"
   | "campaign_payout_rejected"
+  | "proxy_expiry_reminder"
   | "marketing";
 
 export type EmailTemplateData = {
@@ -36,6 +37,8 @@ export type EmailTemplateData = {
   address?: string;
   txHash?: string;
   reason?: string;
+  expiryLabel?: string;
+  proxyLabel?: string;
   requestedAt?: string;
   campaignSubject?: string;
   campaignMessage?: string;
@@ -163,6 +166,11 @@ const DEFAULT_TEMPLATES: Record<
     subject: "Ready to try BUYBIZ?",
     preheader: "Your account is set up. Your first deposit is the next step.",
     intro: "You are all set up. When you are ready, add funds to your wallet and choose the proxy plan that fits your work.",
+  },
+  proxy_expiry_reminder: {
+    subject: "Your BUYBIZ Proxy Is Expiring Soon",
+    preheader: "Your proxy subscription is ending soon.",
+    intro: "Your BUYBIZ proxy subscription is scheduled to expire soon.",
   },
   marketing: {
     subject: "A little something from BUYBIZ",
@@ -397,8 +405,17 @@ export function renderEmail(input: {
       </div>
       <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.7;color:${BRAND.muted};">If you did not create a BUYBIZ account, you can safely ignore this email. Never share this code with anyone.</p>`;
       break;
+    case "proxy_expiry_reminder":
+      content = `<p style="margin:16px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.75;color:#4E5157;">Your BUYBIZ proxy subscription is scheduled to expire soon.</p>
+      ${details([
+        ["Proxy", data.proxyLabel ?? "Your proxy"],
+        ["Expires", data.expiryLabel ?? ""],
+      ])}
+      <p style="margin:16px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.75;color:#4E5157;">To continue using proxy services without interruption, you can purchase a new proxy before or after your current subscription expires.</p>
+      ${button("Buy a new proxy", `${input.websiteUrl}/marketplace`)}`;
+      break;
     case "welcome":
-      content = `<p style="margin:16px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.75;color:#4E5157;">Your account is ready. Add funds from ₦1,500, choose a proxy plan, and your connection details will appear in My Proxies.</p>
+      content = `<p style="margin:16px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.75;color:#4E5157;">Your account is ready. Add funds from ₦2,000, choose a proxy plan, and your connection details will appear in My Proxies.</p>
       ${button("Open your dashboard", `${input.websiteUrl}/dashboard`)}
       <p style="margin:8px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.7;color:${BRAND.muted};">Not sure which plan fits? Reply to this email and a real person will help you choose.</p>`;
       break;

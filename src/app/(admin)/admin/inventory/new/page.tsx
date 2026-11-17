@@ -119,7 +119,7 @@ export default async function NewInventoryPage() {
                 </Select>
               </AdminField>
               <AdminField label="Maximum seats" htmlFor="maxSeats" hint="Shared: 1-10. Single: always 1">
-                <Input id="maxSeats" name="maxSeats" type="number" min={1} max={10} defaultValue={settings.inventoryDefaultMaxSeats} />
+                <Input id="maxSeats" name="maxSeats" type="number" min={1} max={15} defaultValue={settings.inventoryDefaultMaxSeats} />
               </AdminField>
               <AdminField label="Upstream expiry" htmlFor="upstreamExpiry" hint="WAT">
                 <Input id="upstreamExpiry" name="upstreamExpiry" type="date" required defaultValue={expiryDate} />

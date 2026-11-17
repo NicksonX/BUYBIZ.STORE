@@ -28,7 +28,7 @@ export function ProxyAiWorkspace({
     const first = products[0];
     return first ? Math.ceil(first.durationSeconds / 86_400) + 2 : 9;
   });
-  const [maxSeats, setMaxSeats] = useState(10);
+  const [maxSeats, setMaxSeats] = useState(15);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -124,9 +124,9 @@ export function ProxyAiWorkspace({
         <div className="mt-4 grid gap-2 sm:grid-cols-5">
           <label className="text-[9.5px] text-muted-foreground">Protocol<select value={protocol} onChange={(event) => setProtocol(event.target.value as typeof protocol)} className="mt-1 h-9 w-full rounded-[8px] border border-border bg-surface px-2 text-[10.5px] text-foreground"><option value="socks5">SOCKS5</option><option value="socks4">SOCKS4</option><option value="http">HTTP</option><option value="https">HTTPS</option></select></label>
           <label className="text-[9.5px] text-muted-foreground">Plan<select value={productSlug} onChange={(event) => { const next = event.target.value; setProductSlug(next); const product = products.find((item) => item.slug === next); if (product) setExpiryDays(Math.ceil(product.durationSeconds / 86_400) + 2); }} className="mt-1 h-9 w-full rounded-[8px] border border-border bg-surface px-2 text-[10.5px] text-foreground">{products.map((product) => <option key={product.slug} value={product.slug}>{product.name}</option>)}</select></label>
-          <label className="text-[9.5px] text-muted-foreground">Access<select value={accessType} onChange={(event) => { const next = event.target.value as "shared" | "single"; setAccessType(next); setMaxSeats(next === "single" ? 1 : 10); }} className="mt-1 h-9 w-full rounded-[8px] border border-border bg-surface px-2 text-[10.5px] text-foreground"><option value="shared">Shared</option><option value="single">Single customer</option></select></label>
+          <label className="text-[9.5px] text-muted-foreground">Access<select value={accessType} onChange={(event) => { const next = event.target.value as "shared" | "single"; setAccessType(next); setMaxSeats(next === "single" ? 1 : 15); }} className="mt-1 h-9 w-full rounded-[8px] border border-border bg-surface px-2 text-[10.5px] text-foreground"><option value="shared">Shared</option><option value="single">Single customer</option></select></label>
           <label className="text-[9.5px] text-muted-foreground">Expiry (days)<input type="number" min={1} max={365} value={expiryDays} onChange={(event) => setExpiryDays(Number(event.target.value))} className="mt-1 h-9 w-full rounded-[8px] border border-border bg-surface px-2 text-[10.5px] text-foreground" /></label>
-          <label className="text-[9.5px] text-muted-foreground">Max seats<input type="number" min={1} max={100} value={accessType === "single" ? 1 : maxSeats} disabled={accessType === "single"} onChange={(event) => setMaxSeats(Number(event.target.value))} className="mt-1 h-9 w-full rounded-[8px] border border-border bg-surface px-2 text-[10.5px] text-foreground disabled:opacity-50" /></label>
+          <label className="text-[9.5px] text-muted-foreground">Max seats<input type="number" min={1} max={15} value={accessType === "single" ? 1 : maxSeats} disabled={accessType === "single"} onChange={(event) => setMaxSeats(Number(event.target.value))} className="mt-1 h-9 w-full rounded-[8px] border border-border bg-surface px-2 text-[10.5px] text-foreground disabled:opacity-50" /></label>
         </div>
         <p className="mt-2 text-[8.5px] leading-4 text-muted-foreground">Use at least the plan duration plus one day. A 30-day plan needs upstream inventory with more than 30 days remaining to stay sellable for the full subscription.</p>
 

@@ -14,6 +14,7 @@ import {
 import { PageHeader } from "@/components/ui/page-header";
 import { Badge } from "@/components/ui/badge";
 import { CheckoutForm } from "@/components/marketplace/checkout-form";
+import { ProxyUseCases } from "@/components/marketing/proxy-use-cases";
 import { requireVerifiedUserPage } from "@/server/auth/guards";
 import { getCheckoutData } from "@/server/data/customer";
 import { getAppSettings } from "@/server/data/settings";
@@ -212,6 +213,10 @@ export default async function CheckoutPage({
             </div>
 
             <div className="p-5">
+              <details className="surface-card rounded-[14px]">
+                <summary className="cursor-pointer list-none px-4 py-3 text-[11px] font-semibold [&::-webkit-details-marker]:hidden">What can you use this proxy for?</summary>
+                <div className="px-4 pb-4"><ProxyUseCases /></div>
+              </details>
               <CheckoutForm
             countryCode={countryCode}
                 productSlug={product.slug}

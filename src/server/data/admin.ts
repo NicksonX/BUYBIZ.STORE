@@ -125,6 +125,7 @@ export type AdminAuditRow = AuditLog & {
 export type AdminOverview = {
   totalUsers: number;
   totalDeposits: number;
+  depositedUsers: number;
   totalSales: number;
   netSales: number;
   successfulProxyOrders: number;
@@ -167,6 +168,7 @@ export async function getAdminOverview(): Promise<AdminOverview> {
     db.query<{
       totalUsers: number;
       totalDeposits: number;
+      depositedUsers: number;
       totalSales: number;
       totalRefunds: number;
       successfulProxyOrders: number;
@@ -188,6 +190,7 @@ export async function getAdminOverview(): Promise<AdminOverview> {
       `select
          (select count(*)::int from profiles where role = 'customer') as "totalUsers",
          (select coalesce(sum(amount_minor),0)::bigint from deposits where status = 'credited') as "totalDeposits",
+         (select count(distinct user_id)::int from deposits where status = 'credited') as "depositedUsers",
          (select coalesce(sum(o.amount_minor),0)::bigint
             from orders o join products p on p.id=o.product_id
            where o.status='completed' and p.category='proxy'
@@ -282,6 +285,7 @@ export async function getAdminOverview(): Promise<AdminOverview> {
   return {
     totalUsers: Number(m?.totalUsers ?? 0),
     totalDeposits: amount(m?.totalDeposits),
+    depositedUsers: Number(m?.depositedUsers ?? 0),
     totalSales: amount(m?.totalSales),
     netSales: amount(m?.totalSales) - amount(m?.totalRefunds),
     successfulProxyOrders: Number(m?.successfulProxyOrders ?? 0),
@@ -1532,6 +1536,7 @@ export type AdminSalesRange = {
   refunds: number;
   netSales: number;
   deposits: number;
+  depositedUsers: number;
   successfulOrders: number;
   failedOrders: number;
   pendingOrders: number;
@@ -1543,6 +1548,7 @@ export async function getAdminSalesRange(start: Date, end: Date): Promise<AdminS
     grossSales: unknown;
     refunds: unknown;
     deposits: unknown;
+    depositedUsers: number;
     successfulOrders: number;
     failedOrders: number;
     pendingOrders: number;
@@ -1560,6 +1566,8 @@ export async function getAdminSalesRange(start: Date, end: Date): Promise<AdminS
            and exists (select 1 from proxy_allocations a where a.order_id=o.id)) as "refunds",
        (select coalesce(sum(d.amount_minor),0)::bigint
           from deposits d where d.status='credited' and d.created_at between $1 and $2) as "deposits",
+       (select count(distinct d.user_id)::int
+          from deposits d where d.status='credited' and d.created_at between $1 and $2) as "depositedUsers",
        (select count(*)::int from orders o join products p on p.id=o.product_id
          where o.status='completed' and p.category='proxy'
            and o.created_at between $1 and $2
@@ -1579,6 +1587,7 @@ export async function getAdminSalesRange(start: Date, end: Date): Promise<AdminS
     refunds,
     netSales: gross - refunds,
     deposits: amount(row?.deposits),
+    depositedUsers: Number(row?.depositedUsers ?? 0),
     successfulOrders: Number(row?.successfulOrders ?? 0),
     failedOrders: Number(row?.failedOrders ?? 0),
     pendingOrders: Number(row?.pendingOrders ?? 0),
