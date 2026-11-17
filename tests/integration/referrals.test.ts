@@ -7,6 +7,7 @@ import {
   qualifyReferralForPurchase,
 } from "@/server/services/referrals";
 import { qualifyReferralForAmbassador } from "@/server/services/ambassador";
+import { getReferralDashboard } from "@/server/data/customer";
 import { transferWalletFunds } from "@/server/services/transfers";
 import { createTestUser, fundWallet } from "../helpers";
 
@@ -240,5 +241,20 @@ describe("referral rewards", () => {
       attachReferralForSignup(tx, user.id, code),
     );
     expect(attached).toBeNull();
+  });
+});
+
+describe("referral visibility", () => {
+  it("shows a registered referral immediately without deposit or purchase", async () => {
+    const referrer = await createTestUser("visref");
+    const referee = await createTestUser("visnew");
+    const code = await codeFor(referrer.id);
+    const db = await getDb();
+    await db.transaction((tx) => attachReferralForSignup(tx, referee.id, code));
+    const dashboard = await getReferralDashboard(referrer.id);
+    expect(dashboard.stats.total).toBe(1);
+    expect(dashboard.referrals[0]?.status).toBe("registered");
+    expect(dashboard.referrals[0]?.refereeUsername).toBe(referee.username);
+    expect(dashboard.stats.rewarded).toBe(0);
   });
 });
