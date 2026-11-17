@@ -4,7 +4,7 @@ import { getDb } from "@/lib/db";
 import type { AppSettings } from "@/lib/db/types";
 
 const DEFAULTS: AppSettings = {
-  inventoryDefaultMaxSeats: 15,
+  inventoryDefaultMaxSeats: 20,
   referralMinProxyDurationDays: 7,
   allocationSafetyBufferSeconds: 3600,
   stockExpiryDefaultDays: 30,
@@ -71,7 +71,7 @@ export const getAppSettings = cache(async (): Promise<AppSettings> => {
     const channels = map.get("paystack_channels");
     return {
       inventoryDefaultMaxSeats: Math.min(
-        15,
+        20,
         Math.max(1, num("inventory_default_max_seats", DEFAULTS.inventoryDefaultMaxSeats)),
       ),
       referralMinProxyDurationDays: Math.min(

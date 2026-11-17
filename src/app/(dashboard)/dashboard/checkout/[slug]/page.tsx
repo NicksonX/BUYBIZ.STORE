@@ -110,7 +110,7 @@ export default async function CheckoutPage({
                     product.accessType === "single"
                       ? "One customer"
                       : product.slug === "proxy-7-days"
-                        ? "Shared · up to 10 users"
+                        ? "Shared · up to 20 users"
                         : "Shared access",
                 },
                 {

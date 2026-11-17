@@ -112,6 +112,7 @@ export async function createDemoDatabase(options?: {
     "20261116002200_shared_capacity_15.sql",
     "20261116002300_season_of_rewards.sql",
     "20261117000100_brevo_primary_email.sql",
+    "20261117000200_shared_capacity_20.sql",
   ]) {
     const referralSql = await readFile(
       path.join(process.cwd(), "supabase/migrations", migration),
