@@ -188,14 +188,14 @@ export async function signupAction(
   const emailLimit = await rateLimit({
     action: "auth:signup:email",
     identifier: `${ip}:${emailKey}`,
-    limit: 8,
+    limit: 20,
     windowSeconds: 900,
   });
   if (!emailLimit.allowed) return tooMany(emailLimit.retryAfterSeconds);
   const ipLimit = await rateLimit({
     action: "auth:signup:ip",
     identifier: ip,
-    limit: 30,
+    limit: 100,
     windowSeconds: 900,
   });
   if (!ipLimit.allowed) return tooMany(ipLimit.retryAfterSeconds);
