@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { ArrowRight } from "lucide-react";
 import { signupAction } from "@/server/actions/auth";
 import { initialActionState } from "@/lib/validation/action-state";
@@ -30,6 +30,19 @@ export function RegisterForm({
     signupAction,
     initialActionState,
   );
+  const inFlight = useRef(false);
+
+  useEffect(() => {
+    if (state.status === "error") inFlight.current = false;
+  }, [state]);
+
+  function onSubmit(event: React.FormEvent<HTMLFormElement>) {
+    if (inFlight.current) {
+      event.preventDefault();
+      return;
+    }
+    inFlight.current = true;
+  }
 
   return (
     <div>
@@ -52,7 +65,7 @@ export function RegisterForm({
         </Alert>
       ) : null}
 
-      <form action={formAction} className="space-y-4">
+      <form action={formAction} onSubmit={onSubmit} className="space-y-4">
         {next ? <input type="hidden" name="next" value={next} /> : null}
         {referralCode ? (
           <>

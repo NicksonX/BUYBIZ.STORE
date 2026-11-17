@@ -8,7 +8,7 @@ import type { Profile } from "@/lib/db/types";
 import { AppError, toUserMessage } from "@/lib/errors";
 import { getAppUrl, isDemoMode, isSupabaseAuthConfigured } from "@/lib/config";
 import { hashPassword, verifyPassword } from "@/lib/security/password";
-import { getRequestMeta, rateLimitByIp } from "@/lib/security/rate-limit";
+import { getClientIp, getRequestMeta, rateLimit, rateLimitByIp } from "@/lib/security/rate-limit";
 import { isEmailConfigured } from "@/lib/email/config";
 import {
   createAndSendSignupOtp,
@@ -169,9 +169,6 @@ export async function signupAction(
   _previous: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const limit = await rateLimitByIp("auth:signup", 5, 3600);
-  if (!limit.allowed) return tooMany(limit.retryAfterSeconds);
-
   const parsed = signupSchema.safeParse({
     username: formData.get("username"),
     email: formData.get("email"),
@@ -182,6 +179,25 @@ export async function signupAction(
   if (!parsed.success) {
     return formError("Check the highlighted fields.", zodFieldErrors(parsed.error));
   }
+
+  // Only genuine, valid signup attempts consume a bucket. Keying by email+IP
+  // prevents one noisy network from locking out unrelated first-time users.
+  const ip = await getClientIp();
+  const emailKey = parsed.data.email.trim().toLowerCase();
+  const emailLimit = await rateLimit({
+    action: "auth:signup:email",
+    identifier: `${ip}:${emailKey}`,
+    limit: 8,
+    windowSeconds: 900,
+  });
+  if (!emailLimit.allowed) return tooMany(emailLimit.retryAfterSeconds);
+  const ipLimit = await rateLimit({
+    action: "auth:signup:ip",
+    identifier: ip,
+    limit: 30,
+    windowSeconds: 900,
+  });
+  if (!ipLimit.allowed) return tooMany(ipLimit.retryAfterSeconds);
 
   const db = await getDb();
   const duplicates = await db.query<{ username: string; email: string }>(
