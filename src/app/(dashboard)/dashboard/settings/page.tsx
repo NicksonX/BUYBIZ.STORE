@@ -15,6 +15,7 @@ import { ProfileForm } from "@/components/settings/profile-form";
 import { PasswordForm } from "@/components/settings/password-form";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { EmailPreferencesForm } from "@/components/email/email-preferences-form";
+import { DeleteAccountForm } from "@/components/settings/delete-account-form";
 import { logoutAction } from "@/server/actions/auth";
 import { requireUserPage } from "@/server/auth/guards";
 import { getEmailPreferences } from "@/server/services/email";
@@ -201,6 +202,8 @@ export default async function SettingsPage() {
               </button>
             </form>
           </section>
+
+          <DeleteAccountForm />
         </div>
       </div>
     </div>

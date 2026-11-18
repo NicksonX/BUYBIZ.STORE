@@ -1885,3 +1885,58 @@ export async function toggleAiSupportAction(formData: FormData): Promise<void> {
   revalidatePath("/admin/support");
   revalidatePath("/dashboard/support");
 }
+
+export async function editSupportMessageAction(_previous: ActionState, formData: FormData): Promise<ActionState> {
+  const actor = await staffActor();
+  if (!actor.ok) return actor.state;
+  const messageId = String(formData.get("messageId") ?? "");
+  const body = String(formData.get("body") ?? "").trim();
+  if (!messageId || body.length < 2 || body.length > 5000) return formError("Write a message between 2 and 5,000 characters.");
+  const db = await getDb();
+  const meta = await getRequestMeta();
+  const row = await db.query<{ ticketId: string }>(`select ticket_id as "ticketId" from support_messages where id=$1 and deleted_at is null limit 1`, [messageId]);
+  if (!row.rows[0]) return formError("That message was not found or has been deleted.");
+  await db.query(`update support_messages set body=$2,edited_at=now(),edited_by=$3 where id=$1`, [messageId, body, actor.admin.id]);
+  await writeAuditLog(db, { actorUserId: actor.admin.id, actorRole: actor.admin.role, action: "support.message_edited", entityType: "support_message", entityId: messageId, metadata: { ticketId: row.rows[0].ticketId }, ip: meta.ip, userAgent: meta.userAgent });
+  revalidatePath(`/admin/support/${row.rows[0].ticketId}`);
+  return formSuccess("Message updated.");
+}
+
+export async function deleteSupportMessageAction(_previous: ActionState, formData: FormData): Promise<ActionState> {
+  const actor = await staffActor();
+  if (!actor.ok) return actor.state;
+  const messageId = String(formData.get("messageId") ?? "");
+  if (!messageId) return formError("Missing message.");
+  const db = await getDb();
+  const meta = await getRequestMeta();
+  const row = await db.query<{ ticketId: string }>(`select ticket_id as "ticketId" from support_messages where id=$1 and deleted_at is null limit 1`, [messageId]);
+  if (!row.rows[0]) return formError("That message was already deleted or could not be found.");
+  await db.query(`update support_messages set body='[Message deleted by support]',deleted_at=now(),deleted_by=$2 where id=$1`, [messageId, actor.admin.id]);
+  await writeAuditLog(db, { actorUserId: actor.admin.id, actorRole: actor.admin.role, action: "support.message_deleted", entityType: "support_message", entityId: messageId, metadata: { ticketId: row.rows[0].ticketId }, ip: meta.ip, userAgent: meta.userAgent });
+  revalidatePath(`/admin/support/${row.rows[0].ticketId}`);
+  return formSuccess("Message deleted.");
+}
+
+export async function deleteInventoryAction(_previous: ActionState, formData: FormData): Promise<ActionState> {
+  const actor = await adminActor();
+  if (!actor.ok) return actor.state;
+  const inventoryId = String(formData.get("inventoryId") ?? "");
+  if (!inventoryId) return formError("Missing inventory ID.");
+  const db = await getDb();
+  const meta = await getRequestMeta();
+  const row = await db.query<{ status: string; label: string; activeSeats: number; deletedAt: Date | null }>(
+    `select i.status,i.label,i.deleted_at as "deletedAt",
+            (select count(*)::int from proxy_allocations a where a.proxy_inventory_id=i.id and a.status='active' and a.expires_at>now()) as "activeSeats"
+       from proxy_inventory i where i.id=$1 for update`,
+    [inventoryId],
+  );
+  const item = row.rows[0];
+  if (!item || item.deletedAt) return formError("That inventory item was not found.");
+  if (item.status !== "disabled") return formError("Disable inventory before deleting it.");
+  if (item.activeSeats > 0) return formError("This proxy still has active customers. Wait for allocations to end.");
+  await db.query(`update proxy_inventory set deleted_at=now(),deleted_by=$2,status='disabled',archived_at=coalesce(archived_at,now()),updated_at=now() where id=$1`, [inventoryId, actor.admin.id]);
+  await writeAuditLog(db, { actorUserId: actor.admin.id, actorRole: actor.admin.role, action: "inventory.deleted", entityType: "proxy_inventory", entityId: inventoryId, metadata: { label: item.label }, ip: meta.ip, userAgent: meta.userAgent });
+  invalidateAdmin();
+  revalidatePath("/admin/inventory");
+  redirect("/admin/inventory");
+}

@@ -533,7 +533,7 @@ export async function getAdminInventory(input: {
   productSlugs?: string[];
 }) {
   const db = await getDb();
-  const clauses: string[] = ["i.archived_at is null"];
+  const clauses: string[] = ["i.archived_at is null", "i.deleted_at is null"];
   const params: SqlParam[] = [];
   let index = 1;
   if (input.q) {
@@ -637,7 +637,7 @@ export async function getAdminInventoryDetail(id: string) {
           where status = 'active' and expires_at > now()
           group by proxy_inventory_id
        ) s on s.proxy_inventory_id = i.id
-      where i.id = $1 limit 1`,
+      where i.id = $1 and i.deleted_at is null limit 1`,
     [id],
   );
   if (!inventory.rows[0]) return null;
@@ -985,7 +985,7 @@ export async function getAdminTicketDetail(id: string) {
   const messages = await db.query<SupportMessage>(
     `select m.id, m.ticket_id as "ticketId",
             m.author_user_id as "authorUserId", m.is_staff as "isStaff", m.is_ai as "isAi",
-            m.body, m.created_at as "createdAt",
+            m.body, m.created_at as "createdAt", m.edited_at as "editedAt", m.deleted_at as "deletedAt",
             p.display_name as "authorName", p.role as "authorRole"
        from support_messages m
        left join profiles p on p.id = m.author_user_id

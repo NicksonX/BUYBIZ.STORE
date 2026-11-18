@@ -393,11 +393,11 @@ export async function getTicketForUser(userId: string, ticketId: string) {
   const messages = await db.query<SupportMessage>(
     `select m.id, m.ticket_id as "ticketId",
             m.author_user_id as "authorUserId", m.is_staff as "isStaff", m.is_ai as "isAi",
-            m.body, m.created_at as "createdAt",
+            m.body, m.created_at as "createdAt", m.edited_at as "editedAt", m.deleted_at as "deletedAt",
             p.display_name as "authorName", p.role as "authorRole"
        from support_messages m
        left join profiles p on p.id = m.author_user_id
-      where m.ticket_id = $1 order by m.created_at asc`,
+      where m.ticket_id = $1 and m.deleted_at is null order by m.created_at asc`,
     [ticketId],
   );
   return { ticket: ticketResult.rows[0], messages: messages.rows };

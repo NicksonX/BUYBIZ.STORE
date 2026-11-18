@@ -23,6 +23,7 @@ import { requireAdminPage } from "@/server/auth/guards";
 import { getAdminInventoryDetail } from "@/server/data/admin";
 import { getPlanAvailability } from "@/server/data/products";
 import {
+  deleteInventoryAction,
   setInventoryStatusAction,
   updateInventoryAction,
 } from "@/server/actions/admin";
@@ -117,6 +118,18 @@ export default async function AdminInventoryDetailPage({
                 compact
                 className="inline-flex"
                 confirmMessage="Archive this inventory item? Financial history is retained."
+              />
+            ) : null}
+            {inventory.status === "disabled" && inventory.activeSeats === 0 ? (
+              <AdminActionForm
+                action={deleteInventoryAction}
+                hidden={{ inventoryId: inventory.id }}
+                submitLabel="Delete permanently"
+                pendingLabel="Deleting…"
+                variant="danger"
+                compact
+                className="inline-flex"
+                confirmMessage="Delete this disabled inventory item? It will be hidden from the inventory. Financial/audit records are retained."
               />
             ) : null}
           </div>

@@ -11,6 +11,8 @@ import { requireStaffPage } from "@/server/auth/guards";
 import { getAdminTicketDetail } from "@/server/data/admin";
 import {
   adminTicketReplyAction,
+  deleteSupportMessageAction,
+  editSupportMessageAction,
   setTicketStatusAction,
 } from "@/server/actions/admin";
 import { ticketStatusMeta, titleCase } from "@/lib/status";
@@ -81,8 +83,12 @@ export default async function AdminSupportDetailPage({
                       {message.isStaff ? (message.isAi ? "BUYBIZ AI Support" : `BUYBIZ Support · ${message.authorName ?? "Staff"}`) : ticket.username}
                     </p>
                     <p className="mt-1 whitespace-pre-wrap text-[10.5px] leading-5">{message.body}</p>
+                    {message.deletedAt ? <p className="mt-1 text-[7.5px] text-muted-foreground">Deleted</p> : message.editedAt ? <p className="mt-1 text-[7.5px] text-muted-foreground">Edited</p> : null}
                   </div>
-                  <p className="mt-1 text-[8px] text-muted-foreground">{formatDateTime(message.createdAt)}</p>
+                  <div className="mt-1 flex items-center gap-2 text-[8px] text-muted-foreground">
+                    <span>{formatDateTime(message.createdAt)}</span>
+                    {!message.deletedAt ? <details className="relative inline-block"><summary className="cursor-pointer underline">Actions</summary><div className="absolute right-0 z-20 mt-1 w-64 space-y-2 rounded-[9px] border border-border bg-surface p-2 text-left shadow-xl"><AdminActionForm action={editSupportMessageAction} hidden={{ messageId: message.id }} submitLabel="Save edit" compact variant="outline"><Textarea name="body" defaultValue={message.body} className="min-h-20 text-[9px]" aria-label="Edit message" /></AdminActionForm><AdminActionForm action={deleteSupportMessageAction} hidden={{ messageId: message.id }} submitLabel="Delete message" pendingLabel="Deleting…" compact variant="danger" confirmMessage="Delete this message from the conversation? This cannot be undone." /></div></details> : null}
+                  </div>
                 </div>
               </div>
             ))}

@@ -220,6 +220,8 @@ export interface SupportMessage {
   isAi: boolean;
   body: string;
   createdAt: Date;
+  editedAt?: Date | null;
+  deletedAt?: Date | null;
   authorName?: string | null;
   authorRole?: UserRole | null;
 }

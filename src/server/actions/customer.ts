@@ -23,6 +23,8 @@ import {
   type ActionState,
 } from "@/lib/validation/action-state";
 import { getCurrentUser } from "@/server/auth/session";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { clearDemoSessionCookie } from "@/server/auth/demo-cookie";
 import { requireUserPage, requireVerifiedUser } from "@/server/auth/guards";
 import { purchaseProxy } from "@/server/services/purchase";
 import { renewProxy } from "@/server/services/renewals";
@@ -592,4 +594,28 @@ export async function rateSupportTicketAction(_previous: ActionState, formData: 
   } catch (error) {
     return formError(error instanceof Error ? error.message : "Could not save your rating.");
   }
+}
+
+
+export async function deleteAccountAction(_previous: ActionState, formData: FormData): Promise<ActionState> {
+  const user = await requireUserPage();
+  if (!["customer"].includes(user.role)) return formError("Admin accounts cannot be deleted from this page.");
+  if (String(formData.get("confirm") ?? "") !== "DELETE") return formError("Type DELETE to confirm account deletion.");
+  if (String(formData.get("acknowledge") ?? "") !== "on") return formError("Acknowledge the deletion warning first.");
+  const db = await getDb();
+  const active = await db.query<{ n: number }>(`select count(*)::int n from proxy_allocations where user_id=$1 and status='active' and expires_at>now()`, [user.id]);
+  if (Number(active.rows[0]?.n ?? 0) > 0) return formError("You still have active proxies. Delete is blocked until they expire; contact support if you need help.");
+  const suffix = user.id.replace(/-/g, "").slice(0, 10);
+  await db.query(
+    `update profiles set status='suspended', username=$2, email=$3, display_name='Deleted account',
+       deletion_requested_at=now(), deletion_effective_at=now(), updated_at=now()
+     where id=$1`,
+    [user.id, `deleted_${suffix}`, `deleted+${suffix}@buybiz.invalid`],
+  );
+  if (isDemoMode()) await clearDemoSessionCookie();
+  else {
+    const supabase = await createSupabaseServerClient();
+    await supabase?.auth.signOut();
+  }
+  redirect("/login?deleted=1");
 }
