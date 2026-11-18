@@ -5,6 +5,7 @@ import { useState } from "react";
 import {
   ArrowUpRight,
   Bell,
+  Bot,
   ChevronDown,
   CreditCard,
   LifeBuoy,
@@ -13,6 +14,7 @@ import {
   Search,
   Settings,
   ShieldCheck,
+  Wallet,
   X,
 } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
@@ -83,6 +85,12 @@ export function AdminTopbar({
         </form>
 
         <div className="ml-auto flex items-center gap-1.5">
+          {user.role !== "support" ? (
+            <>
+              <Link href="/admin/treasury" aria-label="Open Treasury Wallet" title="Treasury Wallet" className="hidden h-8 w-8 items-center justify-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground sm:flex"><Wallet className="h-4 w-4" /></Link>
+              <Link href="/admin/ai-command" aria-label="Open AI Command Centre" title="AI Command Centre" className="hidden h-8 w-8 items-center justify-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground sm:flex"><Bot className="h-4 w-4" /></Link>
+            </>
+          ) : null}
           <Link
             href="/admin/deposits?status=pending"
             className="relative hidden h-8 items-center gap-1.5 rounded-full border border-border bg-surface px-3 text-[10px] font-medium text-muted-foreground transition-colors hover:text-foreground sm:inline-flex"
