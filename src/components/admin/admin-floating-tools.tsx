@@ -118,7 +118,7 @@ function TreasurySnapshot() {
 }
 
 export function AdminFloatingTools({ role }: { role: string }) {
-  const canUseFinancialTools = role === "admin" || role === "super_admin";
+  const canUseFinancialTools = role !== "support";
   const [open, setOpen] = useState<{ wallet: boolean; ai: boolean }>({ wallet: false, ai: false });
   const [front, setFront] = useState<"wallet" | "ai">("ai");
   const [walletState, setWalletState] = useWindowState("wallet");
@@ -126,9 +126,9 @@ export function AdminFloatingTools({ role }: { role: string }) {
   if (!canUseFinancialTools) return null;
   return (
     <>
-      <div className="fixed bottom-5 left-4 z-[65] flex flex-col gap-2 lg:left-[264px]">
-        <button type="button" onClick={() => setOpen((s) => ({ ...s, wallet: !s.wallet }))} aria-label="Open Treasury Wallet" title="Treasury Wallet" className="flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-[#0A0B0D] text-white shadow-float transition-transform hover:scale-105 active:scale-95"><Wallet className="h-5 w-5" /></button>
-        <button type="button" onClick={() => setOpen((s) => ({ ...s, ai: !s.ai }))} aria-label="Open AI Command Centre" title="AI Command Centre" className="flex h-11 w-11 items-center justify-center rounded-full border border-[#B9FF66]/30 bg-[#0A0B0D] text-[#B9FF66] shadow-float transition-transform hover:scale-105 active:scale-95"><Bot className="h-5 w-5" /></button>
+      <div className="fixed bottom-5 left-4 z-[80] flex flex-col gap-2 lg:bottom-6 lg:left-[264px]">
+        <button type="button" data-testid="floating-treasury" onClick={() => setOpen((s) => ({ ...s, wallet: !s.wallet }))} aria-label="Open Treasury Wallet" title="Treasury Wallet" className="inline-flex h-10 items-center gap-2 rounded-full border border-white/15 bg-[#0A0B0D] px-3 text-white shadow-float transition-transform hover:scale-[1.03] active:scale-95"><Wallet className="h-4 w-4" /><span className="text-[8.5px] font-semibold uppercase tracking-[0.08em]">Treasury</span></button>
+        <button type="button" data-testid="floating-ai" onClick={() => setOpen((s) => ({ ...s, ai: !s.ai }))} aria-label="Open AI Command Centre" title="AI Command Centre" className="inline-flex h-10 items-center gap-2 rounded-full border border-[#B9FF66]/30 bg-[#0A0B0D] px-3 text-[#B9FF66] shadow-float transition-transform hover:scale-[1.03] active:scale-95"><Bot className="h-4 w-4" /><span className="text-[8.5px] font-semibold uppercase tracking-[0.08em]">AI</span></button>
       </div>
       {open.wallet ? <FloatingWindow title="Treasury Wallet" icon={<Wallet className="h-3.5 w-3.5" />} z={front === "wallet" ? 72 : 71} onFocus={() => setFront("wallet")} state={walletState} setState={setWalletState} onClose={() => setOpen((s) => ({ ...s, wallet: false }))}><TreasurySnapshot /></FloatingWindow> : null}
       {open.ai ? <FloatingWindow title="BUYBIZ AI Command Centre" icon={<Bot className="h-3.5 w-3.5" />} z={front === "ai" ? 72 : 71} onFocus={() => setFront("ai")} state={aiState} setState={setAiState} onClose={() => setOpen((s) => ({ ...s, ai: false }))}><AiCommandConsole /></FloatingWindow> : null}
