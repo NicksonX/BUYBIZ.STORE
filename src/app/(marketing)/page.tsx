@@ -268,9 +268,6 @@ export default async function HomePage() {
                 </span>
               </div>
             </div>
-            <div className="relative mt-1 aspect-[16/10] w-full overflow-hidden rounded-[18px] border border-black/[0.08] bg-[#08090B] shadow-[0_26px_60px_-42px_rgba(0,0,0,0.7)] lg:hidden">
-              <HeroNetworkVisual compact id="hero-network-mobile" />
-            </div>
 
           </div>
         </div>
