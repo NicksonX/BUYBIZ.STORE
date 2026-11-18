@@ -1,11 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import dynamic from "next/dynamic";
 import Link from "next/link";
 import { Bot, ChevronDown, Maximize2, Minimize2, Wallet, X } from "lucide-react";
-const AiCommandConsole = dynamic(() => import("@/components/admin/ai-command-console").then((m) => m.AiCommandConsole), { ssr: false, loading: () => <p className="p-4 text-[10px] text-muted-foreground">Loading command centre…</p> });
-const Web3WalletPanel = dynamic(() => import("@/components/admin/web3-wallet-panel").then((m) => m.Web3WalletPanel), { ssr: false, loading: () => <p className="p-4 text-[10px] text-muted-foreground">Loading wallet…</p> });
+import { AiCommandConsole } from "@/components/admin/ai-command-console";
+import { Web3WalletPanel } from "@/components/admin/web3-wallet-panel";
 
 type Kind = "wallet" | "ai";
 type WindowState = { x: number; y: number; width: number; height: number; minimized: boolean; maximized: boolean };
@@ -62,6 +61,14 @@ function FloatingWindow({ title, icon, z, onFocus, state, setState, onClose, chi
     resize.current = { x: e.clientX, y: e.clientY, w: state.width, h: state.height };
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
   }
+  function onHeaderKeyDown(e: React.KeyboardEvent) {
+    if (state.maximized || window.innerWidth < 768) return;
+    const step = e.shiftKey ? 40 : 12;
+    const delta = e.key === "ArrowLeft" ? [-step, 0] : e.key === "ArrowRight" ? [step, 0] : e.key === "ArrowUp" ? [0, -step] : e.key === "ArrowDown" ? [0, step] : null;
+    if (!delta) return;
+    e.preventDefault();
+    setState((s) => ({ ...s, x: Math.max(4, Math.min(window.innerWidth - s.width - 4, s.x + delta[0])), y: Math.max(4, Math.min(window.innerHeight - 44, s.y + delta[1])) }));
+  }
   function onResize(e: React.PointerEvent) {
     if (!resize.current) return;
     setState((s) => ({ ...s, width: Math.max(320, resize.current!.w + e.clientX - resize.current!.x), height: Math.max(260, resize.current!.h + e.clientY - resize.current!.y) }));
@@ -72,8 +79,8 @@ function FloatingWindow({ title, icon, z, onFocus, state, setState, onClose, chi
     ? { left: 8, right: 8, bottom: 8, top: mobile ? "auto" : 8, height: mobile ? "72dvh" : "auto", width: "auto" }
     : { left: state.x, top: state.y, width: state.width, height: state.height };
   return (
-    <section onPointerDown={onFocus} className={`fixed flex flex-col overflow-hidden rounded-[14px] border border-white/10 bg-[#0A0B0D] text-white shadow-[0_30px_90px_-30px_rgba(0,0,0,0.9)] ${state.minimized ? "hidden" : ""}`} style={{ ...style, zIndex: z }} aria-label={title}>
-      <header className="flex cursor-grab items-center gap-2 border-b border-white/10 px-3 py-2.5 active:cursor-grabbing" onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={endDrag} onPointerCancel={endDrag}>
+    <section role="dialog" aria-modal="false" onPointerDown={onFocus} className={`fixed flex flex-col overflow-hidden rounded-[14px] border border-white/10 bg-[#0A0B0D] text-white shadow-[0_30px_90px_-30px_rgba(0,0,0,0.9)] ${state.minimized ? "hidden" : ""}`} style={{ ...style, zIndex: z }} aria-label={title}>
+      <header tabIndex={0} aria-label={`${title} drag handle`} className="flex cursor-grab items-center gap-2 border-b border-white/10 px-3 py-2.5 active:cursor-grabbing focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#B9FF66]" onKeyDown={onHeaderKeyDown} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={endDrag} onPointerCancel={endDrag}>
         <span className="flex h-6 w-6 items-center justify-center rounded-[6px] bg-white/10">{icon}</span>
         <p className="min-w-0 flex-1 truncate text-[10px] font-semibold uppercase tracking-[0.1em] text-white/80">{title}</p>
         <button type="button" onClick={() => setState((s) => ({ ...s, minimized: true }))} aria-label="Minimize" className="flex h-6 w-6 items-center justify-center rounded text-white/50 hover:bg-white/10"><ChevronDown className="h-3.5 w-3.5" /></button>
