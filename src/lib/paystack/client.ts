@@ -27,6 +27,7 @@ export type PaystackTransaction = {
     | string;
   reference: string;
   amount: number;
+  requested_amount?: number | null;
   currency: string;
   gateway_response?: string;
   paid_at?: string | null;

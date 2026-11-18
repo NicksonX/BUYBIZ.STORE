@@ -41,6 +41,7 @@ type VerificationPayload = {
   status: string;
   reference: string;
   amount: number;
+  requestedAmount?: number | null;
   currency: string;
   id?: string | number;
   fees?: number | null;
@@ -71,6 +72,7 @@ function normalizePayload(tx: PaystackTransaction): VerificationPayload {
     status: tx.status,
     reference: tx.reference,
     amount: tx.amount,
+    requestedAmount: tx.requested_amount ?? null,
     currency: (tx.currency || "NGN").toUpperCase(),
     id: tx.id,
     fees: tx.fees ?? 0,
@@ -113,7 +115,8 @@ async function creditVerifiedDeposit(
       "The payment reference does not match the pending deposit.",
     );
   }
-  if (Number(payload.amount) !== Number(deposit.amountMinor)) {
+  const paidBaseAmount = Number(payload.requestedAmount ?? payload.amount);
+  if (paidBaseAmount !== Number(deposit.amountMinor)) {
     throw new AppError(
       "PAYMENT_FAILED",
       "The paid amount does not match the deposit amount. Your wallet was not credited.",
@@ -686,6 +689,7 @@ export async function completeDemoDeposit(input: {
       status: "success",
       reference: deposit.providerReference,
       amount: deposit.amountMinor,
+      requestedAmount: deposit.amountMinor,
       currency: "NGN",
       id: `demo-${deposit.id}`,
       fees: 0,
