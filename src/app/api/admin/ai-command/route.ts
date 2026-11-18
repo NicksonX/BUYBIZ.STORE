@@ -3,6 +3,8 @@ import { getCurrentUser } from "@/server/auth/session";
 import { getDb } from "@/lib/db";
 import { getTreasuryOverview, readTreasuryBalance } from "@/server/services/treasury";
 import { decryptSecret } from "@/lib/security/encryption";
+import { createGiveaway, announceGiveaway, setGiveawayStatus } from "@/server/services/giveaways";
+import { prepareGiveawayBatch } from "@/server/services/treasury";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -52,11 +54,27 @@ export async function GET() {
   const user = await getCurrentUser();
   if (!user || !["admin", "super_admin"].includes(user.role)) return NextResponse.json({ message: "Admin access required." }, { status: 403 });
   const db = await getDb();
-  const history = await db.query<{ command: string; response: string; mode: string; createdAt: Date }>(
-    `select command,response,mode,created_at as "createdAt" from ai_admin_actions where user_id=$1 order by created_at desc limit 25`,
+  const history = await db.query<{ id: string; command: string; response: string; mode: string; createdAt: Date; status: string; actionType: string | null }>(
+    `select id,command,response,mode,created_at as "createdAt",status,action_type as "actionType" from ai_admin_actions where user_id=$1 order by created_at desc limit 25`,
     [user.id],
   );
   return NextResponse.json({ history: history.rows.reverse() });
+}
+
+type ActionPlan = { type: string; title: string; details: string[]; payload: Record<string, unknown> };
+
+function planAction(command: string, data: Awaited<ReturnType<typeof context>>): ActionPlan | null {
+  const text = command.toLowerCase();
+  if (/create|new/.test(text) && /giveaway/.test(text)) {
+    const reward = Number(command.match(/\$(\d+(?:\.\d+)?)/)?.[1] ?? 1);
+    const limit = Number(command.match(/(\d+)\s*(?:users?|claims?|winners?)/i)?.[1] ?? 20);
+    return { type: "create_giveaway", title: "Create giveaway", details: [`Reward: $${reward.toFixed(2)} USDT`, `Maximum winners: ${limit}`, "Network: BNB Smart Chain (BEP20)", `Budget: $${(reward * limit).toFixed(2)} plus fees`], payload: { reward, limit } };
+  }
+  if (/(launch|activate)/.test(text) && /giveaway/.test(text)) return { type: "activate_giveaway", title: "Launch giveaway", details: ["Status will become Active", "Announcement email will be queued to verified users", "Claim limit remains enforced by the database"], payload: {} };
+  if (/pause/.test(text) && /giveaway/.test(text)) return { type: "pause_giveaway", title: "Pause giveaway", details: ["New claims will be rejected", "Existing claims remain recorded"], payload: {} };
+  if (/(end|close)/.test(text) && /giveaway/.test(text)) return { type: "end_giveaway", title: "End giveaway", details: ["Giveaway will stop accepting claims", "Existing claims and audit records remain"], payload: {} };
+  if (/prepare/.test(text) && /(payment|payout|batch)/.test(text)) return { type: "prepare_batch", title: "Prepare giveaway payment batch", details: ["Selects claims with submitted addresses", "Creates a batch for owner review", "No transaction is signed or sent"], payload: {} };
+  return null;
 }
 
 export async function POST(request: Request) {
@@ -66,6 +84,17 @@ export async function POST(request: Request) {
   try { command = String(((await request.json()) as { command?: unknown }).command ?? "").trim().slice(0, 1200); } catch { /* invalid */ }
   if (command.length < 2) return NextResponse.json({ message: "Type a command." }, { status: 400 });
   const data = await context();
+  const plan = planAction(command, data);
+  if (plan) {
+    const db = await getDb();
+    const latest = await db.query<{ id: string }>(`select id from giveaways order by created_at desc limit 1`);
+    if (plan.type !== "create_giveaway" && !latest.rows[0]) return NextResponse.json({ message: "No giveaway exists to operate on." }, { status: 409 });
+    const inserted = await db.query<{ id: string }>(
+      `insert into ai_admin_actions (user_id,command,mode,response,action_type,status,payload) values ($1,$2,'approval',$3,$4,'pending_approval',$5::jsonb) returning id`,
+      [user.id, command, plan.title, plan.type, JSON.stringify({ ...plan.payload, giveawayId: latest.rows[0]?.id ?? null })],
+    );
+    return NextResponse.json({ reply: `I prepared a **${plan.title}** for your approval. ${plan.details.join(". ")}. No action has been executed.`, mode: "approval", action: { id: inserted.rows[0].id, ...plan } });
+  }
   const apiKey = await geminiKey();
   let reply: string;
   let mode = "deterministic";
@@ -84,6 +113,6 @@ export async function POST(request: Request) {
     } catch { reply = deterministic(command, data); }
   } else reply = deterministic(command, data);
   const db = await getDb();
-  await db.query(`insert into ai_admin_actions (user_id,command,mode,response) values ($1,$2,$3,$4)`, [user.id, command, mode, reply]);
+  await db.query(`insert into ai_admin_actions (user_id,command,mode,response,status) values ($1,$2,$3,$4,'completed')`, [user.id, command, mode, reply]);
   return NextResponse.json({ reply, mode, data: { treasury: data.treasury.balance, claims: data.claims, unpaidClaims: data.unpaidClaims } });
 }
