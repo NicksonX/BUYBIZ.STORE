@@ -22,7 +22,7 @@ Do not invent account-specific balances or promise an action was performed.`;
 function fallback(message: string) {
   const lower = message.toLowerCase();
   const link = /referr|ambassador/.test(lower) ? "/dashboard/referrals" : /campaign|\$10/.test(lower) ? "/dashboard/campaigns" : /reward|payout|usdt/.test(lower) ? "/dashboard/rewards" : /deposit|wallet|refund|paystack/.test(lower) ? "/dashboard/wallet" : /proxy|plan|price|stock/.test(lower) ? "/dashboard/marketplace" : "/faq";
-  return `I understand this is important. I’ve checked the BUYBIZ rules and can help with the next step. Please review the relevant guide here: ${link}. If your issue is account-specific, tell me what you see and I’ll route it to the right place.\n\nHas this resolved your issue? Reply YES to close, or tell me what is still wrong.`;
+  return `Thanks for reaching out. Please check this guide for the next step: ${link}. If it doesn’t answer your question, tell me what you’re seeing and I’ll help.`;
 }
 
 async function proxyDiagnostic(userId: string, message: string) {
@@ -51,7 +51,7 @@ async function proxyDiagnostic(userId: string, message: string) {
   if (allocations.rows.length === 0) return { reply: `I can check this for you, but I don’t see an active proxy on your account. Please open My Proxies and send me the proxy label or order reference. If you believe you should have an active proxy, include the order number so I can trace it.
 
 My Proxies: /dashboard/proxies`, close: false };
-  if (allocations.rows.length > 1) return { reply: `I can run a live check, but you have ${allocations.rows.length} active proxies. Please send the label or host of the one that is not working. You can find it here: /dashboard/proxies`, close: false };
+  if (allocations.rows.length > 1) return { reply: `You have ${allocations.rows.length} active proxies. Which one is failing? Send its label from My Proxies: /dashboard/proxies`, close: false };
   const row = allocations.rows[0];
   const safeLabel = row.label.replace(/\s*·\s*\d+\.\d+\.\d+\.\d+:\d+/, "").trim() || "your proxy";
   try {
@@ -88,7 +88,7 @@ Has this resolved your issue? Reply YES to close, or tell me what you still see.
       close: true,
     };
   } catch {
-    return { reply: `I found ${safeLabel}, but I could not complete a safe live check right now. Please open My Proxies and try switching to another proxy: /dashboard/proxies/${row.id}. If the issue continues, tell me the exact error message you see.`, close: false };
+    return { reply: `I couldn’t complete a live check on ${safeLabel}. Please try switching proxies in My Proxies and send me the exact error if it continues: /dashboard/proxies/${row.id}`, close: false };
   }
 }
 
@@ -109,7 +109,12 @@ export async function autoReplyToTicket(input: { ticketId: string; userId: strin
     });
     return { replied: true, human: false, proxyChecked: true };
   }
-  const generated = await askGemini(`You are BUYBIZ Support. Be empathetic, concise and practical. Use only these platform facts; never invent balances or actions. Ask the customer to confirm whether the issue is resolved. Do not request secrets.\n\n${KNOWLEDGE}\n\nTicket subject: ${input.subject}\nCustomer message: ${input.message}`);
+  const generated = await askGemini(`You are BUYBIZ Support. Write like a calm, experienced human support agent, not a bot. Keep it under 80 words and 2 short paragraphs. Give only the information needed for the next step; do not dump every platform rule. Use at most one link. Never expose proxy endpoints, passwords, API details or internal systems. Never invent balances, refunds or completed actions. Ask one clear question. Do not request secrets.
+
+${KNOWLEDGE}
+
+Ticket subject: ${input.subject}
+Customer message: ${input.message}`);
   const reply = generated ?? fallback(input.message);
   await db.transaction(async (tx) => {
     await tx.query(`insert into support_messages (ticket_id,author_user_id,is_staff,is_ai,body) values ($1,null,true,true,$2)`, [input.ticketId, reply]);
