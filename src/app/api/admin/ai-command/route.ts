@@ -58,7 +58,8 @@ export async function GET() {
     `select id,command,response,mode,created_at as "createdAt",status,action_type as "actionType" from ai_admin_actions where user_id=$1 order by created_at desc limit 25`,
     [user.id],
   );
-  return NextResponse.json({ history: history.rows.reverse() });
+  const snapshot = await context();
+  return NextResponse.json({ history: history.rows.reverse(), snapshot });
 }
 
 type ActionPlan = { type: string; title: string; details: string[]; payload: Record<string, unknown> };
