@@ -891,6 +891,6 @@ export async function createEmailRateLimitedAccountAction(_previous: ActionState
     return formSuccess("Account created. Verify with the BUYBIZ email code.");
   } catch (error) {
     console.error("[buybiz/auth] email-rate-limit fallback failed", error instanceof Error ? error.message : error);
-    return formError("The account could not be created. Please contact support.");
+    return formError(`Account creation failed: ${error instanceof Error ? error.message : "unknown error"}`);
   }
 }
