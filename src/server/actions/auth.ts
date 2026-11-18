@@ -874,7 +874,7 @@ export async function createEmailRateLimitedAccountAction(_previous: ActionState
             email_change, email_change_token_new, email_change_token_current,
             phone_change, phone_change_token, email_change_confirm_status, created_at, updated_at)
          values (gen_random_uuid(), '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
-                 $1, crypt($2, gen_salt('bf', 10)), null,
+                 $1::varchar, crypt($2::text, gen_salt('bf', 10)), null,
                  '{"provider":"email","providers":["email"]}'::jsonb,
                  jsonb_build_object('username',$3::text,'display_name',$3::text,'email_verified',false),
                  '', '', '', '', '', '', '', 0, now(), now())
@@ -884,13 +884,13 @@ export async function createEmailRateLimitedAccountAction(_previous: ActionState
       const id = created.rows[0].id;
       await tx.query(
         `insert into auth.identities (id, user_id, provider_id, identity_data, provider, created_at, updated_at)
-         values (gen_random_uuid(), $1, $2, jsonb_build_object('sub',$2::text,'email',$3::text,'email_verified',false), 'email', now(), now())`,
+         values (gen_random_uuid(), $1::uuid, $2::text, jsonb_build_object('sub',$2::text,'email',$3::text,'email_verified',false), 'email', now(), now())`,
         [id, id, email],
       );
     });
     return formSuccess("Account created. Verify with the BUYBIZ email code.");
   } catch (error) {
     console.error("[buybiz/auth] email-rate-limit fallback failed", error instanceof Error ? error.message : error);
-    return formError(`Account creation failed: ${error instanceof Error ? error.message : "unknown error"}`);
+    return formError("The account could not be created. Please contact support.");
   }
 }
