@@ -45,7 +45,7 @@ export type WalletSummary = {
   entryCount: number;
 };
 
-export type TicketWithCount = SupportTicket & { messageCount: number };
+export type TicketWithCount = SupportTicket & { messageCount: number; rating?: number | null; feedback?: string | null; ratedAt?: Date | null };
 
 async function getWalletSummaryUncached(userId: string): Promise<WalletSummary> {
   const db = await getDb();
@@ -367,6 +367,7 @@ export async function getTicketsForUser(userId: string): Promise<TicketWithCount
     `select t.id, t.ticket_number as "ticketNumber", t.user_id as "userId",
             t.subject, t.category, t.priority, t.status,
             t.last_message_at as "lastMessageAt", t.closed_at as "closedAt",
+            t.rating, t.feedback, t.rated_at as "ratedAt",
             t.created_at as "createdAt", t.updated_at as "updatedAt",
             (select count(*)::int from support_messages m where m.ticket_id = t.id) as "messageCount"
        from support_tickets t where t.user_id = $1
@@ -382,6 +383,7 @@ export async function getTicketForUser(userId: string, ticketId: string) {
     `select t.id, t.ticket_number as "ticketNumber", t.user_id as "userId",
             t.subject, t.category, t.priority, t.status,
             t.last_message_at as "lastMessageAt", t.closed_at as "closedAt",
+            t.rating, t.feedback, t.rated_at as "ratedAt",
             t.created_at as "createdAt", t.updated_at as "updatedAt",
             (select count(*)::int from support_messages m where m.ticket_id = t.id) as "messageCount"
        from support_tickets t where t.id = $1 and t.user_id = $2 limit 1`,
@@ -390,7 +392,7 @@ export async function getTicketForUser(userId: string, ticketId: string) {
   if (!ticketResult.rows[0]) return null;
   const messages = await db.query<SupportMessage>(
     `select m.id, m.ticket_id as "ticketId",
-            m.author_user_id as "authorUserId", m.is_staff as "isStaff",
+            m.author_user_id as "authorUserId", m.is_staff as "isStaff", m.is_ai as "isAi",
             m.body, m.created_at as "createdAt",
             p.display_name as "authorName", p.role as "authorRole"
        from support_messages m

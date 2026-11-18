@@ -984,7 +984,7 @@ export async function getAdminTicketDetail(id: string) {
   if (!ticket.rows[0]) return null;
   const messages = await db.query<SupportMessage>(
     `select m.id, m.ticket_id as "ticketId",
-            m.author_user_id as "authorUserId", m.is_staff as "isStaff",
+            m.author_user_id as "authorUserId", m.is_staff as "isStaff", m.is_ai as "isAi",
             m.body, m.created_at as "createdAt",
             p.display_name as "authorName", p.role as "authorRole"
        from support_messages m

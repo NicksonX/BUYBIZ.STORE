@@ -217,6 +217,7 @@ export interface SupportMessage {
   ticketId: string;
   authorUserId: string | null;
   isStaff: boolean;
+  isAi: boolean;
   body: string;
   createdAt: Date;
   authorName?: string | null;
