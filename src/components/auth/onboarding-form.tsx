@@ -55,11 +55,10 @@ export function OnboardingForm({
           Welcome to BUYBIZ
         </p>
         <h1 className="mt-2 text-[28px] font-semibold leading-[1.04] tracking-[-0.045em] text-[#0A0B0D] sm:text-[32px]">
-          What will you use proxies for?
+          {needsUsername ? "Choose your username." : "What will you use proxies for?"}
         </h1>
         <p className="mt-2 text-[12px] leading-5 text-[#0A0B0D]/50">
-          Pick the closest fit. It helps us keep BUYBIZ focused on what you
-          actually need.
+          {needsUsername ? "This is how other BUYBIZ customers will identify you. You can change it later." : "Pick the closest fit. It helps us keep BUYBIZ focused on what you actually need."}
         </p>
       </div>
 
@@ -75,7 +74,7 @@ export function OnboardingForm({
           <input type="hidden" name="username" value={currentUsername} />
         ) : null}
 
-        <fieldset>
+        {needsUsername ? <input type="hidden" name="useCase" value="other" /> : <fieldset>
           <legend className="sr-only">Intended proxy use case</legend>
           <div className="grid grid-cols-2 gap-2">
             {PROXY_USE_CASES.map((useCase) => {
@@ -131,7 +130,7 @@ export function OnboardingForm({
               {state.fieldErrors.useCase}
             </p>
           ) : null}
-        </fieldset>
+        </fieldset>}
 
         {needsUsername ? (
           <Field
@@ -159,7 +158,7 @@ export function OnboardingForm({
 
         <button
           type="submit"
-          disabled={pending || !selected}
+          disabled={pending || (!needsUsername && !selected)}
           className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[10px] bg-[#0A0B0D] text-[12px] font-semibold text-white transition-colors hover:bg-[#1A1C1F] disabled:cursor-not-allowed disabled:opacity-45"
         >
           {pending ? (
@@ -175,8 +174,8 @@ export function OnboardingForm({
       </form>
 
       <p className="mt-5 text-[9.5px] leading-4 text-[#0A0B0D]/35">
-        You can update your profile later. BUYBIZ uses this answer only to
-        improve the product, not to limit your access.
+        You can update your username later from Settings. BUYBIZ never asks for
+        your Google password.
       </p>
     </div>
   );
