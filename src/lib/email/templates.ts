@@ -14,6 +14,7 @@ export type EmailType =
   | "payout_rejected"
   | "payout_paid"
   | "deposit_followup"
+  | "deposit_recovery_apology"
   | "campaign_customer_reward"
   | "campaign_referrer_reward"
   | "campaign_payout_requested"
@@ -56,6 +57,7 @@ export type EmailTemplateData = {
   statusLabel?: string;
   customerReward?: string;
   windowLabel?: string;
+  ownerCopy?: boolean;
 };
 
 export type EmailTemplateOverride = {
@@ -135,6 +137,11 @@ const DEFAULT_TEMPLATES: Record<
     subject: "Your USDT payout has been sent",
     preheader: "The transfer has been completed.",
     intro: "Your ambassador payout has been sent. The transaction hash is included below for your records.",
+  },
+  deposit_recovery_apology: {
+    subject: "Your BUYBIZ wallet deposit has been corrected",
+    preheader: "We’re sorry for the failed-payment message. Your deposit is now credited.",
+    intro: "We’re sorry about what happened with your recent BUYBIZ wallet deposit.",
   },
   campaign_customer_reward: {
     subject: "Congratulations! Your $10 BUYBIZ Campaign Reward Has Been Activated",
@@ -450,6 +457,19 @@ export function renderEmail(input: {
       content = `<p style="margin:16px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.75;color:#4E5157;">Your account is ready. Add funds from ₦2,500, choose a proxy plan, and your connection details will appear in My Proxies.</p>
       ${button("Open your dashboard", `${input.websiteUrl}/dashboard`)}
       <p style="margin:8px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.7;color:${BRAND.muted};">Not sure which plan fits? Reply to this email and a real person will help you choose.</p>`;
+      break;
+    case "deposit_recovery_apology":
+      content = `<p style="margin:16px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.75;color:#4E5157;">Hi ${escapeHtml(data.name ?? "there")},</p>
+      <p style="margin:10px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.75;color:#4E5157;">${data.ownerCopy ? "This is an owner confirmation copy of the apology sent to the affected customers." : "If you paid and received a failed-payment message, that was our error. Paystack confirmed your payment was successful, but BUYBIZ incorrectly marked it as failed because of a payment-fee mismatch. We have now fixed the issue."}</p>
+      <p style="margin:10px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.75;color:#4E5157;">${data.ownerCopy ? "Eight customer deposits totaling ₦20,000 were verified and credited after the fix. The references are included below for reconciliation." : `Your ${escapeHtml(data.amountLabel ?? "₦2,500")} deposit has been verified and credited to your BUYBIZ wallet. You do not need to pay again.`}</p>
+      <p style="margin:10px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.75;color:#4E5157;">${data.ownerCopy ? "This copy was requested at web3caleb@gmail.com." : "The additional Paystack processing fee shown at checkout was not added to your wallet balance."}</p>
+      ${details([
+        ["Amount credited", data.amountLabel ?? "₦2,500"],
+        ["Transaction reference", data.reference ?? ""],
+        ["Status", "Verified and credited"],
+      ])}
+      ${button("Open wallet", `${input.websiteUrl}/dashboard/wallet`)}
+      <p style="margin:12px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.7;color:${BRAND.muted};">We understand how worrying it is to pay and not see your wallet update immediately. We’re sorry for the inconvenience and appreciate your patience. If anything still looks wrong, reply to this email or open a support ticket.</p>`;
       break;
     case "deposit_confirmation":
       content = `${details([

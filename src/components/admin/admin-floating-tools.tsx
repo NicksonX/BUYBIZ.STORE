@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { Bot, ChevronDown, Maximize2, Minimize2, Wallet, X } from "lucide-react";
-import { AiCommandConsole } from "@/components/admin/ai-command-console";
-import { Web3WalletPanel } from "@/components/admin/web3-wallet-panel";
+const AiCommandConsole = dynamic(() => import("@/components/admin/ai-command-console").then((m) => m.AiCommandConsole), { ssr: false, loading: () => <p className="p-4 text-[10px] text-muted-foreground">Loading command centre…</p> });
+const Web3WalletPanel = dynamic(() => import("@/components/admin/web3-wallet-panel").then((m) => m.Web3WalletPanel), { ssr: false, loading: () => <p className="p-4 text-[10px] text-muted-foreground">Loading wallet…</p> });
 
 type Kind = "wallet" | "ai";
 type WindowState = { x: number; y: number; width: number; height: number; minimized: boolean; maximized: boolean };
