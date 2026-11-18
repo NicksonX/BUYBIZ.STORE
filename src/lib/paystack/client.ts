@@ -146,3 +146,13 @@ export async function verifyPaystackTransaction(reference: string) {
   }
   return payload.data;
 }
+
+
+export type PaystackRefund = { id?: number | string; status?: string; amount?: number; currency?: string };
+export async function listPaystackRefunds(transactionId: string | number): Promise<PaystackRefund[]> {
+  const payload = await paystackFetch<{ data?: PaystackRefund[] }>(
+    `/refund?transaction=${encodeURIComponent(String(transactionId))}`,
+    { method: "GET" },
+  );
+  return payload.data ?? [];
+}

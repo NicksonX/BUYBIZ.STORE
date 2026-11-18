@@ -12,6 +12,7 @@ import {
 import {
   initializePaystackTransaction,
   verifyPaystackTransaction,
+  listPaystackRefunds,
   type PaystackTransaction,
 } from "@/lib/paystack/client";
 import {
@@ -501,6 +502,13 @@ export async function creditDepositFromVerification(input: {
   userAgent?: string | null;
 }): Promise<DepositVerificationResult> {
   const db = await getDb();
+  if (input.payload.id && String(input.payload.id).match(/^\d+$/)) {
+    let refunds;
+    try { refunds = await listPaystackRefunds(input.payload.id); }
+    catch { throw new AppError("PAYMENT_FAILED", "Refund status could not be verified. Your wallet has not been credited."); }
+    const blocking = refunds.some((r) => r.status !== "failed");
+    if (blocking) throw new AppError("PAYMENT_FAILED", "A refund or reversal is associated with this payment. Your wallet has not been credited.");
+  }
   const result: DepositVerificationResult = await db.transaction(async (tx) => {
     const deposit = await loadDepositForUpdate(tx, input.depositId);
     if (!deposit) {
