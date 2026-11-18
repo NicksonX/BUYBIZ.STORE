@@ -14,6 +14,7 @@ import { getTicketForUser } from "@/server/data/customer";
 import { ticketStatusMeta, titleCase } from "@/lib/status";
 import { formatDateTime } from "@/lib/utils";
 import { SupportAutoRefresh } from "@/components/support/auto-refresh";
+import { SupportRatingForm } from "@/components/support/rating-form";
 
 export const dynamic = "force-dynamic";
 
@@ -49,6 +50,7 @@ export default async function SupportTicketPage({
       />
 
       <SupportAutoRefresh />
+      {closed && !ticket.rating ? <div className="mb-4"><SupportRatingForm ticketId={ticket.id} /></div> : null}
       <div className="mt-5 grid gap-4 lg:grid-cols-[1.3fr_0.7fr]">
         <section className="surface-card flex min-h-[480px] flex-col overflow-hidden rounded-[15px]">
           <div className="flex items-center justify-between border-b border-border px-4 py-3">
@@ -90,7 +92,7 @@ export default async function SupportTicketPage({
                           staff ? "text-muted-foreground" : "text-background/55"
                         }`}
                       >
-                        {staff ? "BUYBIZ Support" : "You"}
+                        {staff ? (message.isAi ? "BUYBIZ AI" : "BUYBIZ Support") : "You"}
                       </p>
                       <p className="mt-1 whitespace-pre-wrap text-[10.5px] leading-5">
                         {message.body}

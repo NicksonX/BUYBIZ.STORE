@@ -117,6 +117,7 @@ export async function replyAsStaff(input: {
     await tx.query(
       `update support_tickets
           set status = (case when status = 'closed' then 'open' else 'pending' end)::ticket_status,
+              close_requested_at = null,
               last_message_at = now(), updated_at = now()
         where id = $1`,
       [row.id],

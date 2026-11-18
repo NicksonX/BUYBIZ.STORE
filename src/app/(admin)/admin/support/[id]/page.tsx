@@ -78,7 +78,7 @@ export default async function AdminSupportDetailPage({
                     }`}
                   >
                     <p className={`text-[8.5px] font-semibold ${message.isStaff ? "text-background/55" : "text-muted-foreground"}`}>
-                      {message.isStaff ? `BUYBIZ Support · ${message.authorName ?? "Staff"}` : ticket.username}
+                      {message.isStaff ? (message.isAi ? "BUYBIZ AI Support" : `BUYBIZ Support · ${message.authorName ?? "Staff"}`) : ticket.username}
                     </p>
                     <p className="mt-1 whitespace-pre-wrap text-[10.5px] leading-5">{message.body}</p>
                   </div>

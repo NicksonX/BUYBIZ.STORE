@@ -45,6 +45,7 @@ import { getTicketForUser } from "@/server/data/customer";
 import { getAppSettings } from "@/server/data/settings";
 import { writeAuditLog } from "@/server/services/audit";
 import { flushEmailQueue } from "@/server/services/email";
+import { autoReplyToTicket, rateSupportTicket } from "@/server/services/support-automation";
 
 export async function purchaseAction(
   _previous: ActionState,
@@ -528,6 +529,7 @@ export async function createTicketAction(
       message: parsed.data.message,
     });
     destination = `/dashboard/support/${ticket.ticketId}`;
+    await autoReplyToTicket({ ticketId: ticket.ticketId, userId: user.id, subject: parsed.data.subject, message: parsed.data.message }).catch((error) => console.error("[buybiz/support] auto reply failed", error));
   } catch (error) {
     if (error instanceof AppError) return formError(error.userMessage);
     console.error("[buybiz/support] create failed", error);
@@ -566,6 +568,7 @@ export async function replyToTicketAction(
       ticketId: parsed.data.ticketId,
       message: parsed.data.message,
     });
+    await autoReplyToTicket({ ticketId: parsed.data.ticketId, userId: user.id, subject: owned.ticket.subject, message: parsed.data.message }).catch((error) => console.error("[buybiz/support] auto reply failed", error));
   } catch (error) {
     if (error instanceof AppError) return formError(error.userMessage);
     console.error("[buybiz/support] reply failed", error);
@@ -574,4 +577,19 @@ export async function replyToTicketAction(
   revalidatePath(`/dashboard/support/${parsed.data.ticketId}`);
   revalidatePath("/dashboard/support");
   return formSuccess("Reply sent.");
+}
+
+
+export async function rateSupportTicketAction(_previous: ActionState, formData: FormData): Promise<ActionState> {
+  const user = await requireUserPage();
+  const ticketId = String(formData.get("ticketId") ?? "");
+  const rating = Number(formData.get("rating"));
+  const feedback = String(formData.get("feedback") ?? "");
+  try {
+    await rateSupportTicket({ userId: user.id, ticketId, rating, feedback });
+    revalidatePath(`/dashboard/support/${ticketId}`);
+    return formSuccess("Thank you. Your rating was recorded.");
+  } catch (error) {
+    return formError(error instanceof Error ? error.message : "Could not save your rating.");
+  }
 }
