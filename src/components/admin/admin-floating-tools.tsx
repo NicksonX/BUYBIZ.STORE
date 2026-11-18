@@ -21,7 +21,12 @@ function useWindowState(kind: Kind) {
     try {
       const saved = JSON.parse(localStorage.getItem(STORAGE) || "{}") as Record<string, WindowState>;
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      if (saved[kind]) setState({ ...DEFAULTS[kind], ...saved[kind], maximized: false });
+      if (saved[kind]) {
+        const next = { ...DEFAULTS[kind], ...saved[kind], maximized: false };
+        const width = Math.min(Math.max(next.width, 320), Math.max(320, window.innerWidth - 8));
+        const height = Math.min(Math.max(next.height, 260), Math.max(260, window.innerHeight - 16));
+        setState({ ...next, width, height, x: Math.max(4, Math.min(next.x, window.innerWidth - width - 4)), y: Math.max(4, Math.min(next.y, window.innerHeight - 44)) });
+      }
     } catch { /* ignore */ }
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoaded(true);
@@ -121,14 +126,23 @@ export function AdminFloatingTools({ role }: { role: string }) {
   const canUseFinancialTools = role !== "support";
   const [open, setOpen] = useState<{ wallet: boolean; ai: boolean }>({ wallet: false, ai: false });
   const [front, setFront] = useState<"wallet" | "ai">("ai");
+  function toggleTool(kind: "wallet" | "ai") {
+    const willOpen = !open[kind];
+    setOpen((s) => ({ ...s, [kind]: willOpen }));
+    if (willOpen) {
+      const setter = kind === "wallet" ? setWalletState : setAiState;
+      setter((s) => ({ ...s, minimized: false }));
+      setFront(kind);
+    }
+  }
   const [walletState, setWalletState] = useWindowState("wallet");
   const [aiState, setAiState] = useWindowState("ai");
   if (!canUseFinancialTools) return null;
   return (
     <>
       <div className="fixed bottom-24 right-3 z-[90] flex flex-col items-end gap-2 lg:bottom-auto lg:top-1/2 lg:-translate-y-1/2">
-        <button type="button" data-testid="floating-treasury" onClick={() => setOpen((s) => ({ ...s, wallet: !s.wallet }))} aria-label="Open Treasury Wallet" title="Treasury Wallet" className="inline-flex h-10 items-center gap-2 rounded-full border border-white/15 bg-[#0A0B0D] px-3 text-white shadow-float transition-transform hover:scale-[1.03] active:scale-95"><Wallet className="h-4 w-4" /><span className="text-[8.5px] font-semibold uppercase tracking-[0.08em]">Treasury</span></button>
-        <button type="button" data-testid="floating-ai" onClick={() => setOpen((s) => ({ ...s, ai: !s.ai }))} aria-label="Open AI Command Centre" title="AI Command Centre" className="inline-flex h-10 items-center gap-2 rounded-full border border-[#B9FF66]/30 bg-[#0A0B0D] px-3 text-[#B9FF66] shadow-float transition-transform hover:scale-[1.03] active:scale-95"><Bot className="h-4 w-4" /><span className="text-[8.5px] font-semibold uppercase tracking-[0.08em]">AI</span></button>
+        <button type="button" data-testid="floating-treasury" onClick={() => toggleTool("wallet")} aria-label="Open Treasury Wallet" title="Treasury Wallet" className="inline-flex h-10 items-center gap-2 rounded-full border border-white/15 bg-[#0A0B0D] px-3 text-white shadow-float transition-transform hover:scale-[1.03] active:scale-95"><Wallet className="h-4 w-4" /><span className="text-[8.5px] font-semibold uppercase tracking-[0.08em]">Treasury</span></button>
+        <button type="button" data-testid="floating-ai" onClick={() => toggleTool("ai")} aria-label="Open AI Command Centre" title="AI Command Centre" className="inline-flex h-10 items-center gap-2 rounded-full border border-[#B9FF66]/30 bg-[#0A0B0D] px-3 text-[#B9FF66] shadow-float transition-transform hover:scale-[1.03] active:scale-95"><Bot className="h-4 w-4" /><span className="text-[8.5px] font-semibold uppercase tracking-[0.08em]">AI</span></button>
       </div>
       {open.wallet ? <FloatingWindow title="Treasury Wallet" icon={<Wallet className="h-3.5 w-3.5" />} z={front === "wallet" ? 72 : 71} onFocus={() => setFront("wallet")} state={walletState} setState={setWalletState} onClose={() => setOpen((s) => ({ ...s, wallet: false }))}><TreasurySnapshot /></FloatingWindow> : null}
       {open.ai ? <FloatingWindow title="BUYBIZ AI Command Centre" icon={<Bot className="h-3.5 w-3.5" />} z={front === "ai" ? 72 : 71} onFocus={() => setFront("ai")} state={aiState} setState={setAiState} onClose={() => setOpen((s) => ({ ...s, ai: false }))}><AiCommandConsole /></FloatingWindow> : null}
