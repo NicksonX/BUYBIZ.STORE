@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { ArrowRight } from "lucide-react";
-import { signupAction } from "@/server/actions/auth";
+import { completeBrowserSignupAction, prepareBrowserSignupAction, signupAction } from "@/server/actions/auth";
+import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { initialActionState } from "@/lib/validation/action-state";
 import { Alert } from "@/components/ui/alert";
 import { Field, Input } from "@/components/ui/input";
@@ -26,22 +28,58 @@ export function RegisterForm({
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [acceptTerms, setAcceptTerms] = useState(false);
-  const [state, formAction, pending] = useActionState(
-    signupAction,
-    initialActionState,
-  );
+  const [state, setState] = useState(initialActionState);
+  const [pending, setPending] = useState(false);
   const inFlight = useRef(false);
+  const router = useRouter();
 
-  useEffect(() => {
-    if (state.status === "error") inFlight.current = false;
-  }, [state]);
-
-  function onSubmit(event: React.FormEvent<HTMLFormElement>) {
-    if (inFlight.current) {
-      event.preventDefault();
-      return;
-    }
+  async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (inFlight.current) return;
     inFlight.current = true;
+    setPending(true);
+    setState(initialActionState);
+    try {
+      const form = new FormData(event.currentTarget);
+      if (demoMode) {
+        const demo = await signupAction(initialActionState, form);
+        setState(demo);
+        return;
+      }
+      const prepared = await prepareBrowserSignupAction(initialActionState, form);
+      if (prepared.status !== "success") { setState(prepared); return; }
+      const supabase = getSupabaseBrowserClient();
+      if (!supabase) { setState({ status: "error", message: "Authentication is not configured." }); return; }
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { username, display_name: username },
+          emailRedirectTo: `${window.location.origin}/auth/callback?next=/onboarding`,
+        },
+      });
+      if (error) {
+        const message = /rate|too many/i.test(error.message)
+          ? "Signup is temporarily limited from this network. Please wait 5 minutes and try again."
+          : /already|exists/i.test(error.message)
+            ? "That email may already have an account. Try signing in instead."
+            : "We could not create your account. Check your details and try again.";
+        setState({ status: "error", message });
+        return;
+      }
+      if (referralCode) {
+        document.cookie = `buybiz_pending_referral=${encodeURIComponent(referralCode)}; path=/; max-age=600; SameSite=Lax${window.location.protocol === "https:" ? "; Secure" : ""}`;
+      }
+      const completed = await completeBrowserSignupAction(initialActionState, form);
+      if (completed.status !== "success") { setState(completed); return; }
+      if (completed.redirectTo) router.push(completed.redirectTo);
+      else setState(completed);
+    } catch {
+      setState({ status: "error", message: "We could not create your account. Please try again." });
+    } finally {
+      inFlight.current = false;
+      setPending(false);
+    }
   }
 
   return (
@@ -65,7 +103,7 @@ export function RegisterForm({
         </Alert>
       ) : null}
 
-      <form action={formAction} onSubmit={onSubmit} className="space-y-4">
+      <form onSubmit={onSubmit} className="space-y-4">
         {next ? <input type="hidden" name="next" value={next} /> : null}
         {referralCode ? (
           <>

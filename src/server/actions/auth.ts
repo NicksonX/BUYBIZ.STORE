@@ -797,3 +797,51 @@ export async function oauthAction(
   }
   redirect(data.url);
 }
+
+export async function prepareBrowserSignupAction(_previous: ActionState, formData: FormData): Promise<ActionState> {
+  const parsed = signupSchema.safeParse({
+    username: formData.get("username"), email: formData.get("email"), password: formData.get("password"),
+    acceptTerms: formData.get("acceptTerms"), referralCode: formData.get("referralCode") ?? "",
+  });
+  if (!parsed.success) return formError("Check the highlighted fields.", zodFieldErrors(parsed.error));
+  const ip = await getClientIp();
+  const emailKey = parsed.data.email.trim().toLowerCase();
+  const emailLimit = await rateLimit({ action: "auth:signup:email", identifier: `${ip}:${emailKey}`, limit: 20, windowSeconds: 300 });
+  if (!emailLimit.allowed) return formError("Too many signup attempts. Please try again in 5 minutes.");
+  const ipLimit = await rateLimit({ action: "auth:signup:ip", identifier: ip, limit: 100, windowSeconds: 300 });
+  if (!ipLimit.allowed) return formError("Too many signup attempts. Please try again in 5 minutes.");
+  const db = await getDb();
+  const duplicates = await db.query<{ username: string; email: string }>(`select username,email from profiles where lower(username)=lower($1) or lower(email)=lower($2) limit 2`, [parsed.data.username, parsed.data.email]);
+  if (duplicates.rows[0]) return formError("An account may already exist with that email or username. Try signing in instead.");
+  if (parsed.data.referralCode) {
+    const referral = await validateReferralCode(parsed.data.referralCode, parsed.data.email);
+    if (!referral.valid) return formError("That referral code is not valid for this email.", { referralCode: "That referral code is not valid, active or usable for this email." });
+  }
+  return formSuccess("Ready to create your account.");
+}
+
+export async function completeBrowserSignupAction(_previous: ActionState, formData: FormData): Promise<ActionState> {
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const referralCode = String(formData.get("referralCode") ?? "").trim();
+  if (!email) return formError("Missing email.");
+  const db = await getDb();
+  let profile = await db.query<{ id: string; username: string; createdAt: Date }>(`select id,username,created_at as "createdAt" from profiles where lower(email)=lower($1) limit 1`, [email]);
+  if (!profile.rows[0]) {
+    for (let i = 0; i < 4; i += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 250));
+      profile = await db.query(`select id,username,created_at as "createdAt" from profiles where lower(email)=lower($1) limit 1`, [email]);
+      if (profile.rows[0]) break;
+    }
+  }
+  const row = profile.rows[0];
+  if (!row || Date.now() - new Date(row.createdAt).getTime() > 15 * 60_000) return formError("The account was created, but the local profile is not ready yet. Sign in or contact support.");
+  if (referralCode) {
+    try { await db.transaction((tx) => attachReferralForSignup(tx, row.id, referralCode)); }
+    catch (error) { console.error("[buybiz/auth] browser referral attach failed", error); }
+  }
+  if (isEmailConfigured()) {
+    const otp = await createAndSendSignupOtp({ userId: row.id, email, name: row.username });
+    return formSuccess(otp.sent ? "Account created. Check your email for the verification code." : "Account created. Request a verification code from the next screen.", { redirectTo: `/verify-email?email=${encodeURIComponent(email)}&next=/onboarding` });
+  }
+  return formSuccess("Account created.", { redirectTo: "/onboarding" });
+}
