@@ -2,6 +2,9 @@ import "server-only";
 import { getDb } from "@/lib/db";
 import { askGemini } from "@/server/services/gemini";
 import { notifyUser } from "@/server/services/notifications";
+import { decryptSecret } from "@/lib/security/encryption";
+import { verifyProxy } from "@/server/services/proxy-verification";
+import type { ParsedProxy } from "@/lib/ai/proxy-parser";
 
 const KNOWLEDGE = `BUYBIZ platform rules:
 - Proxies: shared or personal, purchased from wallet; available only when verified country inventory exists. 7-day shared plans are up to 20 active users per IP; personal is one customer.
@@ -22,6 +25,62 @@ function fallback(message: string) {
   return `I understand this is important. I’ve checked the BUYBIZ rules and can help with the next step. Please review the relevant guide here: ${link}. If your issue is account-specific, tell me what you see and I’ll route it to the right place.\n\nHas this resolved your issue? Reply YES to close, or tell me what is still wrong.`;
 }
 
+async function proxyDiagnostic(userId: string, message: string) {
+  const proxyTerm = /(proxy|port|ip address|connection|connect|not working|timeout|socks)/i.test(message);
+  const issue = /(not working|not connecting|can.?t connect|cannot connect|unable to connect|timeout|refused|error|failed|issue|problem|broken|switch|refund|port)/i.test(message);
+  const informational = /(what is|what's|how (do|does|can)|explain|meaning of|difference between)/i.test(message);
+  if (!proxyTerm || !issue || informational) return null;
+  const db = await getDb();
+  const allocations = await db.query<{ id: string; label: string; host: string; port: number; protocol: "socks5"|"socks4"|"http"|"https"; encryptedUsername: string | null; encryptedPassword: string | null; countryCode: string | null }>(
+    `select a.id,i.label,i.host,i.port,i.protocol,i.encrypted_username as "encryptedUsername",i.encrypted_password as "encryptedPassword",i.country_code as "countryCode"
+       from proxy_allocations a join proxy_inventory i on i.id=a.proxy_inventory_id
+      where a.user_id=$1 and a.status='active' and a.expires_at>now() order by a.activated_at desc`,
+    [userId],
+  );
+  if (allocations.rows.length === 0) return { reply: `I can check this for you, but I don’t see an active proxy on your account. Please open My Proxies and send me the proxy label or order reference. If you believe you should have an active proxy, include the order number so I can trace it.
+
+My Proxies: /dashboard/proxies`, close: false };
+  if (allocations.rows.length > 1) return { reply: `I can run a live check, but you have ${allocations.rows.length} active proxies. Please send the label or host of the one that is not working. You can find it here: /dashboard/proxies`, close: false };
+  const row = allocations.rows[0];
+  const safeLabel = row.label.replace(/\s*·\s*\d+\.\d+\.\d+\.\d+:\d+/, "").trim() || "your proxy";
+  try {
+    const parsed: ParsedProxy = {
+      lineNumber: 1, raw: row.host, host: row.host, port: Number(row.port), protocol: row.protocol,
+      username: row.encryptedUsername ? await decryptSecret(row.encryptedUsername) : null,
+      password: row.encryptedPassword ? await decryptSecret(row.encryptedPassword) : null,
+      fingerprint: row.id, error: null,
+    };
+    const check = await verifyProxy(parsed, row.countryCode ?? "US");
+    if (check.status === "verified") return {
+      reply: `I ran a live check on ${safeLabel}. The proxy endpoint is reachable and returned a valid exit IP, so the proxy itself is working.
+
+Please check these in your proxy app:
+• Protocol: ${row.protocol.toUpperCase()}
+• Host and port match My Proxies exactly
+• Username and password have no extra spaces
+• Your device allows that connection (VPN/firewall can block it)
+• Try the proxy in another supported app to isolate the device issue
+
+Connection details: /dashboard/proxies/${row.id}
+
+Has this resolved your issue? Reply YES to close, or tell me what you still see.`,
+      close: true,
+    };
+    return {
+      reply: `I checked ${safeLabel} and it failed verification: ${check.error ?? "connection failed"}.
+
+This is a proxy-side issue. You can use the switch option on My Proxies to move to another eligible proxy, or terminate and purchase a new plan if no switch target is available. I cannot change or refund the allocation automatically from this ticket.
+
+Open My Proxies: /dashboard/proxies/${row.id}
+
+Has this resolved your issue? Reply YES to close, or tell me what you still see.`,
+      close: true,
+    };
+  } catch {
+    return { reply: `I found ${safeLabel}, but I could not complete a safe live check right now. Please open My Proxies and try switching to another proxy: /dashboard/proxies/${row.id}. If the issue continues, tell me the exact error message you see.`, close: false };
+  }
+}
+
 export async function autoReplyToTicket(input: { ticketId: string; userId: string; subject: string; message: string }) {
   const db = await getDb();
   const human = await db.query(`select 1 from support_messages where ticket_id=$1 and is_staff=true and is_ai=false limit 1`, [input.ticketId]);
@@ -29,8 +88,16 @@ export async function autoReplyToTicket(input: { ticketId: string; userId: strin
   const asksHuman = /(human|agent|person|real support|escalate)/i.test(input.message);
   if (asksHuman) {
     await db.query(`update support_tickets set status='open', updated_at=now() where id=$1`, [input.ticketId]);
-    await db.query(`insert into support_messages (ticket_id,author_user_id,is_staff,is_ai,body) values ($1,null,true,true,$2)`, [input.ticketId, "I’m connecting this to a human support agent. Your ticket remains open and a person will review it. I won’t close it automatically."]);
+    await db.query(`insert into support_messages (ticket_id,author_user_id,is_staff,is_ai,body) values ($1,null,true,true,$2)`, [input.ticketId, "I’ve flagged this for human review. I can’t guarantee an immediate agent response, but your ticket remains open and I won’t close it automatically. You can also review the relevant guide at /faq while you wait."]);
     return { replied: true, human: true };
+  }
+  const diagnosis = await proxyDiagnostic(input.userId, `${input.subject} ${input.message}`);
+  if (diagnosis) {
+    await db.transaction(async (tx) => {
+      await tx.query(`insert into support_messages (ticket_id,author_user_id,is_staff,is_ai,body) values ($1,null,true,true,$2)`, [input.ticketId, diagnosis.reply]);
+      await tx.query(`update support_tickets set status='pending', close_requested_at=${diagnosis.close ? "now()" : "null"}, ai_auto_replied_at=now(), last_message_at=now(), updated_at=now() where id=$1`, [input.ticketId]);
+    });
+    return { replied: true, human: false, proxyChecked: true };
   }
   const generated = await askGemini(`You are BUYBIZ Support. Be empathetic, concise and practical. Use only these platform facts; never invent balances or actions. Ask the customer to confirm whether the issue is resolved. Do not request secrets.\n\n${KNOWLEDGE}\n\nTicket subject: ${input.subject}\nCustomer message: ${input.message}`);
   const reply = generated ?? fallback(input.message);
@@ -66,4 +133,29 @@ export async function rateSupportTicket(input: { userId: string; ticketId: strin
   if (!Number.isInteger(input.rating) || input.rating < 1 || input.rating > 5) throw new Error("Rating must be 1 to 5.");
   const db = await getDb();
   await db.query(`update support_tickets set rating=$3,feedback=$4,rated_at=now(),updated_at=now() where id=$1 and user_id=$2 and status='closed'`, [input.ticketId, input.userId, input.rating, input.feedback.trim().slice(0, 1000)]);
+}
+
+
+export async function autoRespondToAwaitingTickets(limit = 30) {
+  const db = await getDb();
+  const rows = await db.query<{ id: string; userId: string; subject: string; body: string; lastStaff: boolean; hasHuman: boolean }>(
+    `select t.id,t.user_id as "userId",t.subject,m.body,m.is_staff as "lastStaff",
+            exists(select 1 from support_messages h where h.ticket_id=t.id and h.is_staff=true and h.is_ai=false) as "hasHuman"
+       from support_tickets t
+       join lateral (select body,is_staff from support_messages where ticket_id=t.id order by created_at desc limit 1) m on true
+      where t.status in ('open','pending') and m.is_staff=false
+      order by t.last_message_at asc limit $1`,
+    [limit],
+  );
+  const results: Array<{ ticketId: string; replied: boolean; skipped?: string }> = [];
+  for (const ticket of rows.rows) {
+    if (ticket.hasHuman) { results.push({ ticketId: ticket.id, replied: false, skipped: "human_takeover" }); continue; }
+    try {
+      const outcome = await autoReplyToTicket({ ticketId: ticket.id, userId: ticket.userId, subject: ticket.subject, message: ticket.body });
+      results.push({ ticketId: ticket.id, replied: outcome.replied, skipped: outcome.replied ? undefined : outcome.reason });
+    } catch (error) {
+      results.push({ ticketId: ticket.id, replied: false, skipped: error instanceof Error ? error.message : "failed" });
+    }
+  }
+  return { evaluated: rows.rows.length, replied: results.filter((r) => r.replied).length, results };
 }
