@@ -876,7 +876,7 @@ export async function createEmailRateLimitedAccountAction(_previous: ActionState
          values (gen_random_uuid(), '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
                  $1, crypt($2, gen_salt('bf', 10)), null,
                  '{"provider":"email","providers":["email"]}'::jsonb,
-                 jsonb_build_object('username',$3,'display_name',$3,'email_verified',false),
+                 jsonb_build_object('username',$3::text,'display_name',$3::text,'email_verified',false),
                  '', '', '', '', '', '', '', 0, now(), now())
          returning id`,
         [email, parsed.data.password, parsed.data.username],
