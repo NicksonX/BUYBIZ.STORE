@@ -22,11 +22,13 @@ export function SocialButtons({
   referralCode,
   googleEnabled,
   className,
+  onlyGoogle = false,
 }: {
   next?: string;
   referralCode?: string;
   googleEnabled: boolean;
   className?: string;
+  onlyGoogle?: boolean;
 }) {
   const [state, formAction, pending] = useActionState(
     oauthAction,
@@ -37,13 +39,13 @@ export function SocialButtons({
 
   return (
     <div className={cn("space-y-3", className)}>
-      <div className="relative flex items-center gap-3">
+      {!onlyGoogle ? <div className="relative flex items-center gap-3">
         <span className="h-px flex-1 bg-black/[0.08]" />
         <span className="text-[10px] font-medium uppercase tracking-[0.12em] text-[#0A0B0D]/35">
           or continue with
         </span>
         <span className="h-px flex-1 bg-black/[0.08]" />
-      </div>
+      </div> : null}
 
       <form action={formAction}>
         <input type="hidden" name="provider" value="google" />
@@ -52,7 +54,7 @@ export function SocialButtons({
         <button
           type="submit"
           disabled={!googleEnabled || pending}
-          className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-[10px] border border-black/[0.09] bg-white text-[12px] font-medium text-[#0A0B0D] shadow-xs transition-colors hover:bg-[#FAFAFA] disabled:cursor-not-allowed disabled:opacity-45"
+          className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[10px] border border-black/[0.09] bg-white text-[12.5px] font-medium text-[#0A0B0D] shadow-xs transition-colors hover:bg-[#FAFAFA] disabled:cursor-not-allowed disabled:opacity-45"
         >
           {pending ? <LoadingDots /> : <GoogleIcon />}
           Continue with Google
@@ -61,8 +63,7 @@ export function SocialButtons({
 
       {!anyEnabled ? (
         <p className="text-center text-[9.5px] leading-4 text-[#0A0B0D]/35">
-          Google sign-in becomes available once the provider is configured in
-          Supabase. Email and password work today.
+          Google sign-in is not configured for this deployment yet.
         </p>
       ) : null}
 
