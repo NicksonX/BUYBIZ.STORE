@@ -60,7 +60,7 @@ export function AdminShell({
           </div>
         </main>
       </div>
-      <AdminFloatingTools />
+      <AdminFloatingTools role={user.role} />
     </div>
   );
 }

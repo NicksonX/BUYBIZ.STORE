@@ -25,7 +25,7 @@ test("demo admin console opens and lists users", async ({ page }) => {
   await page.fill('input[name="password"]', "Admin1234!");
   await page.getByRole("button", { name: /^Sign in/ }).click();
   await page.waitForURL("**/admin");
-  await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Operations overview", exact: true })).toBeVisible();
   await page.goto("/admin/users");
   await expect(page.getByRole("heading", { name: "Users", exact: true })).toBeVisible();
   await expect(page.getByText("admin@buybiz.test").first()).toBeVisible();

@@ -109,11 +109,13 @@ function TreasurySnapshot() {
   </div>;
 }
 
-export function AdminFloatingTools() {
+export function AdminFloatingTools({ role }: { role: string }) {
+  const canUseFinancialTools = role === "admin" || role === "super_admin";
   const [open, setOpen] = useState<{ wallet: boolean; ai: boolean }>({ wallet: false, ai: false });
   const [front, setFront] = useState<"wallet" | "ai">("ai");
   const [walletState, setWalletState] = useWindowState("wallet");
   const [aiState, setAiState] = useWindowState("ai");
+  if (!canUseFinancialTools) return null;
   return (
     <>
       <div className="fixed bottom-5 left-4 z-[65] flex flex-col gap-2 lg:left-[264px]">
