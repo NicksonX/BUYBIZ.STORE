@@ -845,3 +845,52 @@ export async function completeBrowserSignupAction(_previous: ActionState, formDa
   }
   return formSuccess("Account created.", { redirectTo: "/onboarding" });
 }
+
+/**
+ * Emergency fallback for Supabase's built-in email rate limit.
+ * Creates the auth user without asking Supabase to send mail; BUYBIZ's own
+ * OTP remains mandatory. This is used only after the normal browser signup
+ * returns the known email-rate-limit error.
+ */
+export async function createEmailRateLimitedAccountAction(_previous: ActionState, formData: FormData): Promise<ActionState> {
+  const parsed = signupSchema.safeParse({
+    username: formData.get("username"), email: formData.get("email"), password: formData.get("password"),
+    acceptTerms: formData.get("acceptTerms"), referralCode: formData.get("referralCode") ?? "",
+  });
+  if (!parsed.success) return formError("Check the highlighted fields.", zodFieldErrors(parsed.error));
+  const ip = await getClientIp();
+  const email = parsed.data.email.trim().toLowerCase();
+  const limit = await rateLimit({ action: "auth:signup:fallback", identifier: `${ip}:${email}`, limit: 3, windowSeconds: 300 });
+  if (!limit.allowed) return formError("Too many attempts. Try again later.");
+  const db = await getDb();
+  const existing = await db.query(`select 1 from auth.users where lower(email)=lower($1) limit 1`, [email]);
+  if (existing.rows[0]) return formError("That email already has an account. Sign in instead.");
+  try {
+    await db.transaction(async (tx) => {
+      const created = await tx.query<{ id: string }>(
+        `insert into auth.users
+           (id, instance_id, aud, role, email, encrypted_password, email_confirmed_at,
+            raw_app_meta_data, raw_user_meta_data, confirmation_token, recovery_token,
+            email_change, email_change_token_new, email_change_token_current,
+            phone_change, phone_change_token, email_change_confirm_status, created_at, updated_at)
+         values (gen_random_uuid(), '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
+                 $1, crypt($2, gen_salt('bf', 10)), null,
+                 '{"provider":"email","providers":["email"]}'::jsonb,
+                 jsonb_build_object('username',$3,'display_name',$3,'email_verified',false),
+                 '', '', '', '', '', '', '', 0, now(), now())
+         returning id`,
+        [email, parsed.data.password, parsed.data.username],
+      );
+      const id = created.rows[0].id;
+      await tx.query(
+        `insert into auth.identities (id, user_id, provider_id, identity_data, provider, created_at, updated_at)
+         values (gen_random_uuid(), $1, $2, jsonb_build_object('sub',$2::text,'email',$3::text,'email_verified',false), 'email', now(), now())`,
+        [id, id, email],
+      );
+    });
+    return formSuccess("Account created. Verify with the BUYBIZ email code.");
+  } catch (error) {
+    console.error("[buybiz/auth] email-rate-limit fallback failed", error instanceof Error ? error.message : error);
+    return formError("The account could not be created. Please contact support.");
+  }
+}

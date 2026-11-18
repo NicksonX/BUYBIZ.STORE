@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight } from "lucide-react";
-import { completeBrowserSignupAction, prepareBrowserSignupAction, signupAction } from "@/server/actions/auth";
+import { completeBrowserSignupAction, createEmailRateLimitedAccountAction, prepareBrowserSignupAction, signupAction } from "@/server/actions/auth";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { initialActionState } from "@/lib/validation/action-state";
 import { Alert } from "@/components/ui/alert";
@@ -59,13 +59,13 @@ export function RegisterForm({
         },
       });
       if (error) {
-        const message = /rate|too many/i.test(error.message)
-          ? "Signup is temporarily limited from this network. Please wait 5 minutes and try again."
-          : /already|exists/i.test(error.message)
-            ? "That email may already have an account. Try signing in instead."
-            : "We could not create your account. Check your details and try again.";
-        setState({ status: "error", message });
-        return;
+        if (/rate|too many|email rate/i.test(error.message)) {
+          const fallback = await createEmailRateLimitedAccountAction(initialActionState, form);
+          if (fallback.status !== "success") { setState(fallback); return; }
+        } else {
+          setState({ status: "error", message: /already|exists/i.test(error.message) ? "That email may already have an account. Try signing in instead." : "We could not create your account. Check your details and try again." });
+          return;
+        }
       }
       if (referralCode) {
         document.cookie = `buybiz_pending_referral=${encodeURIComponent(referralCode)}; path=/; max-age=600; SameSite=Lax${window.location.protocol === "https:" ? "; Secure" : ""}`;
