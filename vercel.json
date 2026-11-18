@@ -7,10 +7,6 @@
     {
       "path": "/api/cron/proxy-expiry",
       "schedule": "15 0 * * *"
-    },
-    {
-      "path": "/api/cron/support-close",
-      "schedule": "*/5 * * * *"
     }
   ]
 }
