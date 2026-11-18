@@ -74,8 +74,8 @@ function mapSupabaseAuthError(message: string) {
   if (normalized.includes("already registered") || normalized.includes("already exists")) {
     return "An account with this email may already exist. Try signing in instead.";
   }
-  if (normalized.includes("rate limit") || normalized.includes("too many")) {
-    return "Too many attempts. Please wait a moment and try again.";
+  if (normalized.includes("rate limit") || normalized.includes("too many") || normalized.includes("request rate")) {
+    return "The authentication provider is temporarily limiting signups from this network. Please wait 5 minutes before trying again. Do not retry repeatedly.";
   }
   if (normalized.includes("password")) {
     return "That password does not meet the requirements. Use at least 8 characters with a letter and a number.";
@@ -265,7 +265,7 @@ export async function signupAction(
       if (!isSupabaseAuthConfigured()) {
         return formError("Authentication is not configured for this deployment.");
       }
-      const supabase = await createSupabaseServerClient();
+      const supabase = await createSupabaseServerClient({ forwardIp: ip });
       if (!supabase) return formError("Authentication is not configured.");
       const { data, error } = await supabase.auth.signUp({
         email: parsed.data.email,
