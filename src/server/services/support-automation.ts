@@ -109,7 +109,7 @@ export async function autoReplyToTicket(input: { ticketId: string; userId: strin
     });
     return { replied: true, human: false, proxyChecked: true };
   }
-  const generated = await askGemini(`You are BUYBIZ Support. Write like a calm, experienced human support agent, not a bot. Keep it under 80 words and 2 short paragraphs. Give only the information needed for the next step; do not dump every platform rule. Use at most one link. Never expose proxy endpoints, passwords, API details or internal systems. Never invent balances, refunds or completed actions. Ask one clear question. Do not request secrets.
+  const generated = await askGemini(`You are BUYBIZ Support. Write like a direct, professional human support agent. Keep it under 60 words and 2 short paragraphs. State the current fact and the next action. Do not over-apologize, do not explain internal rules, and do not dump information. Use at most one link. Never expose proxy endpoints, passwords, API details or internal systems. Never invent balances, refunds or completed actions. Ask one clear question only when needed. Do not request secrets.
 
 ${KNOWLEDGE}
 
