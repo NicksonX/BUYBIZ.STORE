@@ -37,6 +37,17 @@ async function proxyDiagnostic(userId: string, message: string) {
       where a.user_id=$1 and a.status='active' and a.expires_at>now() order by a.activated_at desc`,
     [userId],
   );
+  const cited = message.match(/\b(\d{1,3}(?:\.\d{1,3}){3}):(\d{2,5})\b/);
+  if (cited) {
+    const match = await db.query<{ status: string; label: string; id: string }>(
+      `select a.status,a.id,i.label from proxy_allocations a join proxy_inventory i on i.id=a.proxy_inventory_id where a.user_id=$1 and i.host=$2 and i.port=$3 order by a.created_at desc limit 1`,
+      [userId, cited[1], Number(cited[2])],
+    );
+    const found = match.rows[0];
+    if (found && found.status !== "active") {
+      return { reply: `I found the endpoint you listed, but that allocation is no longer active (${found.status}). That is why it times out. Your current active proxy is shown in My Proxies; use the host and port from the active card. If you want the old proxy replaced, this needs human review.\n\nMy Proxies: /dashboard/proxies\n\nI’ll keep this ticket open.`, close: false };
+    }
+  }
   if (allocations.rows.length === 0) return { reply: `I can check this for you, but I don’t see an active proxy on your account. Please open My Proxies and send me the proxy label or order reference. If you believe you should have an active proxy, include the order number so I can trace it.
 
 My Proxies: /dashboard/proxies`, close: false };
@@ -83,8 +94,7 @@ Has this resolved your issue? Reply YES to close, or tell me what you still see.
 
 export async function autoReplyToTicket(input: { ticketId: string; userId: string; subject: string; message: string }) {
   const db = await getDb();
-  const human = await db.query(`select 1 from support_messages where ticket_id=$1 and is_staff=true and is_ai=false limit 1`, [input.ticketId]);
-  if (human.rows[0]) return { replied: false, reason: "human_takeover" };
+  // A customer follow-up is answered even if a human previously replied; the human can still take over afterwards.
   const asksHuman = /(human|agent|person|real support|escalate)/i.test(input.message);
   if (asksHuman) {
     await db.query(`update support_tickets set status='open', updated_at=now() where id=$1`, [input.ticketId]);
@@ -149,10 +159,9 @@ export async function autoRespondToAwaitingTickets(limit = 30) {
   );
   const results: Array<{ ticketId: string; replied: boolean; skipped?: string }> = [];
   for (const ticket of rows.rows) {
-    if (ticket.hasHuman) { results.push({ ticketId: ticket.id, replied: false, skipped: "human_takeover" }); continue; }
     try {
       const outcome = await autoReplyToTicket({ ticketId: ticket.id, userId: ticket.userId, subject: ticket.subject, message: ticket.body });
-      results.push({ ticketId: ticket.id, replied: outcome.replied, skipped: outcome.replied ? undefined : outcome.reason });
+      results.push({ ticketId: ticket.id, replied: outcome.replied, skipped: outcome.replied ? undefined : "not_replied" });
     } catch (error) {
       results.push({ ticketId: ticket.id, replied: false, skipped: error instanceof Error ? error.message : "failed" });
     }
