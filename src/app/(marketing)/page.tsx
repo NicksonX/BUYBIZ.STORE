@@ -1,7 +1,6 @@
-import Image from "next/image";
 import Link from "next/link";
 import { cookies } from "next/headers";
-import { LogoMark } from "@/components/brand/logo";
+import { HeroNetworkVisual } from "@/components/marketing/hero-network";
 import {
   ArrowRight,
   ArrowUpRight,
@@ -188,27 +187,10 @@ export default async function HomePage() {
   return (
     <div className={cn("marketing-home", marketingTheme === "dark" && "dark")}>
       <section className="marketing-light-section relative overflow-hidden bg-[#F4F4F5] text-[#0A0B0D] dark:bg-[#08090B]">
-        <div className="pointer-events-none absolute inset-y-0 right-0 hidden w-[54%] lg:block">
-          <Image
-            src="/marketing/hero-customer-v2.jpg"
-            alt="A customer using a laptop"
-            fill
-            priority
-            sizes="55vw"
-            className="marketing-kenburns object-cover object-[38%_42%] grayscale contrast-[1.04] [clip-path:polygon(12%_0,100%_0,100%_100%,0_100%)]"
-          />
-          <div className="marketing-hero-fade-left absolute inset-0 bg-[linear-gradient(90deg,#F4F4F5_0%,rgba(244,244,245,0.76)_8%,rgba(244,244,245,0.08)_34%,rgba(244,244,245,0)_62%)]" />
-          <div className="marketing-hero-fade-bottom absolute inset-x-0 bottom-0 h-44 bg-[linear-gradient(0deg,#F4F4F5_0%,rgba(244,244,245,0)_100%)]" />
-          <div className="marketing-float absolute bottom-6 right-[8%] z-10 inline-flex items-center gap-2.5 rounded-full border border-white/35 bg-[#0A0B0D]/55 px-3 py-2 shadow-[0_12px_30px_-18px_rgba(0,0,0,0.65)] backdrop-blur-md">
-            <LogoMark tone="onDark" className="h-5 w-5 rounded-[6px]" />
-            <span className="text-[9px] font-bold uppercase tracking-[0.16em] text-white/90">
-              BUYBIZ
-            </span>
-            <span className="h-3 w-px bg-white/25" />
-            <span className="text-[8px] font-medium uppercase tracking-[0.1em] text-white/55">
-              Proxy access
-            </span>
-          </div>
+        <div className="pointer-events-none absolute inset-y-0 right-0 hidden w-[56%] lg:block">
+          <div className="absolute inset-0 [clip-path:polygon(10%_0,100%_0,100%_100%,0_100%)]"><HeroNetworkVisual /></div>
+          <div className="marketing-hero-fade-left absolute inset-0 bg-[linear-gradient(90deg,#F4F4F5_0%,rgba(244,244,245,0.9)_6%,rgba(244,244,245,0.1)_30%,rgba(244,244,245,0)_55%)]" />
+          <div className="marketing-hero-fade-bottom absolute inset-x-0 bottom-0 h-32 bg-[linear-gradient(0deg,#F4F4F5_0%,rgba(244,244,245,0)_100%)]" />
         </div>
 
         <div className="relative mx-auto w-full max-w-[1200px] px-5 pb-7 pt-8 sm:px-8 sm:pb-8 sm:pt-10 lg:pb-8 lg:pt-12">
@@ -285,6 +267,9 @@ export default async function HomePage() {
                   <LockKeyhole className="h-3.5 w-3.5" /> No auto-renewal
                 </span>
               </div>
+            </div>
+            <div className="relative mt-1 aspect-[16/10] w-full overflow-hidden rounded-[18px] border border-black/[0.08] bg-[#08090B] shadow-[0_26px_60px_-42px_rgba(0,0,0,0.7)] lg:hidden">
+              <HeroNetworkVisual compact id="hero-network-mobile" />
             </div>
 
           </div>

@@ -1181,3 +1181,9 @@ h1, h2, h3, h4, p, li, td, th, a, button {
   .payment-ring, .payment-mark, .payment-dots i, .payment-pulse-dots i { animation: none !important; }
   .payment-ring { border-color: #0a0b0d; }
 }
+
+/* BUYBIZ hero network mesh: subtle packet flow, disabled for reduced motion. */
+.hero-network-flow { animation: hero-network-dash 18s linear infinite; }
+.hero-network-flow-slow { animation-duration: 28s; animation-direction: reverse; }
+@keyframes hero-network-dash { to { stroke-dashoffset: -180; } }
+@media (prefers-reduced-motion: reduce) { .hero-network-flow { animation: none; } }
