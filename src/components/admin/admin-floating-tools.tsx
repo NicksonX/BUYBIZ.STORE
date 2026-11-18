@@ -126,7 +126,7 @@ export function AdminFloatingTools({ role }: { role: string }) {
   if (!canUseFinancialTools) return null;
   return (
     <>
-      <div className="fixed bottom-5 left-4 z-[80] flex flex-col gap-2 lg:bottom-6 lg:left-[264px]">
+      <div className="fixed bottom-24 right-3 z-[90] flex flex-col items-end gap-2 lg:bottom-auto lg:top-1/2 lg:-translate-y-1/2">
         <button type="button" data-testid="floating-treasury" onClick={() => setOpen((s) => ({ ...s, wallet: !s.wallet }))} aria-label="Open Treasury Wallet" title="Treasury Wallet" className="inline-flex h-10 items-center gap-2 rounded-full border border-white/15 bg-[#0A0B0D] px-3 text-white shadow-float transition-transform hover:scale-[1.03] active:scale-95"><Wallet className="h-4 w-4" /><span className="text-[8.5px] font-semibold uppercase tracking-[0.08em]">Treasury</span></button>
         <button type="button" data-testid="floating-ai" onClick={() => setOpen((s) => ({ ...s, ai: !s.ai }))} aria-label="Open AI Command Centre" title="AI Command Centre" className="inline-flex h-10 items-center gap-2 rounded-full border border-[#B9FF66]/30 bg-[#0A0B0D] px-3 text-[#B9FF66] shadow-float transition-transform hover:scale-[1.03] active:scale-95"><Bot className="h-4 w-4" /><span className="text-[8.5px] font-semibold uppercase tracking-[0.08em]">AI</span></button>
       </div>
