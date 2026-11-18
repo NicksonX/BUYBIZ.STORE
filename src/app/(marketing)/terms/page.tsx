@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { LegalPage, type LegalSection } from "@/components/marketing/legal-page";
 
+export const revalidate = 3600;
 export const metadata: Metadata = {
   title: "Terms of service",
   description:

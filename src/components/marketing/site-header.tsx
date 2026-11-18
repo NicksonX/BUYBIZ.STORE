@@ -79,10 +79,23 @@ export function SiteHeader({
 
   useEffect(() => {
     let cancelled = false;
+    const key = "buybiz_auth_hint";
+    try {
+      const cached = sessionStorage.getItem(key);
+      if (cached) {
+        const parsed = JSON.parse(cached) as { value?: boolean; at?: number };
+        if (parsed.value !== undefined && parsed.at && Date.now() - parsed.at < 60_000) {
+          setIsAuthenticated(Boolean(parsed.value));
+          return () => { cancelled = true; };
+        }
+      }
+    } catch { /* sessionStorage can be unavailable */ }
     fetch("/api/auth/session", { cache: "no-store" })
       .then((response) => (response.ok ? response.json() : { authenticated: false }))
       .then((data: { authenticated?: boolean }) => {
-        if (!cancelled) setIsAuthenticated(Boolean(data.authenticated));
+        if (cancelled) return;
+        setIsAuthenticated(Boolean(data.authenticated));
+        try { sessionStorage.setItem(key, JSON.stringify({ value: Boolean(data.authenticated), at: Date.now() })); } catch { /* ignore */ }
       })
       .catch(() => {
         if (!cancelled) setIsAuthenticated(false);

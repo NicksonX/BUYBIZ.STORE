@@ -13,6 +13,7 @@ import {
 import { MarketingPageHero } from "@/components/marketing/page-hero";
 import { ContactForm } from "@/components/marketing/contact-form";
 
+export const revalidate = 3600;
 export const metadata: Metadata = {
   title: "Contact",
   description:

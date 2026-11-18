@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { MarketingPageHero, HeroLink } from "@/components/marketing/page-hero";
 
+export const revalidate = 3600;
 export const metadata: Metadata = {
   title: "About",
   description:
