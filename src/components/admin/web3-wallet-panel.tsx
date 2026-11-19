@@ -46,19 +46,37 @@ export function Web3WalletPanel() {
     try { setBalances(await readBalances(target)); } catch (e) { setError(e instanceof Error ? e.message : "Could not refresh balance."); } finally { setBusy(false); }
   }
   function provider() {
-    return (window as unknown as { okxwallet?: { ethereum?: EthereumProvider }; ethereum?: EthereumProvider }).okxwallet?.ethereum ?? (window as unknown as { ethereum?: EthereumProvider }).ethereum ?? null;
+    const w = window as unknown as {
+      okxwallet?: EthereumProvider & { ethereum?: EthereumProvider };
+      ethereum?: EthereumProvider;
+    };
+    const okx = w.okxwallet;
+    return okx?.ethereum ?? (typeof okx?.request === "function" ? okx : null) ?? w.ethereum ?? null;
+  }
+  async function waitForProvider() {
+    for (let attempt = 0; attempt < 8; attempt += 1) {
+      const p = provider();
+      if (p) return p;
+      await new Promise((resolve) => window.setTimeout(resolve, 250));
+    }
+    return null;
+  }
+  function providerErrorMessage(error: unknown) {
+    if (error instanceof Error && error.message) return error.message;
+    if (error && typeof error === "object" && "message" in error) return String((error as { message?: unknown }).message);
+    return "Wallet connection failed.";
   }
   async function connect() {
-    const p = provider();
-    if (!p) { setError("No EVM/OKX browser wallet found. Open BUYBIZ in the OKX Wallet browser or install the extension."); return; }
     setBusy(true); setError(null);
     try {
+      const p = await waitForProvider();
+      if (!p) { setError("OKX Wallet was not detected. Unlock the OKX extension and refresh this page."); return; }
       const accounts = await p.request({ method: "eth_requestAccounts" }) as string[];
       const account = accounts?.[0];
-      if (!account) throw new Error("No wallet account was returned.");
-      try { await p.request({ method: "wallet_switchEthereumChain", params: [{ chainId: "0x38" }] }); } catch { setError("Switch OKX Wallet to BNB Smart Chain (BSC)."); }
+      if (!account) throw new Error("OKX did not return a wallet account. Unlock the wallet and try again.");
+      try { await p.request({ method: "wallet_switchEthereumChain", params: [{ chainId: "0x38" }] }); } catch { setError("Switch OKX Wallet to BNB Smart Chain (BSC), then press Connect again."); }
       setAddress(account); setWalletKind("connected"); setMode("wallet"); void refresh(account);
-    } catch (e) { setError(e instanceof Error ? e.message : "Wallet connection failed."); } finally { setBusy(false); }
+    } catch (e) { setError(providerErrorMessage(e)); } finally { setBusy(false); }
   }
   function create() {
     setError(null);

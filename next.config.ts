@@ -16,8 +16,8 @@ const contentSecurityPolicy = [
   "img-src 'self' data: blob:",
   "font-src 'self' data:",
   isDev
-    ? "connect-src 'self' ws: wss: https://*.supabase.co https://api.paystack.co"
-    : "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.paystack.co",
+    ? "connect-src 'self' ws: wss: https://*.supabase.co https://api.paystack.co https://bsc-dataseed.binance.org"
+    : "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.paystack.co https://bsc-dataseed.binance.org",
   "frame-src 'self' https://checkout.paystack.com",
   "form-action 'self' https://checkout.paystack.com",
   "frame-ancestors 'none'",
