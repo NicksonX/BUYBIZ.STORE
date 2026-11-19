@@ -4,6 +4,7 @@ export type ActionState = {
   fieldErrors?: Record<string, string>;
   resetUrl?: string;
   redirectTo?: string;
+  claimId?: string;
 };
 
 export const initialActionState: ActionState = {};

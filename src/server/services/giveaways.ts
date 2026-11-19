@@ -100,6 +100,18 @@ export async function submitGiveawayWallet(input: { userId: string; claimId: str
       `update giveaway_claims set wallet_address=$2, address_status='submitted' where id=$1 and user_id=$3`,
       [input.claimId, input.address.trim(), input.userId],
     );
+    const notice = await tx.query<{ email: string; name: string; title: string; rewardCents: number; asset: string; network: string }>(
+      `select p.email, coalesce(p.display_name,p.username) name, g.title, g.reward_amount_usd_cents as "rewardCents", g.reward_asset as asset, g.network
+         from giveaway_claims c join profiles p on p.id=c.user_id join giveaways g on g.id=c.giveaway_id
+        where c.id=$1 limit 1`,
+      [input.claimId],
+    );
+    const info = notice.rows[0];
+    if (info) await queueEmail(tx, {
+      type: "giveaway_claim_received", userId: input.userId, recipient: info.email,
+      data: { name: info.name, giveawayTitle: info.title, amountLabel: `$${(Number(info.rewardCents) / 100).toFixed(2)} ${info.asset}`, network: info.network },
+      dedupeKey: `giveaway_claim_received:${input.claimId}`,
+    });
     return { ok: true };
   });
 }
@@ -131,11 +143,12 @@ export async function getGiveawayAdminData() {
        from giveaways order by created_at desc`,
   );
   const claims = await db.query<Record<string, unknown>>(
-    `select c.id, c.giveaway_id as "giveawayId", c.reward_amount_usd_cents as "rewardCents",
+    `select c.id, c.giveaway_id as "giveawayId", c.user_id as "userId", c.reward_amount_usd_cents as "rewardCents",
             c.wallet_address as "walletAddress", c.address_status as "addressStatus",
             c.payment_status as "paymentStatus", c.transaction_hash as "transactionHash",
-            c.claimed_at as "claimedAt", p.username, p.email
-       from giveaway_claims c join profiles p on p.id=c.user_id order by c.claimed_at desc limit 500`,
+            c.claimed_at as "claimedAt", p.username, p.email, g.network
+       from giveaway_claims c join profiles p on p.id=c.user_id join giveaways g on g.id=c.giveaway_id
+      order by c.claimed_at desc limit 500`,
   );
   return { giveaways: giveaways.rows, claims: claims.rows };
 }
@@ -155,20 +168,36 @@ export async function setGiveawayStatus(id: string, status: GiveawayStatus) {
 
 export async function announceGiveaway(id: string) {
   const db = await getDb();
-  const g = await db.query<{ title: string; rewardCents: number; asset: string; network: string }>(
-    `select title, reward_amount_usd_cents as "rewardCents", reward_asset as asset, network from giveaways where id=$1 and status='active'`,
+  const g = await db.query<{ title: string; rewardCents: number; asset: string; network: string; startsAt: Date | null; endsAt: Date | null }>(
+    `select title, reward_amount_usd_cents as "rewardCents", reward_asset as asset, network,
+            starts_at as "startsAt", ends_at as "endsAt"
+       from giveaways where id=$1 and status='active'`,
     [id],
   );
-  if (!g.rows[0]) return { queued: 0 };
-  const users = await db.query<{ id: string; email: string; username: string }>(`select id,email,username from profiles where role='customer' and status='active' and email_verified=true limit 1000`);
+  if (!g.rows[0]) return { queued: 0, eligible: 0 };
+  const giveaway = g.rows[0];
+  const format = (value: Date | null) => value
+    ? new Intl.DateTimeFormat("en-NG", { dateStyle: "medium", timeStyle: "short", timeZone: "Africa/Lagos" }).format(new Date(value)) + " (Africa/Lagos)"
+    : "See the giveaway page";
+  const startsAtLabel = format(giveaway.startsAt);
+  const endsAtLabel = format(giveaway.endsAt);
+  const data = {
+    giveawayTitle: giveaway.title,
+    amountLabel: `$${(giveaway.rewardCents / 100).toFixed(2)} ${giveaway.asset}`,
+    startsAtLabel,
+    endsAtLabel,
+  };
+  const users = await db.query<{ id: string; email: string; username: string }>(
+    `select id,email,username from profiles where role='customer' and status='active' and email_verified=true`,
+  );
   let queued = 0;
   for (const user of users.rows) {
     const deliveryId = await db.transaction((tx) => queueEmail(tx, {
       type: "giveaway_live", userId: user.id, recipient: user.email,
-      data: { name: user.username, giveawayTitle: g.rows[0].title, amountLabel: `$${(g.rows[0].rewardCents / 100).toFixed(2)} ${g.rows[0].asset}` },
+      data: { ...data, name: user.username },
       dedupeKey: `giveaway_live:${id}:${user.id}`,
     }));
     if (deliveryId) queued += 1;
   }
-  return { queued };
+  return { queued, eligible: users.rows.length };
 }

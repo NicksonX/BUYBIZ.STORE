@@ -23,6 +23,7 @@ export type EmailType =
   | "campaign_payout_rejected"
   | "proxy_expiry_reminder"
   | "giveaway_live"
+  | "giveaway_claim_received"
   | "giveaway_winner_paid"
   | "marketing";
 
@@ -43,6 +44,8 @@ export type EmailTemplateData = {
   expiryLabel?: string;
   proxyLabel?: string;
   giveawayTitle?: string;
+  startsAtLabel?: string;
+  endsAtLabel?: string;
   network?: string;
   requestedAt?: string;
   campaignSubject?: string;
@@ -182,6 +185,11 @@ const DEFAULT_TEMPLATES: Record<
     subject: "Congratulations! Your BUYBIZ Giveaway Reward Has Been Paid",
     preheader: "Your giveaway reward is confirmed on-chain.",
     intro: "Your BUYBIZ giveaway reward has been sent and confirmed on the blockchain.",
+  },
+  giveaway_claim_received: {
+    subject: "Your BUYBIZ Giveaway Claim Was Received",
+    preheader: "Your giveaway claim and wallet details are saved for review.",
+    intro: "Your BUYBIZ giveaway claim was received. Payment is not automatic; it is reviewed before processing.",
   },
   giveaway_live: {
     subject: "A New BUYBIZ Giveaway Is Live!",
@@ -435,14 +443,27 @@ export function renderEmail(input: {
       ])}
       ${button("Visit BUYBIZ", `${input.websiteUrl}/dashboard/giveaways`)}`;
       break;
-    case "giveaway_live":
-      content = `<p style="margin:16px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.75;color:#4E5157;">A new BUYBIZ giveaway is now live.</p>
+    case "giveaway_claim_received":
+      content = `<p style="margin:16px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.75;color:#4E5157;">Your giveaway claim has been submitted successfully.</p>
       ${details([
         ["Giveaway", data.giveawayTitle ?? "BUYBIZ Giveaway"],
         ["Reward", data.amountLabel ?? ""],
+        ["Network", data.network ?? "BEP20"],
       ])}
-      <p style="margin:16px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.75;color:#4E5157;">Open the Giveaways page to read the details and find the claim code on our official BUYBIZ social channel. Codes are not included in this email.</p>
-      ${button("Visit BUYBIZ Giveaway", `${input.websiteUrl}/dashboard/giveaways`)}`;
+      <p style="margin:12px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.7;color:${BRAND.muted};">Your wallet details are saved for verification and subsequent reward processing. This does not mean payment has already been sent. We will notify you when the reward is processed.</p>
+      ${button("View your claim", `${input.websiteUrl}/dashboard/giveaways`)}`;
+      break;
+    case "giveaway_live":
+      content = `<p style="margin:16px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.75;color:#4E5157;">Something exciting is coming from BUYBIZ.</p>
+      ${details([
+        ["Giveaway", data.giveawayTitle ?? "BUYBIZ Giveaway"],
+        ["Reward", data.amountLabel ?? "$1.00 USDT"],
+        ["Starts", data.startsAtLabel ?? "See the giveaway page"],
+        ["Ends", data.endsAtLabel ?? "See the giveaway page"],
+      ])}
+      <p style="margin:16px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.75;color:#4E5157;">Visit the official giveaway page when the event begins, check the official BUYBIZ channel for the claim code, and follow the on-page instructions. The code is not included in this email.</p>
+      <p style="margin:10px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.7;color:${BRAND.muted};">A claim is not a guarantee of payment. Claims are reviewed and rewards are processed manually after verification.</p>
+      ${button("Visit the BUYBIZ Giveaway", `${input.websiteUrl}/dashboard/giveaways`)}`;
       break;
     case "proxy_expiry_reminder":
       content = `<p style="margin:16px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.75;color:#4E5157;">Your BUYBIZ proxy subscription is scheduled to expire soon.</p>

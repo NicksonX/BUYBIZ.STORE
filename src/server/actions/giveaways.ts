@@ -9,13 +9,13 @@ import { AppError } from "@/lib/errors";
 export async function claimGiveawayAction(_previous: ActionState, formData: FormData): Promise<ActionState> {
   const user = await requireUserPage();
   try {
-    await claimGiveaway({
+    const claim = await claimGiveaway({
       userId: user.id,
       giveawayId: String(formData.get("giveawayId") ?? ""),
       code: String(formData.get("code") ?? ""),
     });
     revalidatePath("/dashboard/giveaways");
-    return formSuccess("Claim successful. Add your USDT BEP20 payout address to receive the reward.");
+    return formSuccess("Claim successful. Add your USDT BEP20 payout address to receive the reward.", { claimId: claim.claimId });
   } catch (error) {
     if (error instanceof AppError) return formError(error.userMessage);
     console.error("[buybiz/giveaway] claim failed", error);

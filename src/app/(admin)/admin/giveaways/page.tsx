@@ -8,6 +8,7 @@ import { requireAdminPage } from "@/server/auth/guards";
 import { createGiveawayAction, giveawayStatusAction } from "@/server/actions/giveaways";
 import { getGiveawayAdminData, getGiveawayCode } from "@/server/services/giveaways";
 import { formatDateTime } from "@/lib/utils";
+import { getDb } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +17,8 @@ function usd(cents: unknown) { return `$${(Number(cents) / 100).toFixed(2)}`; }
 export default async function AdminGiveawaysPage() {
   await requireAdminPage();
   const data = await getGiveawayAdminData();
+  const db = await getDb();
+  const delivery = await db.query<{ status: string; n: number }>(`select status,count(*)::int n from email_deliveries where email_type='giveaway_live' group by status`);
   const codes = new Map<string, string>();
   for (const g of data.giveaways) {
     try { codes.set(String(g.id), await getGiveawayCode(String(g.id))); } catch { /* no code */ }
@@ -23,6 +26,10 @@ export default async function AdminGiveawaysPage() {
   return (
     <div className="space-y-4">
       <PageHeader eyebrow="Growth" title="Giveaways" description="Create code-gated rewards, monitor claims, and prepare payouts. Treasury signing is not enabled from this screen." />
+      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+        {[["Successful claims", data.claims.length], ["Pending addresses", data.claims.filter((c) => c.addressStatus === "missing").length], ["Addresses submitted", data.claims.filter((c) => c.addressStatus === "submitted").length], ["Paid rewards", data.claims.filter((c) => c.paymentStatus === "paid").length]].map(([label, value]) => <div key={String(label)} className="surface-card rounded-[10px] p-3"><p className="text-[8.5px] text-muted-foreground">{label}</p><p className="tabular mt-1 text-[17px] font-semibold">{value}</p></div>)}
+      </div>
+      <p className="mt-2 text-[9px] text-muted-foreground">Announcement delivery: {delivery.rows.map((row) => `${row.n} ${row.status}`).join(" · ") || "not queued"}. No claim code or claim limit is included in the email.</p>
       <details className="surface-card rounded-[13px] p-4" open>
         <summary className="cursor-pointer list-none text-[12px] font-semibold [&::-webkit-details-marker]:hidden">Create a giveaway</summary>
         <div className="mt-3">
@@ -62,7 +69,7 @@ export default async function AdminGiveawaysPage() {
 
       <section className="surface-card overflow-hidden rounded-[13px]">
         <div className="border-b border-border px-4 py-3"><h2 className="text-[12px] font-semibold">Claims</h2><p className="mt-0.5 text-[9px] text-muted-foreground">Payout addresses are visible only in this admin area. Payment signing is not connected.</p></div>
-        {data.claims.length === 0 ? <p className="px-4 py-6 text-[10px] text-muted-foreground">No claims yet.</p> : <div className="overflow-x-auto"><table className="w-full min-w-[760px] text-left"><thead className="border-b border-border bg-surface-subtle/60"><tr>{["User", "Reward", "Address", "Payment", "Claimed"].map((label) => <th key={label} className="px-3 py-2 text-[8.5px] uppercase tracking-[0.08em] text-muted-foreground">{label}</th>)}</tr></thead><tbody className="divide-y divide-border">{data.claims.map((c) => <tr key={String(c.id)}><td className="px-3 py-2 text-[10px]">{String(c.username)}</td><td className="px-3 py-2 text-[10px]">{usd(c.rewardCents)}</td><td className="max-w-[240px] break-all px-3 py-2 font-mono text-[8px]">{c.walletAddress ? String(c.walletAddress) : "Not submitted"}</td><td className="px-3 py-2 text-[9px] capitalize">{String(c.paymentStatus)}</td><td className="px-3 py-2 text-[9px] text-muted-foreground">{formatDateTime(new Date(String(c.claimedAt)))}</td></tr>)}</tbody></table></div>}
+        {data.claims.length === 0 ? <p className="px-4 py-6 text-[10px] text-muted-foreground">No claims yet.</p> : <div className="overflow-x-auto"><table className="w-full min-w-[760px] text-left"><thead className="border-b border-border bg-surface-subtle/60"><tr>{["Customer", "User ID", "Reward", "Network", "Wallet address", "Verification", "Payment", "Claimed"].map((label) => <th key={label} className="px-3 py-2 text-[8.5px] uppercase tracking-[0.08em] text-muted-foreground">{label}</th>)}</tr></thead><tbody className="divide-y divide-border">{data.claims.map((c) => <tr key={String(c.id)}><td className="px-3 py-2 text-[10px]">{String(c.username)}<p className="mt-0.5 text-[8px] text-muted-foreground">{String(c.email)}</p></td><td className="px-3 py-2 font-mono text-[7.5px] text-muted-foreground">{String(c.userId)}</td><td className="px-3 py-2 text-[10px]">{usd(c.rewardCents)}</td><td className="px-3 py-2 text-[8px]">{String(c.network)}</td><td className="max-w-[220px] break-all px-3 py-2 font-mono text-[8px]">{c.walletAddress ? String(c.walletAddress) : "Not submitted"}</td><td className="px-3 py-2 text-[9px] capitalize">{String(c.addressStatus)}</td><td className="px-3 py-2 text-[9px] capitalize">{String(c.paymentStatus)}</td><td className="px-3 py-2 text-[9px] text-muted-foreground">{formatDateTime(new Date(String(c.claimedAt)))}</td></tr>)}</tbody></table></div>}
       </section>
     </div>
   );
