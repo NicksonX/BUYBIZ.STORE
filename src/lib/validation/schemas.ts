@@ -193,7 +193,7 @@ export const inventorySchema = z.object({
   region: z.string().trim().max(80).optional().or(z.literal("")),
   providerNote: z.string().trim().max(500).optional().or(z.literal("")),
   purchaseCost: z.string().optional().or(z.literal("")),
-  maxSeats: z.coerce.number().int().min(1).max(10).default(10),
+  maxSeats: z.coerce.number().int().min(1).max(30).default(30),
   accessType: z.enum(["shared", "single"]).default("shared"),
   productSlug: z.string().trim().min(1, "Choose the package this proxy serves.").max(80),
   credentialGroup: z.string().trim().min(1).max(24).default("A"),
@@ -221,7 +221,7 @@ export const roleUpdateSchema = z.object({
 });
 
 export const settingsSchema = z.object({
-  inventoryDefaultMaxSeats: z.coerce.number().int().min(1).max(20),
+  inventoryDefaultMaxSeats: z.coerce.number().int().min(1).max(30),
   referralMinProxyDurationDays: z.coerce.number().int().min(1).max(365),
   allocationSafetyBufferMinutes: z.coerce.number().int().min(0).max(10080),
   stockExpiryDefaultDays: z.coerce.number().int().min(1).max(365),
@@ -248,7 +248,7 @@ export const inventoryEditSchema = z.object({
   providerNote: z.string().trim().max(500).optional().or(z.literal("")),
   adminNotes: z.string().trim().max(1000).optional().or(z.literal("")),
   purchaseCost: z.string().optional().or(z.literal("")),
-  maxSeats: z.coerce.number().int().min(1).max(10),
+  maxSeats: z.coerce.number().int().min(1).max(30),
   accessType: z.enum(["shared", "single"]).default("shared"),
   productSlug: z.string().trim().min(1).max(80),
   credentialGroup: z.string().trim().min(1).max(24),

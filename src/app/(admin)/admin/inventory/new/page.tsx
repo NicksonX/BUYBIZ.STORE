@@ -118,8 +118,8 @@ export default async function NewInventoryPage() {
                   <option value="single">Single customer (personal)</option>
                 </Select>
               </AdminField>
-              <AdminField label="Maximum seats" htmlFor="maxSeats" hint="Shared: 1-10. Single: always 1">
-                <Input id="maxSeats" name="maxSeats" type="number" min={1} max={20} defaultValue={settings.inventoryDefaultMaxSeats} />
+              <AdminField label="Maximum seats" htmlFor="maxSeats" hint="Shared: 1-30. Single: always 1">
+                <Input id="maxSeats" name="maxSeats" type="number" min={1} max={30} defaultValue={settings.inventoryDefaultMaxSeats} />
               </AdminField>
               <AdminField label="Upstream expiry" htmlFor="upstreamExpiry" hint="WAT">
                 <Input id="upstreamExpiry" name="upstreamExpiry" type="date" required defaultValue={expiryDate} />

@@ -221,7 +221,7 @@ export default async function AdminInventoryDetailPage({
                   <Input id="inv-cost" name="purchaseCost" inputMode="decimal" defaultValue={(inventory.purchaseCostMinor / 100).toString()} />
                 </AdminField>
                 <AdminField label="Maximum seats" htmlFor="inv-max" hint={`${inventory.activeSeats} active. Single access is always 1.`}>
-                  <Input id="inv-max" name="maxSeats" type="number" min={1} max={10} defaultValue={inventory.maxSeats} />
+                  <Input id="inv-max" name="maxSeats" type="number" min={1} max={30} defaultValue={inventory.maxSeats} />
                 </AdminField>
                 <AdminField label="Access type" htmlFor="inv-access">
                   <Select id="inv-access" name="accessType" defaultValue={inventory.accessType}>

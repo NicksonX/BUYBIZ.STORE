@@ -103,7 +103,7 @@ export async function createInventoryAction(
     region: formData.get("region") ?? "",
     providerNote: formData.get("providerNote") ?? "",
     purchaseCost: formData.get("purchaseCost") ?? "",
-    maxSeats: formData.get("maxSeats") ?? 10,
+    maxSeats: formData.get("maxSeats") ?? 30,
     accessType: formData.get("accessType") ?? "shared",
     productSlug: formData.get("productSlug"),
     credentialGroup: formData.get("credentialGroup") ?? "A",
@@ -118,9 +118,7 @@ export async function createInventoryAction(
   const data = parsed.data;
   const maxSeats = data.accessType === "single"
     ? 1
-    : data.productSlug === "proxy-7-days"
-      ? Math.max(10, data.maxSeats)
-      : data.maxSeats;
+    : data.maxSeats;
   const rotationHours =
     data.productSlug === "proxy-24-hours"
       ? 24
