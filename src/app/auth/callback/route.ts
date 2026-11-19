@@ -46,7 +46,9 @@ export async function GET(request: NextRequest) {
         `select onboarding_complete as "onboardingComplete", created_at as "createdAt" from profiles where id = $1`,
         [data.user.id],
       );
-      const pendingReferral = request.cookies.get("buybiz_pending_referral")?.value;
+      const queryReferral = url.searchParams.get("ref")?.trim().toUpperCase();
+      const cookieReferral = request.cookies.get("buybiz_pending_referral")?.value;
+      const pendingReferral = /^[A-Z0-9]{4,24}$/.test(queryReferral ?? "") ? queryReferral : cookieReferral;
       if (pendingReferral && profile.rows[0]) {
         const ageMinutes = (Date.now() - new Date(profile.rows[0].createdAt).getTime()) / 60_000;
         const existing = await db.query(`select 1 from referrals where referee_id=$1 limit 1`, [data.user.id]);

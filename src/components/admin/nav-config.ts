@@ -49,7 +49,7 @@ export const adminNav: AdminNavItem[] = [
   { href: "/admin/ledger", label: "Wallet ledger", icon: ArrowLeftRight, group: "Finance" },
   { href: "/admin/adjustments", label: "Refunds & credits", icon: BadgeDollarSign, group: "Finance" },
   { href: "/admin/expenses", label: "Expenses", icon: Landmark, group: "Finance" },
-  { href: "/admin/referrals", label: "Referral rewards", icon: Gift, group: "Finance" },
+  { href: "/admin/referrals", label: "Referral leaderboard", icon: Gift, group: "Finance" },
   { href: "/admin/campaigns", label: "Campaigns & USD rewards", icon: Gift, group: "Finance" },
   { href: "/admin/ambassador-payouts", label: "Ambassador payouts", icon: BadgeDollarSign, group: "Finance" },
   { href: "/admin/giveaways", label: "Giveaways", icon: PartyPopper, group: "Finance" },

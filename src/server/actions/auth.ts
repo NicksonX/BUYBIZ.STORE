@@ -785,11 +785,12 @@ export async function oauthAction(
 
   const supabase = await createSupabaseServerClient();
   if (!supabase) return formError("Authentication is not configured.");
+  const callback = new URL("/auth/callback", getAppUrl());
+  callback.searchParams.set("next", next);
+  if (referralCode) callback.searchParams.set("ref", referralCode);
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider,
-    options: {
-      redirectTo: `${getAppUrl()}/auth/callback?next=${encodeURIComponent(next)}`,
-    },
+    options: { redirectTo: callback.toString() },
   });
   if (error || !data.url) {
     console.error("[buybiz/auth] oauth init failed", error?.message);
