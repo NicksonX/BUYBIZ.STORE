@@ -73,12 +73,12 @@ export function ProxyAiWorkspace({
     }
   }
 
-  async function save() {
+  async function save(forceRelist = allowDuplicate) {
     if (!batchId) return;
     setSaving(true);
     setError(null);
     try {
-      const result = await saveVerifiedProxiesAction(batchId, allowDuplicate);
+      const result = await saveVerifiedProxiesAction(batchId, forceRelist);
       if (!result.ok) {
         setError(result.message);
         return;
@@ -152,6 +152,7 @@ export function ProxyAiWorkspace({
               ))}
             </div>
             <label className="flex items-center gap-2 text-[9px] leading-4 text-muted-foreground"><input type="checkbox" checked={allowDuplicate} onChange={(event) => setAllowDuplicate(event.target.checked)} className="h-3.5 w-3.5 accent-[#0A0B0D]" /> Allow duplicate relist</label>
+            {summary.duplicates > 0 ? <button type="button" onClick={() => void save(true)} disabled={saving || !batchId || summary.verified === 0} className="inline-flex h-9 items-center gap-1.5 rounded-full border border-border bg-surface px-4 text-[10.5px] font-semibold text-foreground disabled:opacity-40">Save & relist duplicates</button> : null}
             <button type="button" onClick={() => void save()} disabled={saving || !batchId || summary.verified === 0} className="inline-flex h-9 items-center gap-1.5 rounded-full bg-foreground px-4 text-[10.5px] font-semibold text-background disabled:opacity-40">
               {saving ? <LoadingDots /> : <Save className="h-3.5 w-3.5" />} Save verified proxies to inventory
             </button>
