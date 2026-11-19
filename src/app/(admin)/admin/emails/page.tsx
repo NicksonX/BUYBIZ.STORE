@@ -7,6 +7,8 @@ import { Input, Textarea } from "@/components/ui/input";
 import { StatCard } from "@/components/ui/stat-card";
 import { requireAdminPage } from "@/server/auth/guards";
 import { getEmailAdminData } from "@/server/data/email";
+import { getDb } from "@/lib/db";
+import { getGiveawayAnnouncementStats } from "@/server/services/giveaways";
 import {
   processEmailQueueAction,
   retryEmailDeliveryAction,
@@ -26,6 +28,9 @@ function label(value: string) {
 export default async function AdminEmailsPage() {
   await requireAdminPage();
   const data = await getEmailAdminData();
+  const db = await getDb();
+  const activeGiveaway = (await db.query<{ id: string; title: string }>(`select id,title from giveaways where status='active' order by created_at desc limit 1`)).rows[0];
+  const giveawayStats = activeGiveaway ? await getGiveawayAnnouncementStats(activeGiveaway.id) : null;
   const emailReady = data.runtime.apiKeyPresent && Boolean(data.settings.senderEmail || data.runtime.fromAddress);
 
   return (
@@ -60,6 +65,7 @@ export default async function AdminEmailsPage() {
         </div>
       </div>
 
+      {giveawayStats ? <section className="surface-card rounded-[13px] p-4"><div className="flex flex-wrap items-center justify-between gap-2"><div><h2 className="text-[12px] font-semibold">Active giveaway announcement</h2><p className="mt-0.5 text-[9px] text-muted-foreground">{activeGiveaway?.title} · scoped campaign counts, not all BUYBIZ email.</p></div><Badge tone={giveawayStats.statuses.failed ? "warning" : "success"}>{giveawayStats.total} tracked</Badge></div><div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">{["sent", "queued", "sending", "failed"].map((status) => <div key={status} className="rounded-[8px] bg-surface-subtle p-2"><p className="text-[8px] capitalize text-muted-foreground">{status === "sent" ? "Accepted by provider" : status}</p><p className="tabular mt-1 text-[15px] font-semibold">{giveawayStats.statuses[status as keyof typeof giveawayStats.statuses] ?? 0}</p></div>)}</div></section> : null}
       <div className="grid grid-cols-2 gap-2.5 xl:grid-cols-4">
         <StatCard label="Queued" value={data.counts.queued} icon={Mail} hint="Waiting for the worker" />
         <StatCard label="Sent" value={data.counts.sent} icon={CheckCircle2} hint="Provider accepted" />

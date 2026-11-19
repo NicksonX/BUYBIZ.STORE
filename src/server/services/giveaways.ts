@@ -201,3 +201,23 @@ export async function announceGiveaway(id: string) {
   }
   return { queued, eligible: users.rows.length };
 }
+
+export async function getGiveawayAnnouncementStats(giveawayId: string) {
+  const db = await getDb();
+  const prefix = `giveaway_live:${giveawayId}:%`;
+  const [counts, eligible] = await Promise.all([
+    db.query<{ status: string; n: number }>(
+      `select status,count(*)::int n from email_deliveries
+        where email_type='giveaway_live' and dedupe_key like $1
+        group by status`,
+      [prefix],
+    ),
+    db.query<{ n: number }>(
+      `select count(*)::int n from profiles where role='customer' and status='active' and email_verified=true`,
+    ),
+  ]);
+  const map = new Map(counts.rows.map((row) => [row.status, Number(row.n)]));
+  const statuses = ["queued", "sending", "sent", "failed", "disabled", "not_configured"] as const;
+  const byStatus = Object.fromEntries(statuses.map((status) => [status, map.get(status) ?? 0])) as Record<(typeof statuses)[number], number>;
+  return { statuses: byStatus, total: counts.rows.reduce((sum, row) => sum + Number(row.n), 0), eligible: Number(eligible.rows[0]?.n ?? 0) };
+}

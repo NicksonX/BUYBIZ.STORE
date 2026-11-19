@@ -6,9 +6,10 @@ import { AdminField } from "@/components/admin/field";
 import { Input, Textarea } from "@/components/ui/input";
 import { requireAdminPage } from "@/server/auth/guards";
 import { createGiveawayAction, giveawayStatusAction } from "@/server/actions/giveaways";
-import { getGiveawayAdminData, getGiveawayCode } from "@/server/services/giveaways";
+import { getGiveawayAdminData, getGiveawayAnnouncementStats, getGiveawayCode } from "@/server/services/giveaways";
 import { formatDateTime } from "@/lib/utils";
 import { getDb } from "@/lib/db";
+import { SupportAutoRefresh } from "@/components/support/auto-refresh";
 
 export const dynamic = "force-dynamic";
 
@@ -18,18 +19,23 @@ export default async function AdminGiveawaysPage() {
   await requireAdminPage();
   const data = await getGiveawayAdminData();
   const db = await getDb();
-  const delivery = await db.query<{ status: string; n: number }>(`select status,count(*)::int n from email_deliveries where email_type='giveaway_live' group by status`);
+  const announcement = await getGiveawayAnnouncementStats(String(data.giveaways[0]?.id ?? ""));
   const codes = new Map<string, string>();
   for (const g of data.giveaways) {
     try { codes.set(String(g.id), await getGiveawayCode(String(g.id))); } catch { /* no code */ }
   }
   return (
     <div className="space-y-4">
+      <SupportAutoRefresh intervalMs={30000} />
       <PageHeader eyebrow="Growth" title="Giveaways" description="Create code-gated rewards, monitor claims, and prepare payouts. Treasury signing is not enabled from this screen." />
       <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
         {[["Successful claims", data.claims.length], ["Pending addresses", data.claims.filter((c) => c.addressStatus === "missing").length], ["Addresses submitted", data.claims.filter((c) => c.addressStatus === "submitted").length], ["Paid rewards", data.claims.filter((c) => c.paymentStatus === "paid").length]].map(([label, value]) => <div key={String(label)} className="surface-card rounded-[10px] p-3"><p className="text-[8.5px] text-muted-foreground">{label}</p><p className="tabular mt-1 text-[17px] font-semibold">{value}</p></div>)}
       </div>
-      <p className="mt-2 text-[9px] text-muted-foreground">Announcement delivery: {delivery.rows.map((row) => `${row.n} ${row.status}`).join(" · ") || "not queued"}. No claim code or claim limit is included in the email.</p>
+      <section className="surface-card mt-2 rounded-[11px] p-3">
+        <div className="flex flex-wrap items-center justify-between gap-2"><div><h2 className="text-[10.5px] font-semibold">Announcement delivery · active giveaway</h2><p className="mt-0.5 text-[8.5px] text-muted-foreground">Exact status from the email queue for this giveaway. “Sent” means accepted by the provider, not inbox placement.</p></div><span className="text-[9px] text-muted-foreground">Audience snapshot: {announcement.total} queued/tracked · current eligible: {announcement.eligible}</span></div>
+        <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-5">{["sent", "queued", "sending", "failed", "disabled"].map((status) => <div key={status} className="rounded-[8px] bg-surface-subtle px-2 py-1.5"><p className="text-[8px] capitalize text-muted-foreground">{status === "sent" ? "Accepted by provider" : status}</p><p className="tabular mt-0.5 text-[13px] font-semibold">{announcement.statuses[status as keyof typeof announcement.statuses] ?? 0}</p></div>)}</div>
+        <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface-subtle"><div className="h-full rounded-full bg-[#16794A]" style={{ width: `${announcement.total ? Math.round((announcement.statuses.sent / announcement.total) * 100) : 0}%` }} /></div>
+      </section>
       <details className="surface-card rounded-[13px] p-4" open>
         <summary className="cursor-pointer list-none text-[12px] font-semibold [&::-webkit-details-marker]:hidden">Create a giveaway</summary>
         <div className="mt-3">
