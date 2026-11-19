@@ -50,7 +50,7 @@ export default async function AdminReferralsPage({ searchParams }: { searchParam
         {data.rows.length === 0 ? <EmptyState icon={Gift} title="No referrers match" description="Try another search or remove the status filter." /> : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[1100px] border-collapse text-left">
-              <thead><tr className="border-b border-border bg-surface-subtle/60">{["Rank", "Customer", "User ID", "Code", "Registered", "Pending", "Qualified", "Approved", "Paid", "Earnings", "Joined"].map((label) => <th key={label} className="px-3 py-2 text-[8px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">{label}</th>)}</tr></thead>
+              <thead><tr className="border-b border-border bg-surface-subtle/60">{["Rank", "Customer", "User ID", "Code", "Registered", "Pending", "Qualified", "Approved", "Paid payouts", "Earnings", "Joined"].map((label) => <th key={label} className="px-3 py-2 text-[8px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">{label}</th>)}</tr></thead>
               <tbody className="divide-y divide-border">
                 {data.rows.map((row, index) => <tr key={row.id} className="hover:bg-surface-subtle/50">
                   <td className="px-3 py-2.5"><span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-surface-subtle px-1.5 text-[9px] font-semibold">{(data.page - 1) * data.pageSize + index + 1}</span></td>
