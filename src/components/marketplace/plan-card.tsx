@@ -28,7 +28,7 @@ export function PlanCard({
     : [
         "Instant allocation when stock is available",
         product.slug === "proxy-7-days"
-          ? "Shared access for up to 20 active users"
+          ? "Shared proxy access"
           : "Shared upstream proxy",
         "Expiry shown clearly in your dashboard",
       ];
