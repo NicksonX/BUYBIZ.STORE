@@ -25,6 +25,7 @@ function useWindowState(kind: Kind) {
         const next = { ...DEFAULTS[kind], ...saved[kind], maximized: false };
         const width = Math.min(Math.max(next.width, 320), Math.max(320, window.innerWidth - 8));
         const height = Math.min(Math.max(next.height, 260), Math.max(260, window.innerHeight - 16));
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setState({ ...next, width, height, x: Math.max(4, Math.min(next.x, window.innerWidth - width - 4)), y: Math.max(4, Math.min(next.y, window.innerHeight - 44)) });
       }
     } catch { /* ignore */ }

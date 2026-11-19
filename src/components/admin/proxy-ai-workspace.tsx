@@ -31,6 +31,7 @@ export function ProxyAiWorkspace({
   const [maxSeats, setMaxSeats] = useState(20);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [allowDuplicate, setAllowDuplicate] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [rows, setRows] = useState<ProxyPreviewRow[]>([]);
   const [batchId, setBatchId] = useState<string | null>(null);
@@ -77,12 +78,12 @@ export function ProxyAiWorkspace({
     setSaving(true);
     setError(null);
     try {
-      const result = await saveVerifiedProxiesAction(batchId);
+      const result = await saveVerifiedProxiesAction(batchId, allowDuplicate);
       if (!result.ok) {
         setError(result.message);
         return;
       }
-      setSavedMessage(`${result.saved} verified prox${result.saved === 1 ? "y" : "ies"} saved to inventory.${result.skipped ? ` ${result.skipped} duplicate/invalid entries skipped.` : ""}`);
+      setSavedMessage(`${result.saved} verified prox${result.saved === 1 ? "y" : "ies"} saved to inventory.${result.skipped ? ` ${result.skipped} duplicate/invalid entries skipped.` : ""}${result.relisted ? ` ${result.relisted} duplicate${result.relisted === 1 ? "" : "s"} re-listed intentionally.` : ""}`);
       setBatchId(null);
       setRows([]);
     } catch {
@@ -150,6 +151,7 @@ export function ProxyAiWorkspace({
                 <button key={key} type="button" onClick={() => setFilter(key)} className={cn("rounded-full border px-2.5 py-1 text-[9.5px]", filter === key ? "border-foreground bg-foreground text-background" : "border-border text-muted-foreground")}>{label}</button>
               ))}
             </div>
+            <label className="flex items-center gap-2 text-[9px] leading-4 text-muted-foreground"><input type="checkbox" checked={allowDuplicate} onChange={(event) => setAllowDuplicate(event.target.checked)} className="h-3.5 w-3.5 accent-[#0A0B0D]" /> Allow duplicate relist</label>
             <button type="button" onClick={() => void save()} disabled={saving || !batchId || summary.verified === 0} className="inline-flex h-9 items-center gap-1.5 rounded-full bg-foreground px-4 text-[10.5px] font-semibold text-background disabled:opacity-40">
               {saving ? <LoadingDots /> : <Save className="h-3.5 w-3.5" />} Save verified proxies to inventory
             </button>

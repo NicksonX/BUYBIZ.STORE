@@ -184,7 +184,7 @@ export async function parseAndVerifyProxiesAction(input: {
   };
 }
 
-export async function saveVerifiedProxiesAction(batchId: string) {
+export async function saveVerifiedProxiesAction(batchId: string, allowDuplicate = false) {
   let admin;
   try {
     admin = await requireAdmin();
@@ -222,8 +222,15 @@ export async function saveVerifiedProxiesAction(batchId: string) {
       : Math.max(1, Math.min(20, Number(settings.maxSeats ?? 20)));
 
   let saved = 0;
+  let relisted = 0;
   await db.transaction(async (tx) => {
     for (const item of eligible) {
+      const existing = await tx.query<{ id: string }>(`select id from proxy_inventory where fingerprint=$1 limit 1`, [item.fingerprint]);
+      const isDuplicate = Boolean(existing.rows[0]);
+      const fingerprint = isDuplicate && allowDuplicate
+        ? `${item.fingerprint}::relist::${batchId}::${item.lineNumber}`
+        : item.fingerprint;
+      if (isDuplicate && allowDuplicate) relisted += 1;
       const encryptedUsername = await encryptOptional(item.username);
       const encryptedPassword = await encryptOptional(item.password);
       const inserted = await tx.query<{ id: string }>(
@@ -240,7 +247,7 @@ export async function saveVerifiedProxiesAction(batchId: string) {
          on conflict do nothing
          returning id`,
         [
-          `${countryName(row.expectedCountryCode)} · ${item.host}:${item.port}`,
+          `${countryName(row.expectedCountryCode)} · ${item.host}:${item.port}${isDuplicate && allowDuplicate ? " · relist" : ""}`,
           item.protocol,
           item.host,
           item.port,
@@ -251,7 +258,7 @@ export async function saveVerifiedProxiesAction(batchId: string) {
           countryName(row.expectedCountryCode),
           item.verification.exitIp,
           item.verification.latencyMs,
-          item.fingerprint,
+          fingerprint,
           maxSeats,
           accessType,
           settings.productSlug ?? "",
@@ -279,12 +286,12 @@ export async function saveVerifiedProxiesAction(batchId: string) {
       action: "proxy_import.saved",
       entityType: "proxy_import_batch",
       entityId: batchId,
-      metadata: { saved, countryCode: row.expectedCountryCode, productSlug: settings.productSlug },
+      metadata: { saved, relisted, allowDuplicate, countryCode: row.expectedCountryCode, productSlug: settings.productSlug },
     });
   });
   revalidatePath("/admin/ai-proxy");
   revalidatePath("/admin/inventory");
   revalidatePath("/dashboard/marketplace");
   revalidatePath("/dashboard/checkout/[slug]", "page");
-  return { ok: true as const, saved, skipped: eligible.length - saved };
+  return { ok: true as const, saved, skipped: eligible.length - saved, relisted };
 }

@@ -85,6 +85,7 @@ export function SiteHeader({
       if (cached) {
         const parsed = JSON.parse(cached) as { value?: boolean; at?: number };
         if (parsed.value !== undefined && parsed.at && Date.now() - parsed.at < 60_000) {
+          // eslint-disable-next-line react-hooks/set-state-in-effect
           setIsAuthenticated(Boolean(parsed.value));
           return () => { cancelled = true; };
         }
