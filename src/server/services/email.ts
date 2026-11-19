@@ -314,9 +314,9 @@ export async function processEmailQueue(options?: {
     return { processed: 0, sent: 0, failed: 0, configured: false };
   }
 
-  const limit = Math.min(Math.max(options?.limit ?? 20, 1), 50);
+  const limit = Math.min(Math.max(options?.limit ?? 20, 1), 200);
   const ids = options?.ids?.length
-    ? options.ids.slice(0, 50)
+    ? options.ids.slice(0, 200)
     : (
         await db.query<{ id: string }>(
           `select id from email_deliveries

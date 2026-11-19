@@ -4,6 +4,7 @@ import { processEmailQueue } from "@/server/services/email";
 import { runDepositFollowupJobs } from "@/server/services/email-followups";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 300;
 
 function isAuthorized(request: Request) {
   const secret = process.env.CRON_SECRET;
