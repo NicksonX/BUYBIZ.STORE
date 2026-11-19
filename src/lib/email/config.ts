@@ -34,6 +34,9 @@ export function getProviderDailyLimit(provider: EmailProvider): number | null {
     : process.env.RESEND_DAILY_LIMIT;
   if (!raw) return null;
   const parsed = Number(raw);
+  // Brevo Pro is confirmed at 5,000/day. Do not let a stale lower app env
+  // suppress Brevo and silently route transactional mail to fallback.
+  if (provider === "brevo") return Math.max(5000, Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : 5000);
   return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : null;
 }
 

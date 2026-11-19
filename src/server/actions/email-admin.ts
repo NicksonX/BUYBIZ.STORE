@@ -139,7 +139,7 @@ export async function processEmailQueueAction(
   if (!isEmailConfigured()) {
     return formError("Email provider is not configured. Add EMAIL_API_KEY and EMAIL_FROM in Render.");
   }
-  const result = await processEmailQueue({ limit: 50 });
+  const result = await processEmailQueue({ limit: 200 });
   revalidatePath("/admin/emails");
   return formSuccess(
     `Queue processed: ${result.sent} sent, ${result.failed} failed, ${result.processed} checked.`,

@@ -27,7 +27,7 @@ export async function GET(request: Request) {
   }
   try {
     const followups = await runDepositFollowupJobs();
-    const queue = await processEmailQueue({ limit: 50 });
+    const queue = await processEmailQueue({ limit: 200 });
     return NextResponse.json(
       { ok: true, followups, queue },
       { headers: { "Cache-Control": "no-store" } },
