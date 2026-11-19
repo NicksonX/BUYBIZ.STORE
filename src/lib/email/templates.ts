@@ -24,6 +24,7 @@ export type EmailType =
   | "proxy_expiry_reminder"
   | "giveaway_live"
   | "giveaway_claim_received"
+  | "giveaway_approved"
   | "giveaway_winner_paid"
   | "marketing";
 
@@ -185,6 +186,11 @@ const DEFAULT_TEMPLATES: Record<
     subject: "Congratulations! Your BUYBIZ Giveaway Reward Has Been Paid",
     preheader: "Your giveaway reward is confirmed on-chain.",
     intro: "Your BUYBIZ giveaway reward has been sent and confirmed on the blockchain.",
+  },
+  giveaway_approved: {
+    subject: "Your BUYBIZ Giveaway Reward Was Approved",
+    preheader: "Your giveaway reward is approved and awaiting payment.",
+    intro: "Your BUYBIZ giveaway reward has been approved for payment processing.",
   },
   giveaway_claim_received: {
     subject: "Your BUYBIZ Giveaway Claim Was Received",
@@ -442,6 +448,12 @@ export function renderEmail(input: {
         ["Transaction", data.txHash ?? ""],
       ])}
       ${button("Visit BUYBIZ", `${input.websiteUrl}/dashboard/giveaways`)}`;
+      break;
+    case "giveaway_approved":
+      content = `<p style="margin:16px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.75;color:#4E5157;">Your giveaway reward has been approved and is awaiting payment processing.</p>
+      ${details([["Reward", data.amountLabel ?? ""], ["Network", data.network ?? "BEP20"], ["Status", "Approved · payment pending"]])}
+      <p style="margin:12px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.7;color:${BRAND.muted};">This is not a payment confirmation. We will send another email when the transaction is confirmed on-chain.</p>
+      ${button("View your claim", `${input.websiteUrl}/dashboard/giveaways`)}`;
       break;
     case "giveaway_claim_received":
       content = `<p style="margin:16px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.75;color:#4E5157;">Your giveaway claim has been submitted successfully.</p>

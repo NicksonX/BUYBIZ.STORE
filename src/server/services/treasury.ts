@@ -115,10 +115,24 @@ export async function prepareGiveawayBatch(giveawayId: string, adminId: string) 
 
 export async function approveGiveawayBatch(batchId: string, ownerId: string) {
   const db = await getDb();
-  const batch = await db.query(`update giveaway_payment_batches set status='approved',approved_by=$2,approved_at=now(),updated_at=now() where id=$1 and status='prepared' returning id`, [batchId, ownerId]);
-  if (!batch.rows[0]) throw new AppError("CONFLICT", "Batch is not awaiting approval.");
-  await db.query(`update giveaway_payment_items set status='awaiting_signature' where batch_id=$1`, [batchId]);
-  return { ok: true };
+  return db.transaction(async (tx) => {
+    const batch = await tx.query(`update giveaway_payment_batches set status='approved',approved_by=$2,approved_at=now(),updated_at=now() where id=$1 and status='prepared' returning id`, [batchId, ownerId]);
+    if (!batch.rows[0]) throw new AppError("CONFLICT", "Batch is not awaiting approval.");
+    await tx.query(`update giveaway_payment_items set status='awaiting_signature' where batch_id=$1`, [batchId]);
+    const recipients = await tx.query<{ userId: string; email: string; name: string; amount: number }>(
+      `select i.user_id as "userId", p.email, coalesce(p.display_name,p.username) as name, i.amount_usd_cents as amount
+         from giveaway_payment_items i join profiles p on p.id=i.user_id where i.batch_id=$1`,
+      [batchId],
+    );
+    for (const person of recipients.rows) {
+      await queueEmail(tx, {
+        type: "giveaway_approved", userId: person.userId, recipient: person.email,
+        data: { name: person.name, amountLabel: `$${(Number(person.amount) / 100).toFixed(2)} USDT`, network: "BEP20" },
+        dedupeKey: `giveaway_approved:${batchId}:${person.userId}`,
+      });
+    }
+    return { ok: true };
+  });
 }
 
 export async function recordGiveawayPayment(input: { itemId: string; txHash: string }) {
