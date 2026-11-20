@@ -348,11 +348,9 @@ export async function getAmbassadorDashboard(userId: string) {
     requestedAt: Date;
     paidAt: Date | null;
     rejectionReason: string | null;
-    adminNote: string | null;
   }>(
     `select id, amount_usd_cents as "amountCents", status,
             wallet_address as "walletAddress", transaction_hash as "transactionHash",
-            admin_note as "adminNote",
             requested_at as "requestedAt", paid_at as "paidAt",
             rejection_reason as "rejectionReason"
        from ambassador_withdrawals where user_id=$1

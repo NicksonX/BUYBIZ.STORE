@@ -30,7 +30,6 @@ type PayoutRow = {
   requestedAt: Date;
   paidAt: Date | null;
   rejectionReason: string | null;
-  adminNote: string | null;
 };
 
 export function AmbassadorPanel({
@@ -258,7 +257,6 @@ export function AmbassadorPanel({
                     <Badge tone={payout.status === "paid" ? "success" : payout.status === "rejected" ? "danger" : payout.status === "processing" ? "info" : "warning"}>{payout.status}</Badge>
                   </div>
                   <p className="mt-1 text-[8.5px] text-muted-foreground">Requested {formatDate(payout.requestedAt)}</p>
-                  {payout.adminNote ? <p className="mt-1 rounded-[5px] bg-surface-subtle px-1.5 py-1 text-[8px] text-muted-foreground">{payout.adminNote}</p> : null}
                   {payout.transactionHash ? <p className="mt-1 break-all font-mono text-[8px] text-success">{payout.transactionHash}</p> : null}
                   {payout.rejectionReason ? <p className="mt-1 text-[8.5px] text-danger">{payout.rejectionReason}</p> : null}
                 </div>

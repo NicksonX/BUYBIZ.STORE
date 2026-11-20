@@ -167,9 +167,6 @@ export default async function AmbassadorPayoutsPage() {
                   {payout.transactionHash ? (
                     <p className="mt-1.5 break-all text-[9px] text-success">Tx: {payout.transactionHash}</p>
                   ) : null}
-                  {payout.adminNote ? (
-                    <p className="mt-1.5 rounded-[5px] bg-surface px-2 py-1 text-[8.5px] leading-4 text-muted-foreground">{payout.adminNote}</p>
-                  ) : null}
                   {payout.rejectionReason ? (
                     <p className="mt-1.5 text-[9px] text-danger">Reason: {payout.rejectionReason}</p>
                   ) : null}
