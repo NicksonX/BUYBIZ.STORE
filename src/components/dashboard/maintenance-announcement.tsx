@@ -4,8 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import { Check, Wrench } from "lucide-react";
 import type { DashboardAnnouncement } from "@/server/services/announcements";
 
-const keyFor = (id: string) => `buybiz_announcement_dismissed:${id}`;
-
 export function MaintenanceAnnouncement({ announcement }: { announcement: DashboardAnnouncement | null }) {
   const [open, setOpen] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -13,9 +11,9 @@ export function MaintenanceAnnouncement({ announcement }: { announcement: Dashbo
   useEffect(() => {
     if (!announcement) return;
     try {
-      if (window.localStorage.getItem(keyFor(announcement.id)) === "1") return;
+      if (window.localStorage.getItem(`buybiz_announcement_dismissed:${announcement.id}`) === "1") return;
     } catch {
-      // Storage can be unavailable in private browsing; show it for this load.
+      // If storage is unavailable, show it for this load.
     }
     setOpen(true);
   }, [announcement]);
@@ -38,7 +36,7 @@ export function MaintenanceAnnouncement({ announcement }: { announcement: Dashbo
 
   function dismiss() {
     if (announcement) {
-      try { window.localStorage.setItem(keyFor(announcement.id), "1"); } catch { /* ignore */ }
+      try { window.localStorage.setItem(`buybiz_announcement_dismissed:${announcement.id}`, "1"); } catch { /* ignore */ }
     }
     setOpen(false);
   }

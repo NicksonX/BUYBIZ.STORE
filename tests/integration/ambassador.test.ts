@@ -118,8 +118,8 @@ describe("ambassador promotion and USD commissions", () => {
         group by email_type order by email_type`,
       [referrer.id],
     );
-    expect(mail.rows.find((row) => row.type === "ambassador_promotion")?.count).toBe(1);
-    expect(mail.rows.find((row) => row.type === "ambassador_commission")?.count).toBe(10);
+    expect(mail.rows.find((row) => row.type === "ambassador_promotion")?.count ?? 0).toBe(0);
+    expect(mail.rows.find((row) => row.type === "ambassador_commission")?.count ?? 0).toBe(0);
 
     const dashboard = await getAmbassadorDashboard(referrer.id);
     expect(dashboard.isAmbassador).toBe(true);
@@ -208,7 +208,7 @@ describe("ambassador USDT payouts", () => {
         where user_id=$1 and email_type='payout_requested'`,
       [referrer.id],
     );
-    expect(mail.rows[0].count).toBe(1);
+    expect(mail.rows[0].count).toBe(0);
   });
 });
 

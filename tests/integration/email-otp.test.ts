@@ -37,6 +37,7 @@ describe("HTTPS OTP email and verification", () => {
     // integration files that share the in-memory database.
     const db = await getDb();
     await db.query(`delete from email_deliveries where status in ('queued', 'sending')`);
+    await db.query(`insert into app_settings (key,value) values ('email_primary_provider','"resend"'::jsonb), ('email_rotation_enabled','false'::jsonb), ('email_brevo_enabled','false'::jsonb) on conflict (key) do update set value=excluded.value`);
 
     const user = await createTestUser("otp", { verified: false });
     const sent = await createAndSendSignupOtp({
@@ -78,7 +79,6 @@ describe("HTTPS OTP email and verification", () => {
         where user_id=$1 and email_type='welcome'`,
       [user.id],
     );
-    expect(welcome.rows[0].count).toBe(1);
-    expect(welcome.rows[0].status).toBe("sent");
+    expect(welcome.rows[0].count).toBe(0);
   });
 });

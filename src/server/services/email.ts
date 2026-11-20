@@ -8,6 +8,7 @@ import {
 } from "@/lib/email/config";
 import { sendEmailViaProvider, type ProviderSendResult } from "@/lib/email/client";
 import { recordProviderAttempt, selectEmailProviders } from "@/server/services/email-providers";
+import { getEmailPolicy, isEmailAllowed } from "@/server/services/email-policy";
 import type { EmailProvider } from "@/lib/email/config";
 import {
   DEFAULT_TEMPLATES,
@@ -129,6 +130,11 @@ export async function queueEmail(
 ) {
   const email = input.recipient.trim().toLowerCase();
   if (!email.includes("@")) return null;
+  if (!isEmailAllowed(input.type)) {
+    // Policy suppression is deliberate and takes precedence over provider
+    // availability. The in-app notification is the primary channel.
+    return null;
+  }
   const [ctx, template] = await Promise.all([
     context(tx),
     templateOverride(input.type, tx),
@@ -202,6 +208,9 @@ async function sendDeliveryRow(row: {
   const type = row.email_type as EmailType;
   if (!EMAIL_TYPES.includes(type)) {
     return { ok: false as const, error: "Unknown email type." };
+  }
+  if (!isEmailAllowed(type)) {
+    return { ok: false as const, error: "Suppressed by central email policy." };
   }
   const db = await getDb();
   const [ctx, template, prefs] = await Promise.all([
@@ -352,6 +361,16 @@ export async function processEmailQueue(options?: {
     });
     if (!claim) continue;
     const { row, providers } = claim;
+    if (!isEmailAllowed((row as { email_type?: string }).email_type as EmailType)) {
+      await db.query(
+        `update email_deliveries
+            set status='disabled', provider_status='skipped', provider=null,
+                last_error=$2, updated_at=now()
+          where id=$1`,
+        [row.id, "Suppressed by central email policy; use in-app notifications."],
+      );
+      continue;
+    }
     if (providers.length === 0) {
       await db.query(
         `update email_deliveries

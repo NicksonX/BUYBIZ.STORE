@@ -46,7 +46,7 @@ export async function selectEmailProviders(
   );
   const pointer = rotation.rows[0]?.nextProvider ?? "resend";
   const settings = await tx.query<{ key: string; value: unknown }>(
-    `select key, value from app_settings where key in ('email_primary_provider','email_rotation_enabled')`,
+    `select key, value from app_settings where key in ('email_primary_provider','email_rotation_enabled','email_brevo_enabled')`,
   );
   const settingMap = new Map(settings.rows.map((row) => [row.key, row.value]));
   const configuredPrimary = String(settingMap.get("email_primary_provider") ?? "").toLowerCase();
@@ -56,10 +56,14 @@ export async function selectEmailProviders(
   const dbRotation = settingMap.get("email_rotation_enabled");
   const rotationEnabled = dbRotation === false ? false : getEmailRotationEnabled();
   const selectedPrimary = rotationEnabled ? pointer : primary;
+  // Brevo must stay disabled unless explicitly re-authorised in settings.
+  const brevoAuthorized = settingMap.get("email_brevo_enabled") === true;
   const candidates: EmailProvider[] = [];
-  if (await eligible(tx, selectedPrimary)) candidates.push(selectedPrimary);
+  if (selectedPrimary !== "brevo" || brevoAuthorized) {
+    if (await eligible(tx, selectedPrimary)) candidates.push(selectedPrimary);
+  }
   const secondary = otherProvider(selectedPrimary);
-  if (await eligible(tx, secondary)) candidates.push(secondary);
+  if ((secondary !== "brevo" || brevoAuthorized) && await eligible(tx, secondary)) candidates.push(secondary);
 
   if (candidates.length > 0) {
     await tx.query(

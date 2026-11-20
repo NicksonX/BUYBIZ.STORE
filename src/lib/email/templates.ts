@@ -2,6 +2,7 @@ import "server-only";
 
 export type EmailType =
   | "signup_verification"
+  | "provider_test"
   | "welcome"
   | "deposit_confirmation"
   | "referral_joined"
@@ -86,6 +87,11 @@ const DEFAULT_TEMPLATES: Record<
     subject: "Your BUYBIZ verification code",
     preheader: "Use this code to verify your email.",
     intro: "Enter this code to verify your email and finish setting up your BUYBIZ account.",
+  },
+  provider_test: {
+    subject: "BUYBIZ email delivery test",
+    preheader: "A test message from the BUYBIZ email system.",
+    intro: "This is a test message confirming that the BUYBIZ email provider is configured and accepting mail.",
   },
   welcome: {
     subject: "Welcome to BUYBIZ",
@@ -432,6 +438,11 @@ export function renderEmail(input: {
   let content = "";
 
   switch (input.type) {
+    case "provider_test":
+      content = `<p style="margin:16px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.75;color:#4E5157;">This is a provider delivery test from the BUYBIZ email system.</p>
+      ${details([["Provider", "Resend"], ["Purpose", "Verify transactional delivery"], ["Action", "No action required"]])}
+      <p style="margin:12px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.7;color:${BRAND.muted};">If you received this message, Resend accepted the delivery request. Inbox placement still depends on the receiving provider.</p>`;
+      break;
     case "signup_verification":
       content = `<div style="margin:22px 0;padding:20px;border:1px solid ${BRAND.line};border-radius:12px;background:#FAFAFB;text-align:center;">
         <p style="margin:0 0 7px;font-family:Arial,Helvetica,sans-serif;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:${BRAND.muted};">Your verification code</p>

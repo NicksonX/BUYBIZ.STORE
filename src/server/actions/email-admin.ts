@@ -94,6 +94,27 @@ export async function updateEmailTemplateAction(
   return formSuccess("Email template updated.");
 }
 
+export async function sendProviderTestAction(_previous: ActionState, _formData: FormData): Promise<ActionState> {
+  try {
+    await requireAdmin();
+  } catch (error) {
+    return formError(toUserMessage(error));
+  }
+  if (!isEmailConfigured()) return formError("Resend is not configured. Add RESEND_API_KEY or EMAIL_API_KEY.");
+  const db = await getDb();
+  const user = await requireAdmin();
+  const deliveryId = await db.transaction((tx) => queueEmail(tx, {
+    type: "provider_test", userId: user.id, recipient: user.email,
+    data: { name: user.displayName ?? user.username, preferencesUrl: "" },
+    dedupeKey: `provider_test:${user.id}:${Date.now()}`,
+  }));
+  if (!deliveryId) return formError("Test email was not queued.");
+  const result = await processEmailQueue({ ids: [deliveryId] });
+  return result.sent
+    ? formSuccess("Resend accepted the test email. Check the delivery log for the provider message ID.")
+    : formError("Resend did not accept the test email. Check the delivery log.");
+}
+
 export async function retryEmailDeliveryAction(
   _previous: ActionState,
   formData: FormData,

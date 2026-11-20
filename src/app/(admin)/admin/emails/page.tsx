@@ -1,4 +1,4 @@
-import { AlertTriangle, CheckCircle2, Mail, RefreshCw, Send, ServerCog } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Mail, RefreshCw, Send, ServerCog, ShieldCheck } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
 import { Badge } from "@/components/ui/badge";
 import { AdminActionForm } from "@/components/admin/action-form";
@@ -12,6 +12,7 @@ import { getGiveawayAnnouncementStats } from "@/server/services/giveaways";
 import {
   processEmailQueueAction,
   retryEmailDeliveryAction,
+  sendProviderTestAction,
   runEmailFollowupsAction,
   sendEmailCampaignAction,
   updateEmailSettingsAction,
@@ -42,6 +43,7 @@ export default async function AdminEmailsPage() {
         actions={
           <div className="flex flex-wrap gap-2">
             <AdminActionForm action={processEmailQueueAction} submitLabel="Process queue" pendingLabel="Sending…" variant="outline" compact />
+            <AdminActionForm action={sendProviderTestAction} submitLabel="Send Resend test" pendingLabel="Testing…" variant="subtle" compact />
             <AdminActionForm action={runEmailFollowupsAction} submitLabel="Run deposit follow-ups" pendingLabel="Running…" variant="subtle" compact />
           </div>
         }
@@ -71,7 +73,17 @@ export default async function AdminEmailsPage() {
         <StatCard label="Sent" value={data.counts.sent} icon={CheckCircle2} hint="Provider accepted" />
         <StatCard label="Failed" value={data.counts.failed} icon={AlertTriangle} hint="Retryable" />
         <StatCard label="Not configured" value={data.counts.notConfigured} icon={ServerCog} hint="No provider at send time" />
+        <StatCard label="Suppressed by policy" value={data.counts.disabled} icon={ShieldCheck} hint="Moved in-app; kept for audit" />
       </div>
+
+      <section className="surface-card rounded-[13px] p-4">
+        <div className="flex flex-wrap items-start justify-between gap-2"><div><h2 className="text-[12px] font-semibold">Central email policy</h2><p className="mt-0.5 text-[9px] text-muted-foreground">Resend is primary. Brevo is disabled. Routine activity is delivered in-app unless an administrator changes this policy in code.</p></div><Badge tone="success">Resend only</Badge></div>
+        <div className="mt-3 grid gap-2 sm:grid-cols-3">
+          <div className="rounded-[8px] border border-border bg-surface-subtle p-2.5"><p className="text-[8px] uppercase tracking-[0.1em] text-muted-foreground">Essential email</p><p className="mt-1 text-[10px] font-medium">{data.policy.essential.length} event types</p><p className="mt-1 text-[8px] leading-4 text-muted-foreground">Security, receipts, confirmed payouts and proxy expiry.</p></div>
+          <div className="rounded-[8px] border border-border bg-surface-subtle p-2.5"><p className="text-[8px] uppercase tracking-[0.1em] text-muted-foreground">In-app only</p><p className="mt-1 text-[10px] font-medium">{data.policy.inAppOnly.length} event types</p><p className="mt-1 text-[8px] leading-4 text-muted-foreground">Referral, ambassador, campaign and giveaway updates.</p></div>
+          <div className="rounded-[8px] border border-border bg-surface-subtle p-2.5"><p className="text-[8px] uppercase tracking-[0.1em] text-muted-foreground">Marketing</p><p className="mt-1 text-[10px] font-medium">{data.policy.marketing.length} event type</p><p className="mt-1 text-[8px] leading-4 text-muted-foreground">Suppressed under the conservative policy.</p></div>
+        </div>
+      </section>
 
       <section className="surface-card rounded-[13px] p-4">
         <h2 className="text-[12px] font-semibold">Sender and follow-up settings</h2>

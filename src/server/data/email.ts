@@ -1,6 +1,7 @@
 import "server-only";
 import { getDb } from "@/lib/db";
 import { getEmailRuntimeStatus } from "@/lib/email/config";
+import { emailPolicySummary } from "@/server/services/email-policy";
 
 export async function getEmailAdminData() {
   const db = await getDb();
@@ -61,12 +62,14 @@ export async function getEmailAdminData() {
       sent: number;
       failed: number;
       notConfigured: number;
+      disabled: number;
     }>(
       `select
          count(*) filter (where status='queued')::int as queued,
          count(*) filter (where status='sent')::int as sent,
          count(*) filter (where status='failed')::int as failed,
-         count(*) filter (where status='not_configured')::int as "notConfigured"
+         count(*) filter (where status='not_configured')::int as "notConfigured",
+         count(*) filter (where status='disabled')::int as disabled
        from email_deliveries`,
     ),
   ]);
@@ -92,7 +95,9 @@ export async function getEmailAdminData() {
       sent: Number(counts.rows[0]?.sent ?? 0),
       failed: Number(counts.rows[0]?.failed ?? 0),
       notConfigured: Number(counts.rows[0]?.notConfigured ?? 0),
+      disabled: Number(counts.rows[0]?.disabled ?? 0),
     },
+    policy: emailPolicySummary(),
   };
 }
 

@@ -2,7 +2,7 @@ import "server-only";
 import { getAppUrl, getSupportEmail } from "@/lib/config";
 
 export function getEmailProviderName() {
-  return (process.env.EMAIL_PROVIDER || "brevo").trim().toLowerCase();
+  return (process.env.EMAIL_PROVIDER || "resend").trim().toLowerCase();
 }
 
 export function getEmailApiKey() {
@@ -31,7 +31,7 @@ export function isProviderEnabled(provider: EmailProvider) {
 export function getProviderDailyLimit(provider: EmailProvider): number | null {
   const raw = provider === "brevo"
     ? process.env.BREVO_DAILY_LIMIT || "5000"
-    : process.env.RESEND_DAILY_LIMIT;
+    : process.env.RESEND_DAILY_LIMIT || "300";
   if (!raw) return null;
   const parsed = Number(raw);
   // Brevo Pro is confirmed at 5,000/day. Do not let a stale lower app env
@@ -67,23 +67,16 @@ export function isEmailConfigured() {
   // The sender address may come from the admin setting at send time. The API
   // key is the hard provider requirement; a missing sender is reported by the
   // send attempt rather than pretending the email went out.
-  return Boolean(getEmailApiKey() || getProviderApiKey("brevo"));
+  return Boolean(getEmailApiKey());
 }
 
 export function getEmailRuntimeStatus() {
-  const provider = getEmailProviderName();
   const resendKey = Boolean(getEmailApiKey());
-  const brevoKey = Boolean(getProviderApiKey("brevo"));
-  const rotating = resendKey && brevoKey;
   return {
     configured: isEmailConfigured(),
-    provider: rotating ? "resend+brevo" : provider,
-    providerLabel: rotating
-      ? "Resend + Brevo rotation"
-      : provider === "brevo"
-        ? "Brevo HTTPS API"
-        : "Resend HTTPS API",
-    apiKeyPresent: resendKey || brevoKey,
+    provider: "resend",
+    providerLabel: "Resend HTTPS API (Brevo disabled by policy)",
+    apiKeyPresent: resendKey,
     fromAddress: getEmailFromAddress(),
     supportEmail:
       process.env.EMAIL_SUPPORT_EMAIL?.trim() ||
