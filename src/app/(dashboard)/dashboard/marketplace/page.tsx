@@ -5,6 +5,7 @@ import {
   Layers3,
   Network,
   Phone,
+  Wrench,
 } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
 import { PlanCard } from "@/components/marketplace/plan-card";
@@ -13,6 +14,7 @@ import { requireUserPage } from "@/server/auth/guards";
 import { getAvailablePlans } from "@/server/data/customer";
 import { getComingSoonProducts } from "@/server/data/products";
 import { getInventoryCountries } from "@/server/data/countries";
+import { getAppSettings } from "@/server/data/settings";
 import { allCountries, countryFlag } from "@/lib/ai/countries";
 import { CountrySearchSelect } from "@/components/marketplace/country-search-select";
 import { cn } from "@/lib/utils";
@@ -46,11 +48,13 @@ export default async function MarketplacePage({
   const countryCode = /^[A-Za-z]{2}$/.test(requestedCountry ?? "") ? requestedCountry!.toUpperCase() : null;
 
   await requireUserPage();
-  const [plans, comingSoon, countries] = await Promise.all([
+  const [plans, comingSoon, countries, settings] = await Promise.all([
     getAvailablePlans(countryCode ?? undefined),
     getComingSoonProducts(),
     getInventoryCountries(),
+    getAppSettings(),
   ]);
+  const proxyPurchasePaused = settings.proxyPurchasePaused;
 
   const inventoryByCode = new Map(countries.map((country) => [country.code, country]));
   const countryOptions = allCountries()
@@ -152,6 +156,12 @@ export default async function MarketplacePage({
 
         {showProxy ? (
           <section className="mt-5">
+            {proxyPurchasePaused ? (
+              <div className="mb-4 flex items-start gap-3 rounded-[12px] border border-border bg-surface-subtle px-3.5 py-3">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border bg-surface"><Wrench className="h-3.5 w-3.5 text-muted-foreground" /></span>
+                <div><p className="text-[11px] font-semibold">Proxy Purchases Temporarily Paused</p><p className="mt-0.5 text-[9.5px] leading-4 text-muted-foreground">We&apos;re currently carrying out maintenance on our proxy services. Purchases and new activations will be available again shortly. Thank you for your patience.</p></div>
+              </div>
+            ) : null}
             <div className="mb-3 flex items-end justify-between gap-3">
               <div>
                 <h2 className="text-[15px] font-semibold tracking-[-0.02em]">
@@ -173,6 +183,7 @@ export default async function MarketplacePage({
                   availability={plan}
                   featured={plan.product.slug === "proxy-30-days"}
                   ctaLabel="Buy with wallet"
+                  paused={proxyPurchasePaused}
                   href={`/dashboard/checkout/${plan.product.slug}${countryCode ? `?country=${countryCode}` : ""}`}
                 />
               ))}

@@ -106,6 +106,12 @@ export default async function AdminSettingsPage() {
                     <option value="true">On: pause purchases and deposits</option>
                   </Select>
                 </AdminField>
+                <AdminField label="Proxy purchases" htmlFor="proxy-purchase-paused" hint="Pauses only proxy purchases and renewals. Deposits and other services remain available.">
+                  <Select id="proxy-purchase-paused" name="proxyPurchasePaused" defaultValue={String(settings.proxyPurchasePaused)}>
+                    <option value="false">Available — normal purchasing</option>
+                    <option value="true">Paused — block new purchases and renewals</option>
+                  </Select>
+                </AdminField>
                 <AdminField label="Minimum deposit (NGN)" htmlFor="deposit-min">
                   <Input id="deposit-min" name="depositMin" inputMode="decimal" defaultValue={(settings.depositMinMinor / 100).toString()} />
                 </AdminField>
@@ -167,8 +173,9 @@ export default async function AdminSettingsPage() {
                 <Input id="support-email" name="supportEmail" type="email" defaultValue={settings.supportEmail} placeholder="Not published" />
               </AdminField>
               <AdminNote tone="warning">
-                Maintenance mode pauses new purchases and deposits. Existing proxy
-                access remains active. Do not use it as a way to avoid refunds.
+                <strong>Maintenance mode</strong> pauses all new purchases and deposits.
+                <strong> Proxy purchases</strong> pauses only proxy purchases and renewals;
+                existing proxy access, deposits and other services remain available.
               </AdminNote>
             </AdminActionForm>
           </div>

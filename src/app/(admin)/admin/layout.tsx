@@ -6,6 +6,7 @@ import { AdminShell } from "@/components/admin/shell";
 import { requireStaffPage } from "@/server/auth/guards";
 import { getAdminBadgeCounts } from "@/server/data/admin";
 import { getActiveDashboardAnnouncement } from "@/server/services/announcements";
+import { getAppSettings } from "@/server/data/settings";
 
 export const metadata: Metadata = {
   title: "Admin",
@@ -29,9 +30,10 @@ export default async function AdminLayout({
   const cookieStore = await cookies();
   const theme =
     cookieStore.get("buybiz_admin_theme")?.value === "light" ? "light" : "dark";
-  const [counts, announcement] = await Promise.all([
+  const [counts, announcement, appSettings] = await Promise.all([
     getAdminBadgeCounts().catch(() => ({ pendingDeposits: 0, openTickets: 0 })),
     getActiveDashboardAnnouncement().catch(() => null),
+    getAppSettings().catch(() => null),
   ]);
 
   return (
@@ -45,6 +47,7 @@ export default async function AdminLayout({
         pendingDeposits={counts.pendingDeposits}
         openTickets={counts.openTickets}
         announcement={announcement}
+        proxyPurchasePaused={Boolean(appSettings?.proxyPurchasePaused)}
       >
         {children}
       </AdminShell>

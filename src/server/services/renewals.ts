@@ -53,6 +53,13 @@ export async function renewProxy(input: {
       };
     }
 
+    if (settings.proxyPurchasePaused) {
+      throw new AppError(
+        "MAINTENANCE",
+        "Proxy purchases are temporarily paused while we perform maintenance. Please check back shortly.",
+      );
+    }
+
     const allocationResult = await tx.query<{
       id: string;
       status: string;

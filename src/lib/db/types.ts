@@ -274,6 +274,7 @@ export interface AppSettings {
   depositScheduledAt: string | null;
   depositMaxMinor: number;
   maintenanceMode: boolean;
+  proxyPurchasePaused: boolean;
   supportEmail: string;
   inventoryExpiryRemedy: string;
   paystackChannels: string[];

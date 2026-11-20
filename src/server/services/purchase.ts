@@ -47,7 +47,7 @@ function numberSetting(value: unknown, fallback: number) {
 async function loadSettings(tx: SqlTransaction) {
   const result = await tx.query<{ key: string; value: unknown }>(
     `select key, value from app_settings
-      where key in ('allocation_safety_buffer_seconds','maintenance_mode')`,
+      where key in ('allocation_safety_buffer_seconds','maintenance_mode','proxy_purchase_paused')`,
   );
   const map = new Map(result.rows.map((row) => [row.key, row.value]));
   return {
@@ -56,6 +56,7 @@ async function loadSettings(tx: SqlTransaction) {
       numberSetting(map.get("allocation_safety_buffer_seconds"), 3600),
     ),
     maintenanceMode: boolSetting(map.get("maintenance_mode"), false),
+    proxyPurchasePaused: boolSetting(map.get("proxy_purchase_paused"), false),
   };
 }
 
@@ -180,6 +181,12 @@ export async function purchaseProxy(input: {
         throw new AppError(
           "MAINTENANCE",
           "Purchases are temporarily paused for maintenance. Your wallet has not been charged.",
+        );
+      }
+      if (settings.proxyPurchasePaused) {
+        throw new AppError(
+          "MAINTENANCE",
+          "Proxy purchases are temporarily paused while we perform maintenance. Please check back shortly.",
         );
       }
 

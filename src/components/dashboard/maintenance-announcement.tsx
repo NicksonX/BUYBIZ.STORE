@@ -60,7 +60,7 @@ export function MaintenanceAnnouncement({ announcement }: { announcement: Dashbo
             {announcement.message.split(/\n{2,}/).map((paragraph, index) => <p key={index}>{paragraph}</p>)}
           </div>
           <div className="mt-4 flex items-center gap-2 border-t border-border pt-3 text-[8.5px] text-muted-foreground"><Check className="h-3 w-3 shrink-0 text-success" /> We will update you when normal service is restored.</div>
-          <button type="button" onClick={dismiss} className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-full bg-foreground px-4 text-[11px] font-semibold text-background transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40">OK</button>
+          <button type="button" onClick={dismiss} className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-full bg-foreground px-4 text-[11px] font-semibold text-background transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40">OK, Understood</button>
           <p className="mt-2 text-center text-[8px] text-muted-foreground">You can continue using your dashboard after dismissing this message.</p>
         </div>
       </div>

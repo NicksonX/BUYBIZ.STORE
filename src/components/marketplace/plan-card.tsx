@@ -12,6 +12,7 @@ export function PlanCard({
   ctaLabel = "Buy with wallet",
   className,
   showFeatures = true,
+  paused = false,
 }: {
   product: Product;
   availability?: Pick<PlanAvailability, "available" | "freeSeats"> | null;
@@ -20,6 +21,7 @@ export function PlanCard({
   ctaLabel?: string;
   className?: string;
   showFeatures?: boolean;
+  paused?: boolean;
 }) {
   const available = availability ? availability.available : true;
   const duration = formatDuration(product.durationSeconds);
@@ -55,7 +57,7 @@ export function PlanCard({
               available ? "bg-current" : "bg-current opacity-70",
             )}
           />
-          {available ? "Available now" : "Unavailable"}
+          {paused ? "Maintenance" : available ? "Available now" : "Unavailable"}
         </Badge>
       </div>
 
@@ -116,7 +118,17 @@ export function PlanCard({
       ) : null}
 
       <div className="relative mt-auto pt-5 sm:pt-6">
-        {available ? (
+        {paused ? (
+          <div
+            className={cn(
+              "flex min-h-11 w-full cursor-not-allowed items-center justify-center rounded-full px-3 text-center text-[11px] font-semibold opacity-80",
+              featured ? "bg-white/10 text-white" : "bg-surface-subtle text-muted-foreground",
+            )}
+            aria-disabled="true"
+          >
+            Purchases Temporarily Paused
+          </div>
+        ) : available ? (
           <Link
             href={target}
             className={cn(

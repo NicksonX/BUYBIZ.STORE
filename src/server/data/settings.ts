@@ -13,6 +13,7 @@ const DEFAULTS: AppSettings = {
   depositScheduledAt: "2026-11-20T00:00:00+01:00",
   depositMaxMinor: 100_000_000,
   maintenanceMode: false,
+  proxyPurchasePaused: false,
   supportEmail: "",
   inventoryExpiryRemedy: "manual_review",
   paystackChannels: ["card", "bank", "ussd", "bank_transfer"],
@@ -108,6 +109,7 @@ export const getAppSettings = cache(async (): Promise<AppSettings> => {
         DEFAULTS.depositMinMinor,
       ),
       maintenanceMode: bool("maintenance_mode", DEFAULTS.maintenanceMode),
+      proxyPurchasePaused: bool("proxy_purchase_paused", DEFAULTS.proxyPurchasePaused),
       supportEmail: str("support_email", DEFAULTS.supportEmail),
       inventoryExpiryRemedy: str("inventory_expiry_remedy", DEFAULTS.inventoryExpiryRemedy),
       paystackChannels:

@@ -6,6 +6,7 @@ import type { Profile } from "@/lib/db/types";
 import { RouteTransition } from "@/components/ui/route-transition";
 import { AdminFloatingTools } from "@/components/admin/admin-floating-tools";
 import { MaintenanceAnnouncement } from "@/components/dashboard/maintenance-announcement";
+import { ProxyMaintenanceBanner } from "@/components/dashboard/proxy-maintenance-banner";
 import type { DashboardAnnouncement } from "@/server/services/announcements";
 
 export function AdminShell({
@@ -13,12 +14,14 @@ export function AdminShell({
   pendingDeposits,
   openTickets,
   announcement,
+  proxyPurchasePaused,
   children,
 }: {
   user: Profile;
   pendingDeposits: number;
   openTickets: number;
   announcement: DashboardAnnouncement | null;
+  proxyPurchasePaused: boolean;
   children: React.ReactNode;
 }) {
   return (
@@ -57,6 +60,7 @@ export function AdminShell({
               </div>
             ) : null}
           </div>
+          <ProxyMaintenanceBanner paused={proxyPurchasePaused} announcementId={announcement?.id ?? null} />
           <div className="mt-5"><RouteTransition>{children}</RouteTransition></div>
           <div className="mt-10 flex flex-col gap-1.5 border-t border-border pt-4 text-[9px] text-muted-foreground/60 sm:flex-row sm:items-center sm:justify-between">
             <p>BUYBIZ admin console. Financial actions are recorded in the audit log.</p>

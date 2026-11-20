@@ -6,6 +6,7 @@ import { DashboardMobileNav } from "@/components/dashboard/mobile-nav";
 import { WalletBalanceAnnouncement } from "@/components/dashboard/balance-announcement";
 import { MaintenanceAnnouncement } from "@/components/dashboard/maintenance-announcement";
 import { InstallPrompt } from "@/components/system/install-prompt";
+import { ProxyMaintenanceBanner } from "@/components/dashboard/proxy-maintenance-banner";
 import type { DashboardAnnouncement } from "@/server/services/announcements";
 import { RouteTransition } from "@/components/ui/route-transition";
 import { AmbassadorFloat } from "@/components/ambassador/ambassador-float";
@@ -19,6 +20,7 @@ export function DashboardShell({
   unread,
   ambassador,
   announcement,
+  proxyPurchasePaused,
   children,
 }: {
   user: Profile;
@@ -26,6 +28,7 @@ export function DashboardShell({
   unread: number;
   ambassador: Awaited<ReturnType<typeof import("@/server/services/ambassador").getAmbassadorCampaign>> | null;
   announcement: DashboardAnnouncement | null;
+  proxyPurchasePaused: boolean;
   children: React.ReactNode;
 }) {
   const demo = isDemoMode();
@@ -87,6 +90,7 @@ export function DashboardShell({
             ) : null}
           </div>
 
+          <ProxyMaintenanceBanner paused={proxyPurchasePaused} announcementId={announcement?.id ?? null} />
           <div className="mt-5"><RouteTransition>{children}</RouteTransition></div>
           <InstallPrompt />
 

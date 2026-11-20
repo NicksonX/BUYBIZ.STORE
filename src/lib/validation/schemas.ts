@@ -228,6 +228,7 @@ export const settingsSchema = z.object({
   depositMin: z.string().min(1),
   depositMax: z.string().min(1),
   maintenanceMode: z.enum(["true", "false"]),
+  proxyPurchasePaused: z.enum(["true", "false"]),
   supportEmail: z.string().trim().max(200).optional().or(z.literal("")),
   inactivityDays: z.coerce.number().int().min(1).max(3650),
   reactivationFee: z.string().min(1),

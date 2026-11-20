@@ -52,7 +52,7 @@ export default async function CheckoutPage({
   const insufficient = wallet.balanceMinor < product.priceMinor;
   const idempotencyKey = randomUUID();
   const balanceAfter = wallet.balanceMinor - product.priceMinor;
-  const canBuy = plan.available && !insufficient;
+  const proxyPurchasePaused = settings.proxyPurchasePaused;
 
   return (
     <div>
@@ -226,6 +226,7 @@ export default async function CheckoutPage({
                 available={plan.available}
                 insufficient={insufficient}
                 accessType={product.accessType}
+                paused={proxyPurchasePaused}
               />
               {insufficient ? (
                 <Link

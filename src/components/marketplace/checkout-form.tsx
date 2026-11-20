@@ -18,6 +18,7 @@ export function CheckoutForm({
   insufficient,
   accessType,
   countryCode,
+  paused,
 }: {
   productSlug: string;
   idempotencyKey: string;
@@ -27,18 +28,25 @@ export function CheckoutForm({
   insufficient: boolean;
   accessType: "shared" | "single";
   countryCode: string | null;
+  paused: boolean;
 }) {
   const [state, formAction, pending] = useActionState(
     purchaseAction,
     initialActionState,
   );
-  const disabled = !available || insufficient;
+  const disabled = paused || !available || insufficient;
 
   return (
     <form action={formAction} className="space-y-4">
       <input type="hidden" name="productSlug" value={productSlug} />
       <input type="hidden" name="idempotencyKey" value={idempotencyKey} />
       {countryCode ? <input type="hidden" name="countryCode" value={countryCode} /> : null}
+
+      {paused ? (
+        <Alert tone="warning" title="Proxy Purchases Temporarily Paused">
+          We&apos;re currently carrying out maintenance on our proxy services. Purchases and new activations will be available again shortly. Your wallet has not been charged.
+        </Alert>
+      ) : null}
 
       {state.message && state.status === "error" ? (
         <Alert tone="danger" title="Purchase not completed">
@@ -91,7 +99,12 @@ export function CheckoutForm({
         disabled={disabled || pending}
         className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-foreground text-[12.5px] font-semibold text-background transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
       >
-        {pending ? (
+        {paused ? (
+          <>
+            <LockKeyhole className="h-3.5 w-3.5" />
+            Purchases Temporarily Paused
+          </>
+        ) : pending ? (
           <>
             <LoadingDots label="Confirming proxy allocation" /> Confirming allocation…
           </>
