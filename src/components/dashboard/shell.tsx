@@ -4,6 +4,8 @@ import { DashboardSidebar } from "@/components/dashboard/sidebar";
 import { DashboardTopbar } from "@/components/dashboard/topbar";
 import { DashboardMobileNav } from "@/components/dashboard/mobile-nav";
 import { WalletBalanceAnnouncement } from "@/components/dashboard/balance-announcement";
+import { MaintenanceAnnouncement } from "@/components/dashboard/maintenance-announcement";
+import type { DashboardAnnouncement } from "@/server/services/announcements";
 import { RouteTransition } from "@/components/ui/route-transition";
 import { AmbassadorFloat } from "@/components/ambassador/ambassador-float";
 import type { Profile } from "@/lib/db/types";
@@ -15,12 +17,14 @@ export function DashboardShell({
   balanceMinor,
   unread,
   ambassador,
+  announcement,
   children,
 }: {
   user: Profile;
   balanceMinor: number;
   unread: number;
   ambassador: Awaited<ReturnType<typeof import("@/server/services/ambassador").getAmbassadorCampaign>> | null;
+  announcement: DashboardAnnouncement | null;
   children: React.ReactNode;
 }) {
   const demo = isDemoMode();
@@ -112,6 +116,7 @@ export function DashboardShell({
       ) : null}
 
       <WalletBalanceAnnouncement balanceMinor={balanceMinor} />
+      <MaintenanceAnnouncement announcement={announcement} />
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { DashboardShell } from "@/components/dashboard/shell";
 import { requireUserPage } from "@/server/auth/guards";
 import { getDashboardCounts, getWalletSummary } from "@/server/data/customer";
 import { getAmbassadorCampaign } from "@/server/services/ambassador";
+import { getActiveDashboardAnnouncement } from "@/server/services/announcements";
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -25,12 +26,13 @@ export default async function DashboardLayout({
   const isMarketplace =
     headerStore.get("x-buybiz-pathname")?.startsWith("/dashboard/marketplace") ?? false;
 
-  const [wallet, counts, ambassador] = await Promise.all([
+  const [wallet, counts, ambassador, announcement] = await Promise.all([
     isMarketplace
       ? Promise.resolve({ balanceMinor: 0 })
       : getWalletSummary(user.id).catch(() => ({ balanceMinor: 0 })),
     getDashboardCounts(user.id).catch(() => ({ unreadNotifications: 0 })),
     getAmbassadorCampaign(user.id).catch(() => null),
+    getActiveDashboardAnnouncement().catch(() => null),
   ]);
 
   return (
@@ -44,6 +46,7 @@ export default async function DashboardLayout({
         balanceMinor={wallet.balanceMinor}
         unread={counts.unreadNotifications}
         ambassador={ambassador}
+        announcement={announcement}
       >
         {children}
       </DashboardShell>
