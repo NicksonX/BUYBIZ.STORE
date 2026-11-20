@@ -130,7 +130,7 @@ export function AmbassadorPanel({
           <div className="grid grid-cols-2 gap-2.5">
             <div className="rounded-[10px] border border-border bg-surface-subtle p-3">
               <p className="text-[9px] text-muted-foreground">Qualified / required</p>
-              <p className="tabular mt-1.5 text-[18px] font-semibold">{qualified}/{required}</p>
+              <p className="tabular mt-1.5 text-[17px] font-semibold">{qualified} of {required}</p>
             </div>
             <div className="rounded-[10px] border border-border bg-surface-subtle p-3">
               <p className="text-[9px] text-muted-foreground">USD available</p>
@@ -140,7 +140,7 @@ export function AmbassadorPanel({
           <div>
             <div className="mb-1.5 flex items-center justify-between text-[9px]">
               <span className="text-muted-foreground">Ambassador progress</span>
-              <span className="tabular font-medium">{qualified} of {required}</span>
+              <span className="tabular font-medium">{qualified} of {required} required</span>
             </div>
             <Progress value={isAmbassador ? 100 : progress} />
           </div>
