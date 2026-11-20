@@ -46,7 +46,7 @@ export default async function AdminLayout({
         user={user}
         pendingDeposits={counts.pendingDeposits}
         openTickets={counts.openTickets}
-        announcement={announcement}
+        announcement={appSettings?.proxyPurchasePaused ? announcement : null}
         proxyPurchasePaused={Boolean(appSettings?.proxyPurchasePaused)}
       >
         {children}
