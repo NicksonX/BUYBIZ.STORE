@@ -11,7 +11,7 @@ import { getUsdRewardsDashboard } from "@/server/services/campaigns";
 import { getAppUrl } from "@/lib/config";
 import { formatDate } from "@/lib/utils";
 import { ShareReferral } from "@/components/campaigns/share-referral";
-import { AmbassadorProgrammeCard } from "@/components/ambassador/ambassador-programme-card";
+import { AmbassadorPanel } from "@/components/ambassador/ambassador-panel";
 
 export const dynamic = "force-dynamic";
 
@@ -67,7 +67,7 @@ export default async function ReferralsPage() {
             </div>
           </div>
 
-          <div className="mt-3"><AmbassadorProgrammeCard isAmbassador={ambassador.isAmbassador} qualified={ambassador.qualified} required={ambassador.config.referralsRequired} total={ambassador.total} pending={ambassador.pending} rejected={ambassador.rejected} earnedCents={ambassador.earnedCents} availableCents={ambassador.availableCents} promotedAt={ambassador.promotedAt} nextPayoutAt={ambassador.config.nextPayoutAt} minProxyDays={data.minProxyDays} commissionCents={ambassador.config.commissionCents} /></div>
+          <div className="mt-3"><AmbassadorPanel isAmbassador={ambassador.isAmbassador} qualified={ambassador.qualified} required={ambassador.config.referralsRequired} total={ambassador.total} pending={ambassador.pending} rejected={ambassador.rejected} availableCents={ambassador.availableCents} earnedCents={ambassador.earnedCents} minWithdrawalCents={ambassador.config.withdrawalMinCents} commissionCents={ambassador.config.commissionCents} address={ambassador.address} openWithdrawal={ambassador.openWithdrawal} withdrawals={ambassador.withdrawals} promotedAt={ambassador.promotedAt} nextPayoutAt={ambassador.config.nextPayoutAt} minProxyDays={data.minProxyDays} /></div>
 
           <section className="surface-card mt-3 overflow-hidden rounded-[14px]">
             <div className="flex items-start justify-between gap-3 border-b border-border px-4 py-3">

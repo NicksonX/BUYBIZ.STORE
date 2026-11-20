@@ -256,7 +256,7 @@ export function AmbassadorPanel({
                     <span className="tabular font-semibold">${(payout.amountCents / 100).toFixed(2)} USDT</span>
                     <Badge tone={payout.status === "paid" ? "success" : payout.status === "rejected" ? "danger" : payout.status === "processing" ? "info" : "warning"}>{payout.status}</Badge>
                   </div>
-                  <p className="mt-1 text-[8.5px] text-muted-foreground">Requested {formatDate(payout.requestedAt)}</p>
+                  <p className="mt-1 text-[8.5px] text-muted-foreground">{payout.status === "paid" && payout.paidAt ? <>Paid {formatDate(payout.paidAt)}</> : <>Requested {formatDate(payout.requestedAt)}</>}</p>
                   {payout.transactionHash ? <p className="mt-1 break-all font-mono text-[8px] text-success">{payout.transactionHash}</p> : null}
                   {payout.rejectionReason ? <p className="mt-1 text-[8.5px] text-danger">{payout.rejectionReason}</p> : null}
                 </div>
