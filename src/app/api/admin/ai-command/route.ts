@@ -38,7 +38,7 @@ function deterministic(command: string, data: Awaited<ReturnType<typeof context>
   }
   if (walletIntent && /pending|awaiting|submitted|verify|check|how many/.test(text)) {
     const rows = data.walletVerification.pending;
-    return rows.length ? `There are ${rows.length} wallet addresses awaiting verification:\n${rows.map((r) => `• ${r.email} — ${r.address}`).join("\n")}\n\nUse “verify all pending wallet addresses” to prepare a bulk verification for owner approval.` : "There are no wallet addresses awaiting verification.";
+    return rows.length ? `There are ${rows.length} wallet addresses awaiting verification:\n${rows.map((r) => `• ${r.email} — ${r.address}`).join("\n")}\n\nBulk auto-verification is disabled: each address requires an explicit ownership review before verification.` : "There are no wallet addresses awaiting verification.";
   }
   if (text.includes("treasury") || text.includes("balance") || text.includes("usdt")) {
     return data.treasury.balance.available
@@ -78,9 +78,6 @@ type ActionPlan = { type: string; title: string; details: string[]; payload: Rec
 
 function planAction(command: string, data: Awaited<ReturnType<typeof context>>): ActionPlan | null {
   const text = command.toLowerCase();
-  if (/verify|approve/.test(text) && /(wallet|address)/.test(text) && /(all|pending|awaiting)/.test(text)) {
-    return { type: "bulk_verify_wallets", title: "Verify all pending wallet addresses", details: [`${data.walletVerification.pendingCount} pending address(es) will be reviewed`, "Your own address will be skipped", "Every verified/rejected row is persisted and audited", "Invalid or already reviewed addresses are skipped"], payload: {} };
-  }
   if (/create|new/.test(text) && /giveaway/.test(text)) {
     const reward = Number(command.match(/\$(\d+(?:\.\d+)?)/)?.[1] ?? 1);
     const limit = Number(command.match(/(\d+)\s*(?:users?|claims?|winners?)/i)?.[1] ?? 20);

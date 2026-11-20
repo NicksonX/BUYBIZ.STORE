@@ -9,7 +9,6 @@ import { requireAdminPage } from "@/server/auth/guards";
 import { getAmbassadorPayouts } from "@/server/data/ambassador";
 import {
   approveAmbassadorPayoutAction,
-  bulkVerifyPendingAddressesAction,
   markAmbassadorPayoutPaidAction,
   rejectAmbassadorPayoutAction,
   verifyAmbassadorAddressAction,
@@ -84,7 +83,7 @@ export default async function AmbassadorPayoutsPage() {
         <div className="flex flex-wrap items-start justify-between gap-2 border-b border-border px-4 py-3">
           <div><h2 className="text-[12px] font-semibold">USDT address verification</h2>
           <p className="mt-0.5 text-[9px] text-muted-foreground">Validate ownership before enabling withdrawals. Admin review is persisted and audited.</p></div>
-          <AdminActionForm action={bulkVerifyPendingAddressesAction} submitLabel="Verify all pending" pendingLabel="Verifying…" variant="outline" compact refreshOnSuccess confirmMessage="Verify all pending addresses except your own? This is an explicit administrative review and will be audited." />
+          
           <p className="mt-0.5 text-[9px] text-muted-foreground">
             Validate that the address belongs to the ambassador before enabling withdrawals. BUYBIZ checks BEP20 format; the administrator remains responsible for ownership checks.
           </p>

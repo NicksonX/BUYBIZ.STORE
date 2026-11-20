@@ -1781,20 +1781,6 @@ export async function verifyAmbassadorAddressAction(
   }
 }
 
-export async function bulkVerifyPendingAddressesAction(_previous: ActionState, _formData: FormData): Promise<ActionState> {
-  const actor = await adminActor();
-  if (!actor.ok) return actor.state;
-  try {
-    const { bulkVerifyPendingAddresses } = await import("@/server/services/ambassador");
-    const result = await bulkVerifyPendingAddresses({ adminId: actor.admin.id, adminRole: actor.admin.role });
-    revalidatePath("/admin/ambassador-payouts");
-    revalidatePath("/dashboard/referrals");
-    return formSuccess(`Reviewed ${result.reviewed}: ${result.verified} verified, ${result.skippedOwn} skipped, ${result.failed} failed, ${result.pending} still pending.`);
-  } catch (error) {
-    return formError(error instanceof AppError ? error.userMessage : "Bulk verification failed.");
-  }
-}
-
 export async function updateAmbassadorSettingsAction(
   _previous: ActionState,
   formData: FormData,

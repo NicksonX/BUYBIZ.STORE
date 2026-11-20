@@ -628,39 +628,3 @@ export async function getAmbassadorCampaign(userId: string) {
     availableCents: Number(result.rows[0]?.available ?? 0),
   };
 }
-
-/**
- * Explicit administrator bulk review. This is not format-only auto-verification:
- * only pending rows are considered, the reviewing admin's own address is skipped,
- * each row is locked, and every result is audited.
- */
-export async function bulkVerifyPendingAddresses(input: { adminId: string; adminRole: string }) {
-  const db = await getDb();
-  return db.transaction(async (tx) => {
-    const pending = await tx.query<{ id: string; userId: string; address: string }>(
-      `select id,user_id as "userId",address from ambassador_wallet_addresses
-        where status='pending' order by created_at for update skip locked`,
-    );
-    const result = { reviewed: 0, verified: 0, skippedOwn: 0, failed: 0, pending: 0 };
-    for (const row of pending.rows) {
-      result.reviewed += 1;
-      if (row.userId === input.adminId) { result.skippedOwn += 1; continue; }
-      if (!/^0x[0-9a-fA-F]{40}$/.test(row.address)) { result.failed += 1; continue; }
-      const updated = await tx.query(
-        `update ambassador_wallet_addresses
-            set status='verified',verified_by=$2,verified_at=now(),rejection_reason=null,updated_at=now()
-          where id=$1 and status='pending' returning id`,
-        [row.id, input.adminId],
-      );
-      if (!updated.rows[0]) { result.failed += 1; continue; }
-      result.verified += 1;
-      await writeAuditLog(tx, {
-        actorUserId: input.adminId, actorRole: input.adminRole,
-        action: "ambassador.address_verified", entityType: "ambassador_wallet_address",
-        entityId: row.id, metadata: { userId: row.userId, bulk: true },
-      });
-    }
-    result.pending = result.reviewed - result.verified - result.skippedOwn - result.failed;
-    return result;
-  });
-}
