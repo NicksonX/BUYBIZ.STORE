@@ -106,13 +106,13 @@ export function RewardsDashboard({
           <div className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4 lg:grid-cols-2">
             {[["Total", referrals.total, "All registered"], ["Qualified", qualifyingReferrals, "Reward eligible"], ["Pending", pendingReferrals, "Awaiting action"], ["Rejected", referrals.rejected, "Not eligible"]].map(([label, value, note]) => <div key={String(label)}><p className="text-[9px] text-muted-foreground">{label}</p><p className="tabular mt-0.5 text-[18px] font-semibold">{value}</p><p className="text-[8px] text-muted-foreground">{note}</p></div>)}
           </div>
-          <div className="rounded-[9px] border border-border bg-surface-subtle p-2.5">
+          <div className="min-w-0 overflow-hidden rounded-[9px] border border-border bg-surface-subtle p-2.5">
             <p className="text-[8.5px] font-medium uppercase tracking-[0.1em] text-muted-foreground">Your referral link</p>
-            <div className="mt-1.5 flex flex-col gap-2 min-[420px]:flex-row min-[420px]:items-center">
-              <code className="min-w-0 flex-1 truncate rounded-[6px] border border-border bg-surface px-2 py-2 font-mono text-[8.5px] text-muted-foreground" title={referralLink}>{referralLink}</code>
-              <CopyLink value={referralLink} className="w-full justify-center min-[420px]:w-auto" />
+            <div className="mt-1.5 grid min-w-0 gap-2 sm:flex sm:items-center">
+              <code className="block w-full min-w-0 overflow-hidden text-ellipsis whitespace-nowrap rounded-[6px] border border-border bg-surface px-2 py-2 font-mono text-[8.5px] text-muted-foreground" title={referralLink}>{referralLink}</code>
+              <CopyLink value={referralLink} className="w-full justify-center sm:w-auto" />
             </div>
-            <p className="mt-1.5 text-[8.5px] leading-4 text-muted-foreground">Share this link. Qualified referrals earn {usd(ambassador.config.commissionCents)} for both normal and Ambassador rewards.</p>
+            <p className="mt-1.5 break-words text-[8.5px] leading-4 text-muted-foreground">Share this link. Qualified referrals earn {usd(ambassador.config.commissionCents)} for both normal and Ambassador rewards.</p>
           </div>
         </div>
       </section>
