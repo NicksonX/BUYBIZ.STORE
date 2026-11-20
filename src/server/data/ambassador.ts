@@ -17,6 +17,7 @@ export async function getAmbassadorPayouts() {
       network: string;
       transactionHash: string | null;
       rejectionReason: string | null;
+      adminNote: string | null;
       requestedAt: Date;
       approvedAt: Date | null;
       paidAt: Date | null;
@@ -27,6 +28,7 @@ export async function getAmbassadorPayouts() {
               w.wallet_address as "walletAddress", w.network,
               w.transaction_hash as "transactionHash",
               w.rejection_reason as "rejectionReason",
+              w.admin_note as "adminNote",
               w.requested_at as "requestedAt", w.approved_at as "approvedAt",
               w.paid_at as "paidAt", w.rejected_at as "rejectedAt"
          from ambassador_withdrawals w
