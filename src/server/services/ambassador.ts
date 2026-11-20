@@ -418,20 +418,37 @@ export async function submitAmbassadorAddress(userId: string, rawAddress: string
   }
   const db = await getDb();
   return db.transaction(async (tx) => {
-    // Campaign rewards and Ambassador commissions share the same verified
-    // USDT BEP20 payout address. Any active customer may submit one.
-    await tx.query(
-      `update ambassador_wallet_addresses
-          set status='rejected', rejection_reason='Replaced by a new address request.',
-              updated_at=now()
-        where user_id=$1 and status in ('pending','verified')`,
+    // Serialize submissions per account. Pending and verified addresses are
+    // locked against replacement; only a rejected address may be resubmitted.
+    await tx.query(`select id from profiles where id=$1 for update`, [userId]);
+    const latest = await tx.query<{ id: string; status: string; address: string }>(
+      `select id,status,address from ambassador_wallet_addresses
+        where user_id=$1 order by created_at desc limit 1 for update`,
       [userId],
     );
+    const current = latest.rows[0];
+    if (current?.status === "pending") {
+      throw new AppError(
+        "CONFLICT",
+        "Your wallet address is already pending verification. You cannot submit another address until an administrator reviews it.",
+      );
+    }
+    if (current?.status === "verified") {
+      throw new AppError(
+        "CONFLICT",
+        "Your verified wallet address is locked. Contact support if it needs to be changed.",
+      );
+    }
     const inserted = await tx.query<{ id: string }>(
       `insert into ambassador_wallet_addresses (user_id, address, network, status)
        values ($1,$2,'BEP20','pending') returning id`,
       [userId, address],
     );
+    await writeAuditLog(tx, {
+      actorUserId: userId, actorRole: "customer", action: "ambassador.address_submitted",
+      entityType: "ambassador_wallet_address", entityId: inserted.rows[0].id,
+      metadata: { previousStatus: current?.status ?? "none", network: "BEP20" },
+    });
     return inserted.rows[0].id;
   });
 }
@@ -549,6 +566,12 @@ export async function verifyAmbassadorAddress(
   );
   const row = target.rows[0];
   if (!row) throw new AppError("NOT_FOUND", "That payout address was not found.");
+  if (row.status !== "pending") {
+    throw new AppError("CONFLICT", "Only a pending address can be reviewed.");
+  }
+  if (row.userId === input.adminId) {
+    throw new AppError("FORBIDDEN", "You cannot verify or reject your own wallet address.");
+  }
   if (input.approve) {
     await tx.query(
       `update ambassador_wallet_addresses set status='rejected',
@@ -604,4 +627,40 @@ export async function getAmbassadorCampaign(userId: string) {
     qualified: Number(result.rows[0]?.qualified ?? 0),
     availableCents: Number(result.rows[0]?.available ?? 0),
   };
+}
+
+/**
+ * Explicit administrator bulk review. This is not format-only auto-verification:
+ * only pending rows are considered, the reviewing admin's own address is skipped,
+ * each row is locked, and every result is audited.
+ */
+export async function bulkVerifyPendingAddresses(input: { adminId: string; adminRole: string }) {
+  const db = await getDb();
+  return db.transaction(async (tx) => {
+    const pending = await tx.query<{ id: string; userId: string; address: string }>(
+      `select id,user_id as "userId",address from ambassador_wallet_addresses
+        where status='pending' order by created_at for update skip locked`,
+    );
+    const result = { reviewed: 0, verified: 0, skippedOwn: 0, failed: 0, pending: 0 };
+    for (const row of pending.rows) {
+      result.reviewed += 1;
+      if (row.userId === input.adminId) { result.skippedOwn += 1; continue; }
+      if (!/^0x[0-9a-fA-F]{40}$/.test(row.address)) { result.failed += 1; continue; }
+      const updated = await tx.query(
+        `update ambassador_wallet_addresses
+            set status='verified',verified_by=$2,verified_at=now(),rejection_reason=null,updated_at=now()
+          where id=$1 and status='pending' returning id`,
+        [row.id, input.adminId],
+      );
+      if (!updated.rows[0]) { result.failed += 1; continue; }
+      result.verified += 1;
+      await writeAuditLog(tx, {
+        actorUserId: input.adminId, actorRole: input.adminRole,
+        action: "ambassador.address_verified", entityType: "ambassador_wallet_address",
+        entityId: row.id, metadata: { userId: row.userId, bulk: true },
+      });
+    }
+    result.pending = result.reviewed - result.verified - result.skippedOwn - result.failed;
+    return result;
+  });
 }

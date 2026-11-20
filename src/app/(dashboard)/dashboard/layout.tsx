@@ -48,7 +48,7 @@ export default async function DashboardLayout({
         balanceMinor={wallet.balanceMinor}
         unread={counts.unreadNotifications}
         ambassador={ambassador}
-        announcement={appSettings?.proxyPurchasePaused ? announcement : null}
+        announcement={announcement}
         proxyPurchasePaused={Boolean(appSettings?.proxyPurchasePaused)}
       >
         {children}

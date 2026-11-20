@@ -88,6 +88,7 @@ export const getPlanAvailability = cache(async (countryCode?: string): Promise<P
         and i.verification_status = 'verified'
         and i.country_code is not null
         and i.access_type = p.access_type
+        and i.product_slug = p.slug
         and i.archived_at is null
         and ($1::text is null or i.country_code = $1)
         and i.upstream_expires_at >= now() + p.duration_seconds * interval '1 second'

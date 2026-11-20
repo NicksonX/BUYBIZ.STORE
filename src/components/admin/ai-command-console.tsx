@@ -6,7 +6,7 @@ import { LoadingDots } from "@/components/ui/loading-dots";
 
 type Action = { id: string; type: string; title: string; details: string[] };
 type Message = { id?: string; command: string; reply: string; mode?: string; createdAt?: string; data?: { treasury?: { available?: boolean; usdt?: number; bnb?: number }; claims?: number; unpaidClaims?: number }; action?: Action; actionStatus?: string; result?: Record<string, unknown> };
-const starters = ["Show me the treasury balance", "How many giveaway claims are unpaid?", "Is the giveaway live?", "What is the current giveaway status?"];
+const starters = ["Show me the treasury balance", "Show me all pending wallet addresses", "How many wallet addresses are awaiting verification?", "What is the current giveaway status?"];
 
 export function AiCommandConsole() {
   const [command, setCommand] = useState("");

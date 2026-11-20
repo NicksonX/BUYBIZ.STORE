@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState, type ReactNode } from "react";
+import { useEffect, useActionState, type ReactNode } from "react";
+import { useRouter } from "next/navigation";
 import { CheckCircle2 } from "lucide-react";
 import type { ActionState } from "@/lib/validation/action-state";
 import { initialActionState } from "@/lib/validation/action-state";
@@ -23,6 +24,7 @@ export function AdminActionForm({
   className,
   buttonClassName,
   compact = false,
+  refreshOnSuccess = false,
 }: {
   action: AdminAction;
   children?: ReactNode;
@@ -34,8 +36,13 @@ export function AdminActionForm({
   className?: string;
   buttonClassName?: string;
   compact?: boolean;
+  refreshOnSuccess?: boolean;
 }) {
   const [state, formAction, pending] = useActionState(action, initialActionState);
+  const router = useRouter();
+  useEffect(() => {
+    if (refreshOnSuccess && state.status === "success") router.refresh();
+  }, [refreshOnSuccess, state.status, router]);
 
   return (
     <form

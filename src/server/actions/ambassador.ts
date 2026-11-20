@@ -31,6 +31,7 @@ export async function submitAmbassadorAddressAction(
   try {
     await submitAmbassadorAddress(user.id, address);
     revalidatePath("/dashboard/rewards");
+    revalidatePath("/dashboard/referrals");
     return formSuccess(
       "Address submitted. An administrator must verify it before you can request a payout.",
     );

@@ -179,20 +179,21 @@ export function AmbassadorPanel({
                   <p className="flex items-center gap-1 text-[8.5px] font-medium text-success"><ShieldCheck className="h-3 w-3" /> Verified BEP20 address</p>
                   <p className="mt-1 break-all font-mono text-[9px]">{address.address}</p>
                 </div>
+              ) : address?.status === "pending" ? (
+                <div className="mt-2.5 rounded-[8px] border border-warning/20 bg-warning-soft px-3 py-2.5">
+                  <p className="text-[9px] font-semibold text-warning">Status: Pending Verification</p>
+                  <p className="mt-1 break-all font-mono text-[9px] text-warning">{address.address}</p>
+                  <p className="mt-1 text-[8.5px] leading-4 text-warning">Your wallet address has been submitted successfully and is awaiting admin review. You cannot submit another address until this review is completed.</p>
+                </div>
               ) : (
                 <form action={addressAction} className="mt-2.5 space-y-2">
-                  {address?.status === "pending" ? (
-                    <p className="rounded-[8px] border border-warning/20 bg-warning-soft px-2.5 py-2 text-[9px] text-warning">
-                      Address submitted. Waiting for administrator verification.
-                    </p>
-                  ) : null}
                   {address?.status === "rejected" ? (
                     <p className="rounded-[8px] border border-danger/20 bg-danger-soft px-2.5 py-2 text-[9px] text-danger">
-                      Address rejected{address.rejectionReason ? `: ${address.rejectionReason}` : "."} Submit a corrected address.
+                      Previous address rejected{address.rejectionReason ? `: ${address.rejectionReason}` : "."} You can submit a corrected address.
                     </p>
                   ) : null}
-                  <Input name="address" required placeholder="0x... USDT BEP20 wallet address" className="h-9 font-mono text-[10px]" />
-                  <button type="submit" disabled={addressPending} className="inline-flex h-8 items-center gap-1.5 rounded-full border border-border bg-surface px-3 text-[9.5px] font-medium hover:bg-accent disabled:opacity-50">
+                  <Input name="address" required placeholder="0x... USDT BEP20 wallet address" className="h-10 font-mono text-[10px]" />
+                  <button type="submit" disabled={addressPending} className="inline-flex min-h-10 items-center gap-1.5 rounded-full border border-border bg-surface px-3 text-[9.5px] font-medium hover:bg-accent disabled:opacity-50">
                     {addressPending ? <LoadingDots label="Submitting payment method" /> : <WalletCards className="h-3 w-3" />}
                     Submit address for verification
                   </button>

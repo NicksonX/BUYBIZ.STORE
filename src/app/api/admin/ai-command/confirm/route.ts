@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/server/auth/session";
 import { getDb } from "@/lib/db";
 import { createGiveaway, announceGiveaway, setGiveawayStatus } from "@/server/services/giveaways";
 import { prepareGiveawayBatch } from "@/server/services/treasury";
+import { bulkVerifyPendingAddresses } from "@/server/services/ambassador";
 
 export const dynamic = "force-dynamic";
 
@@ -39,6 +40,9 @@ export async function POST(request: Request) {
       await setGiveawayStatus(action.payload.giveawayId, "ended"); result = { status: "ended" };
     } else if (action.actionType === "prepare_batch" && action.payload.giveawayId) {
       const batch = await prepareGiveawayBatch(action.payload.giveawayId, user.id); result = batch;
+    } else if (action.actionType === "bulk_verify_wallets") {
+      const summary = await bulkVerifyPendingAddresses({ adminId: user.id, adminRole: user.role });
+      result = summary;
     } else throw new Error("Unsupported action.");
     await db.query(`update ai_admin_actions set status='completed',result=$2::jsonb,confirmed_by=$3,confirmed_at=now() where id=$1`, [action.id, JSON.stringify(result), user.id]);
     return NextResponse.json({ ok: true, result });

@@ -11,23 +11,35 @@ export const runtime = "nodejs";
 
 async function context() {
   const db = await getDb();
-  const [treasury, balance, giveaways, claims, pending] = await Promise.all([
+  const [treasury, balance, giveaways, claims, pending, walletPending, walletRejected] = await Promise.all([
     getTreasuryOverview(),
     readTreasuryBalance(),
     db.query<{ title: string; status: string; claimed: number; limit: number }>(`select title,status,claimed_count as claimed,claim_limit as limit from giveaways order by created_at desc limit 20`),
     db.query<{ n: number }>(`select count(*)::int n from giveaway_claims`),
     db.query<{ n: number }>(`select count(*)::int n from giveaway_claims where payment_status <> 'paid'`),
+    db.query<{ id: string; email: string; username: string; address: string; createdAt: Date }>(`select a.id,p.email,p.username,a.address,a.created_at as "createdAt" from ambassador_wallet_addresses a join profiles p on p.id=a.user_id where a.status='pending' order by a.created_at limit 100`),
+    db.query<{ id: string; email: string; username: string; address: string; reason: string | null; createdAt: Date }>(`select a.id,p.email,p.username,a.address,a.rejection_reason as reason,a.created_at as "createdAt" from ambassador_wallet_addresses a join profiles p on p.id=a.user_id where a.status='rejected' order by a.created_at desc limit 50`),
   ]);
   return {
     treasury: { configured: Boolean(treasury.wallet), balance, batches: treasury.batches.length },
     giveaways: giveaways.rows,
     claims: claims.rows[0]?.n ?? 0,
     unpaidClaims: pending.rows[0]?.n ?? 0,
+    walletVerification: { pendingCount: walletPending.rows.length, pending: walletPending.rows, rejected: walletRejected.rows },
   };
 }
 
 function deterministic(command: string, data: Awaited<ReturnType<typeof context>>) {
   const text = command.toLowerCase();
+  const walletIntent = /wallet|payout address|submitted address/.test(text);
+  if (walletIntent && /rejected|failed/.test(text)) {
+    const rows = data.walletVerification.rejected;
+    return rows.length ? `There are ${rows.length} rejected wallet addresses:\n${rows.map((r) => `• ${r.email} — ${r.address}${r.reason ? ` — ${r.reason}` : ""}`).join("\n")}` : "There are no rejected wallet addresses.";
+  }
+  if (walletIntent && /pending|awaiting|submitted|verify|check|how many/.test(text)) {
+    const rows = data.walletVerification.pending;
+    return rows.length ? `There are ${rows.length} wallet addresses awaiting verification:\n${rows.map((r) => `• ${r.email} — ${r.address}`).join("\n")}\n\nUse “verify all pending wallet addresses” to prepare a bulk verification for owner approval.` : "There are no wallet addresses awaiting verification.";
+  }
   if (text.includes("treasury") || text.includes("balance") || text.includes("usdt")) {
     return data.treasury.balance.available
       ? `Treasury: ${data.treasury.balance.usdt.toFixed(4)} USDT and ${data.treasury.balance.bnb.toFixed(4)} BNB on BEP20. Network block ${data.treasury.balance.block}. This is read from the public BSC RPC, not a cached balance.`
@@ -66,6 +78,9 @@ type ActionPlan = { type: string; title: string; details: string[]; payload: Rec
 
 function planAction(command: string, data: Awaited<ReturnType<typeof context>>): ActionPlan | null {
   const text = command.toLowerCase();
+  if (/verify|approve/.test(text) && /(wallet|address)/.test(text) && /(all|pending|awaiting)/.test(text)) {
+    return { type: "bulk_verify_wallets", title: "Verify all pending wallet addresses", details: [`${data.walletVerification.pendingCount} pending address(es) will be reviewed`, "Your own address will be skipped", "Every verified/rejected row is persisted and audited", "Invalid or already reviewed addresses are skipped"], payload: {} };
+  }
   if (/create|new/.test(text) && /giveaway/.test(text)) {
     const reward = Number(command.match(/\$(\d+(?:\.\d+)?)/)?.[1] ?? 1);
     const limit = Number(command.match(/(\d+)\s*(?:users?|claims?|winners?)/i)?.[1] ?? 20);
