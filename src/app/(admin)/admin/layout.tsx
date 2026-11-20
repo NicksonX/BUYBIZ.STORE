@@ -5,6 +5,7 @@ import { ThemeScope } from "@/components/theme/theme-provider";
 import { AdminShell } from "@/components/admin/shell";
 import { requireStaffPage } from "@/server/auth/guards";
 import { getAdminBadgeCounts } from "@/server/data/admin";
+import { getActiveDashboardAnnouncement } from "@/server/services/announcements";
 
 export const metadata: Metadata = {
   title: "Admin",
@@ -28,10 +29,10 @@ export default async function AdminLayout({
   const cookieStore = await cookies();
   const theme =
     cookieStore.get("buybiz_admin_theme")?.value === "light" ? "light" : "dark";
-  const counts = await getAdminBadgeCounts().catch(() => ({
-    pendingDeposits: 0,
-    openTickets: 0,
-  }));
+  const [counts, announcement] = await Promise.all([
+    getAdminBadgeCounts().catch(() => ({ pendingDeposits: 0, openTickets: 0 })),
+    getActiveDashboardAnnouncement().catch(() => null),
+  ]);
 
   return (
     <ThemeScope
@@ -43,6 +44,7 @@ export default async function AdminLayout({
         user={user}
         pendingDeposits={counts.pendingDeposits}
         openTickets={counts.openTickets}
+        announcement={announcement}
       >
         {children}
       </AdminShell>

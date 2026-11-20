@@ -5,16 +5,20 @@ import { getPaystackMode, isDemoMode } from "@/lib/config";
 import type { Profile } from "@/lib/db/types";
 import { RouteTransition } from "@/components/ui/route-transition";
 import { AdminFloatingTools } from "@/components/admin/admin-floating-tools";
+import { MaintenanceAnnouncement } from "@/components/dashboard/maintenance-announcement";
+import type { DashboardAnnouncement } from "@/server/services/announcements";
 
 export function AdminShell({
   user,
   pendingDeposits,
   openTickets,
+  announcement,
   children,
 }: {
   user: Profile;
   pendingDeposits: number;
   openTickets: number;
+  announcement: DashboardAnnouncement | null;
   children: React.ReactNode;
 }) {
   return (
@@ -61,6 +65,7 @@ export function AdminShell({
         </main>
       </div>
       <AdminFloatingTools role={user.role} />
+      <MaintenanceAnnouncement announcement={announcement} />
     </div>
   );
 }
