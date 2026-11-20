@@ -52,7 +52,7 @@ export default async function ReferralsPage() {
               {[
                 { label: "Total referrals", value: data.stats.total, icon: Users },
                 { label: "Valid referrals", value: data.stats.rewarded + data.stats.qualified, icon: Gift },
-                { label: "Pending", value: data.stats.registered + data.stats.pending, icon: Gift },
+                { label: "Pending", value: ambassador.pending, icon: Gift },
                 { label: "Invalid", value: data.stats.rejected, icon: Gift },
                 { label: "USD earned", value: `$${(ambassador.earnedCents / 100).toFixed(2)}`, icon: BadgeDollarSign },
                 { label: "USD available", value: `$${(ambassador.availableCents / 100).toFixed(2)}`, icon: BadgeDollarSign },
