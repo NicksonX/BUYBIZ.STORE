@@ -4,6 +4,7 @@ import { getDb } from "@/lib/db";
 import { AppError } from "@/lib/errors";
 import { decryptSecret, encryptSecret } from "@/lib/security/encryption";
 import { queueEmail } from "@/server/services/email";
+import { notifyUser } from "@/server/services/notifications";
 
 export type GiveawayStatus = "draft" | "scheduled" | "active" | "paused" | "ended" | "claimed";
 
@@ -111,6 +112,11 @@ export async function submitGiveawayWallet(input: { userId: string; claimId: str
       type: "giveaway_claim_received", userId: input.userId, recipient: info.email,
       data: { name: info.name, giveawayTitle: info.title, amountLabel: `$${(Number(info.rewardCents) / 100).toFixed(2)} ${info.asset}`, network: info.network },
       dedupeKey: `giveaway_claim_received:${input.claimId}`,
+    });
+    if (info) await notifyUser(tx, {
+      userId: input.userId, type: "system", title: "Giveaway claim received",
+      body: `Your claim for ${info.title} is saved and awaiting payout review. This is not a payment confirmation.`,
+      href: "/dashboard/giveaways",
     });
     return { ok: true };
   });

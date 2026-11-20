@@ -2,6 +2,7 @@ import "server-only";
 import { getDb } from "@/lib/db";
 import { AppError } from "@/lib/errors";
 import { queueEmail } from "@/server/services/email";
+import { notifyUser } from "@/server/services/notifications";
 
 const BSC_RPC = process.env.BSC_RPC_URL?.trim() || "https://bsc-dataseed.binance.org/";
 const USDT_BEP20 = "0x55d398326f99059ff775485246999027b3197955";
@@ -129,6 +130,11 @@ export async function approveGiveawayBatch(batchId: string, ownerId: string) {
         type: "giveaway_approved", userId: person.userId, recipient: person.email,
         data: { name: person.name, amountLabel: `$${(Number(person.amount) / 100).toFixed(2)} USDT`, network: "BEP20" },
         dedupeKey: `giveaway_approved:${batchId}:${person.userId}`,
+      });
+      await notifyUser(tx, {
+        userId: person.userId, type: "system", title: "Giveaway reward approved",
+        body: `Your ${`$${(Number(person.amount) / 100).toFixed(2)} USDT`} giveaway reward is approved and awaiting payment processing.`,
+        href: "/dashboard/giveaways",
       });
     }
     return { ok: true };
