@@ -4,7 +4,6 @@ import { useActionState } from "react";
 import Link from "next/link";
 import {
   ArrowUpRight,
-  Award,
   BadgeCheck,
   BadgeDollarSign,
   Check,
@@ -25,7 +24,6 @@ import { initialActionState } from "@/lib/validation/action-state";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Progress } from "@/components/ui/progress";
 import { LoadingDots } from "@/components/ui/loading-dots";
 import { formatDate } from "@/lib/utils";
 
@@ -69,8 +67,6 @@ export function RewardsDashboard({
 
   const required = ambassador.config.referralsRequired;
   const qualified = ambassador.qualified;
-  const progress = Math.min(100, Math.round((qualified / Math.max(required, 1)) * 100));
-  const unlocked = ambassador.isAmbassador || qualified >= required;
   const pendingReferrals = ambassador.pending;
   const qualifyingReferrals = qualified;
   const availableAddress = rewards.address;
@@ -87,7 +83,7 @@ export function RewardsDashboard({
 
   return (
     <div className="space-y-3.5 sm:space-y-4">
-      <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-2.5 min-[360px]:grid-cols-2 lg:grid-cols-4">
         {[
           { label: "Total Referrals", value: referrals.total, icon: Users, note: "People who joined with your link" },
           { label: "Qualifying Referrals", value: qualifyingReferrals, icon: BadgeCheck, note: `${referrals.minProxyDays}-day+ purchase verified` },
@@ -96,7 +92,7 @@ export function RewardsDashboard({
         ].map((item) => (
           <section key={item.label} className="surface-card flex min-h-[104px] flex-col justify-between rounded-[13px] p-3.5 sm:p-4">
             <div className="flex items-start justify-between gap-2"><p className="text-[10px] font-medium leading-4 text-muted-foreground">{item.label}</p><span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-surface-subtle"><item.icon className="h-3.5 w-3.5 text-muted-foreground" /></span></div>
-            <div className="mt-2"><p className="tabular text-[22px] font-semibold leading-none tracking-[-0.035em] sm:text-[24px]">{item.value}</p><p className="mt-1.5 truncate text-[8.5px] leading-3.5 text-muted-foreground">{item.note}</p></div>
+            <div className="mt-2"><p className="tabular text-[22px] font-semibold leading-none tracking-[-0.035em] sm:text-[24px]">{item.value}</p><p className="mt-1.5 text-[8.5px] leading-3.5 text-muted-foreground">{item.note}</p></div>
           </section>
         ))}
       </div>
@@ -112,37 +108,16 @@ export function RewardsDashboard({
           </div>
           <div className="rounded-[9px] border border-border bg-surface-subtle p-2.5">
             <p className="text-[8.5px] font-medium uppercase tracking-[0.1em] text-muted-foreground">Your referral link</p>
-            <div className="mt-1.5 flex items-center gap-1.5">
+            <div className="mt-1.5 flex flex-col gap-2 min-[420px]:flex-row min-[420px]:items-center">
               <code className="min-w-0 flex-1 truncate rounded-[6px] border border-border bg-surface px-2 py-2 font-mono text-[8.5px] text-muted-foreground" title={referralLink}>{referralLink}</code>
-              <CopyLink value={referralLink} />
+              <CopyLink value={referralLink} className="w-full justify-center min-[420px]:w-auto" />
             </div>
             <p className="mt-1.5 text-[8.5px] leading-4 text-muted-foreground">Share this link. Qualified referrals earn {usd(ambassador.config.commissionCents)} for both normal and Ambassador rewards.</p>
           </div>
         </div>
       </section>
 
-      <section className="overflow-hidden rounded-[13px] border border-border bg-surface">
-        <div className="flex flex-col gap-2 border-b border-border bg-[#101311] px-4 py-3.5 text-white sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-2.5"><span className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/[0.06]"><Award className="h-4 w-4 text-[#F3D99A]" /></span><div><h2 className="text-[12.5px] font-semibold">BUYBIZ Ambassador Programme</h2><p className="mt-0.5 text-[8.5px] text-white/45">Earn {usd(ambassador.config.commissionCents)} for every eligible referral who completes a {referrals.minProxyDays}-day-or-longer proxy purchase.</p></div></div>
-          <span className={`inline-flex w-fit items-center gap-1 rounded-full border px-2.5 py-1 text-[9px] font-medium ${unlocked ? "border-[#8EE7B8]/25 bg-[#8EE7B8]/10 text-[#9BE8BE]" : "border-white/15 bg-white/[0.05] text-white/60"}`}>{unlocked ? <><BadgeCheck className="h-3 w-3" /> Ambassador unlocked</> : "In progress"}</span>
-        </div>
-        <div className="grid gap-4 p-4 sm:p-5 lg:grid-cols-[1.15fr_0.85fr]">
-          <div>
-            <div className="flex items-end justify-between gap-3"><div><p className="text-[9px] text-muted-foreground">Qualification progress</p><p className="tabular mt-1 text-[21px] font-semibold leading-none">{qualified} <span className="text-[13px] font-normal text-muted-foreground">of {required} required</span></p></div><p className="text-[9px] text-muted-foreground">{unlocked ? "Requirement met" : `${Math.max(0, required - qualified)} more to unlock`}</p></div>
-            <Progress value={progress} className="mt-2.5" barClassName={unlocked ? "bg-[#3FBF7F]" : "bg-foreground"} />
-            <p className="mt-2 text-[8.5px] leading-4 text-muted-foreground">{qualified > required ? `${qualified} qualifying referrals — requirement exceeded; progress is capped at 100%.` : "Registration alone does not count. A verified deposit and a completed 7-day-or-longer proxy purchase are required."}</p>
-            <div className="mt-3 grid grid-cols-2 gap-2 text-[9px] sm:grid-cols-4">
-              {[["Total", ambassador.total], ["Qualified", qualified], ["Pending", ambassador.pending], ["Rejected", ambassador.rejected]].map(([label, value]) => <div key={String(label)} className="rounded-[8px] border border-border bg-surface-subtle p-2"><p className="text-[8px] text-muted-foreground">{label}</p><p className="tabular mt-0.5 text-[14px] font-semibold">{value}</p></div>)}
-            </div>
-          </div>
-          <div className="space-y-2.5">
-            <div className="grid grid-cols-2 gap-2"><div className="rounded-[8px] border border-border bg-surface-subtle p-2.5"><p className="text-[8px] text-muted-foreground">Total commissions</p><p className="tabular mt-1 text-[15px] font-semibold">{usd(ambassador.earnedCents)}</p></div><div className="rounded-[8px] border border-border bg-surface-subtle p-2.5"><p className="text-[8px] text-muted-foreground">Available</p><p className="tabular mt-1 text-[15px] font-semibold">{usd(ambassador.availableCents)}</p></div></div>
-            <p className="flex items-center gap-1.5 text-[8.5px] text-muted-foreground"><Clock3 className="h-3 w-3" /> {unlocked ? `Promoted ${ambassador.promotedAt ? formatDate(new Date(ambassador.promotedAt)) : "—"}` : "Unlock at 2 qualified referrals"}{ambassador.config.nextPayoutAt ? ` · Next $3 batch ${formatDate(new Date(ambassador.config.nextPayoutAt))}` : ""}</p>
-          </div>
-        </div>
-      </section>
-
-      <section className="surface-card overflow-hidden rounded-[13px]">
+      <section id="usd-payouts" className="scroll-mt-24 surface-card overflow-hidden rounded-[13px]">
         <div className="flex flex-col gap-3 border-b border-border px-4 py-3.5 sm:flex-row sm:items-start sm:justify-between">
           <div><h2 className="flex items-center gap-1.5 text-[13px] font-semibold"><BadgeDollarSign className="h-4 w-4 text-muted-foreground" /> USD Payouts</h2><p className="mt-0.5 text-[9.5px] leading-4 text-muted-foreground">One destination for campaign and Ambassador rewards. Paid manually in USDT on BNB Smart Chain after review.</p></div>
           <div className="flex shrink-0 gap-4"><div><p className="text-[8px] uppercase tracking-[0.1em] text-muted-foreground">Available</p><p className="tabular mt-0.5 text-[17px] font-semibold">{usd(rewards.totals.availableCents)}</p></div><div><p className="text-[8px] uppercase tracking-[0.1em] text-muted-foreground">Total earned</p><p className="tabular mt-0.5 text-[17px] font-semibold">{usd(rewards.totals.earnedCents)}</p></div></div>
@@ -190,6 +165,6 @@ export function RewardsDashboard({
   );
 }
 
-function CopyLink({ value }: { value: string }) {
-  return <button type="button" onClick={() => navigator.clipboard?.writeText(value)} className="inline-flex min-h-9 shrink-0 items-center gap-1 rounded-[6px] border border-border bg-surface px-2 text-[8.5px] font-medium text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label="Copy referral link"><Copy className="h-3 w-3" /> Copy</button>;
+function CopyLink({ value, className }: { value: string; className?: string }) {
+  return <button type="button" onClick={() => navigator.clipboard?.writeText(value)} className={`inline-flex min-h-10 shrink-0 items-center gap-1 rounded-[6px] border border-border bg-surface px-2 text-[9px] font-medium text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${className ?? ""}`} aria-label="Copy referral link"><Copy className="h-3 w-3" /> Copy</button>;
 }

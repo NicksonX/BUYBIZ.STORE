@@ -11,6 +11,7 @@ import { getUsdRewardsDashboard } from "@/server/services/campaigns";
 import { getAppUrl } from "@/lib/config";
 import { formatDate } from "@/lib/utils";
 import { ShareReferral } from "@/components/campaigns/share-referral";
+import { AmbassadorProgrammeCard } from "@/components/ambassador/ambassador-programme-card";
 
 export const dynamic = "force-dynamic";
 
@@ -45,7 +46,6 @@ export default async function ReferralsPage() {
                 <ShareReferral value={link} />
               </div>
               <p className="mt-4 text-[9.5px] leading-4 text-white/55">To qualify for this referral reward, you must successfully purchase a proxy subscription of at least {data.minProxyDays} days.</p>
-              <p className="mt-2 text-[9.5px] leading-4 text-[#FFB197]">Ambassador progress: {ambassador.qualified}/{ambassador.config.referralsRequired} valid referrals.</p>
             </section>
 
             <div className="grid grid-cols-2 gap-2.5">
@@ -66,6 +66,8 @@ export default async function ReferralsPage() {
               ))}
             </div>
           </div>
+
+          <div className="mt-3"><AmbassadorProgrammeCard isAmbassador={ambassador.isAmbassador} qualified={ambassador.qualified} required={ambassador.config.referralsRequired} total={ambassador.total} pending={ambassador.pending} rejected={ambassador.rejected} earnedCents={ambassador.earnedCents} availableCents={ambassador.availableCents} promotedAt={ambassador.promotedAt} nextPayoutAt={ambassador.config.nextPayoutAt} minProxyDays={data.minProxyDays} commissionCents={ambassador.config.commissionCents} /></div>
 
           <section className="surface-card mt-3 overflow-hidden rounded-[14px]">
             <div className="flex items-start justify-between gap-3 border-b border-border px-4 py-3">
