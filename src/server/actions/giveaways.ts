@@ -15,7 +15,12 @@ export async function claimGiveawayAction(_previous: ActionState, formData: Form
       code: String(formData.get("code") ?? ""),
     });
     revalidatePath("/dashboard/giveaways");
-    return formSuccess("Claim successful. Add your USDT BEP20 payout address to receive the reward.", { claimId: claim.claimId });
+    return formSuccess(
+      claim.isWinner
+        ? `Claim successful. You are winner #${claim.winnerPosition}. Add your USDT BEP20 payout address to receive the reward.`
+        : "Your participation has been recorded. The 20 reward slots are already filled, so this claim is not eligible for a reward.",
+      { claimId: claim.claimId, claimIsWinner: claim.isWinner },
+    );
   } catch (error) {
     if (error instanceof AppError) return formError(error.userMessage);
     console.error("[buybiz/giveaway] claim failed", error);

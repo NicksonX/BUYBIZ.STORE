@@ -30,12 +30,14 @@ export async function listGiveawaysForUser(userId: string) {
     claimLimit: number; claimedCount: number; status: GiveawayStatus;
     startsAt: Date | null; endsAt: Date | null;
     claimId: string | null; walletAddress: string | null; addressStatus: string | null; paymentStatus: string | null;
+    claimIsWinner: boolean | null; winnerPosition: number | null;
     xPostUrl: string | null; tasksEnabled: boolean; completedTasks: string[];
   }>(
     `select g.id, g.slug, g.title, g.description, g.reward_amount_usd_cents as "rewardCents",
             g.reward_asset as asset, g.network, g.claim_limit as "claimLimit",
             g.claimed_count as "claimedCount", g.status, g.starts_at as "startsAt", g.ends_at as "endsAt",
             c.id as "claimId", c.wallet_address as "walletAddress", c.address_status as "addressStatus", c.payment_status as "paymentStatus",
+            c.is_winner as "claimIsWinner", c.winner_position as "winnerPosition",
             g.x_post_url as "xPostUrl", g.tasks_enabled as "tasksEnabled",
             coalesce(array(select tc.task_key from giveaway_task_completions tc where tc.giveaway_id=g.id and tc.user_id=$1), '{}') as "completedTasks"
        from giveaways g
@@ -66,26 +68,29 @@ export async function claimGiveaway(input: { userId: string; giveawayId: string;
     const giveaway = result.rows[0];
     if (!giveaway) throw new AppError("NOT_FOUND", "That giveaway was not found.");
     const now = Date.now();
-    if (giveaway.status !== "active") throw new AppError("CONFLICT", "This giveaway is not accepting claims right now.");
+    if (!["active", "claimed"].includes(giveaway.status)) throw new AppError("CONFLICT", "This giveaway is not accepting claims right now.");
     if (giveaway.startsAt && new Date(giveaway.startsAt).getTime() > now) throw new AppError("CONFLICT", "This giveaway has not started yet.");
     if (giveaway.endsAt && new Date(giveaway.endsAt).getTime() <= now) throw new AppError("CONFLICT", "This giveaway has ended.");
-    if (giveaway.claimedCount >= giveaway.claimLimit) throw new AppError("CONFLICT", "All claims for this giveaway have been used.");
     if (giveaway.codeHash !== hashCode(code)) throw new AppError("VALIDATION", "That claim code is not valid.");
     const existing = await tx.query(`select 1 from giveaway_claims where giveaway_id=$1 and user_id=$2`, [giveaway.id, input.userId]);
     if (existing.rows[0]) throw new AppError("CONFLICT", "You have already claimed this giveaway.");
+    const winners = await tx.query<{ n: number }>(
+      `select count(*)::int n from giveaway_claims where giveaway_id=$1 and is_winner=true`,
+      [giveaway.id],
+    );
+    const winner = Number(winners.rows[0]?.n ?? 0) < giveaway.claimLimit;
+    const position = winner ? Number(winners.rows[0]?.n ?? 0) + 1 : null;
     const claim = await tx.query<{ id: string }>(
-      `insert into giveaway_claims (giveaway_id, user_id, reward_amount_usd_cents, address_status, payment_status)
-       values ($1,$2,$3,'missing','pending') returning id`,
-      [giveaway.id, input.userId, giveaway.rewardCents],
+      `insert into giveaway_claims (giveaway_id, user_id, reward_amount_usd_cents, address_status, payment_status, is_winner, winner_position)
+       values ($1,$2,$3,'missing',$4,$5,$6) returning id`,
+      [giveaway.id, input.userId, winner ? giveaway.rewardCents : 0, winner ? 'pending' : 'not_selected', winner, position],
     );
     await tx.query(
-      `update giveaways set claimed_count=claimed_count+1,
-              status=case when claimed_count+1 >= claim_limit then 'claimed' else status end,
-              updated_at=now() where id=$1`,
+      `update giveaways set claimed_count=claimed_count+1,status='active',updated_at=now() where id=$1`,
       [giveaway.id],
     );
     await tx.query(`insert into giveaway_claim_attempts (giveaway_id,user_id,result) values ($1,$2,'success')`, [giveaway.id, input.userId]);
-    return { claimId: claim.rows[0].id, alreadyClaimed: false };
+    return { claimId: claim.rows[0].id, alreadyClaimed: false, isWinner: winner, winnerPosition: position };
   });
 }
 
@@ -95,11 +100,12 @@ export async function submitGiveawayWallet(input: { userId: string; claimId: str
   }
   const db = await getDb();
   return db.transaction(async (tx) => {
-    const claim = await tx.query<{ id: string; paymentStatus: string }>(
-      `select id, payment_status as "paymentStatus" from giveaway_claims where id=$1 and user_id=$2 for update`,
+    const claim = await tx.query<{ id: string; paymentStatus: string; isWinner: boolean }>(
+      `select id, payment_status as "paymentStatus", is_winner as "isWinner" from giveaway_claims where id=$1 and user_id=$2 for update`,
       [input.claimId, input.userId],
     );
     if (!claim.rows[0]) throw new AppError("NOT_FOUND", "That giveaway claim was not found.");
+    if (!claim.rows[0].isWinner) throw new AppError("CONFLICT", "This participation is recorded, but the 20 reward slots have already been filled.");
     if (["processing", "paid"].includes(claim.rows[0].paymentStatus)) throw new AppError("CONFLICT", "This payout address is locked because payment has started.");
     await tx.query(
       `update giveaway_claims set wallet_address=$2, address_status='submitted' where id=$1 and user_id=$3`,
@@ -158,6 +164,7 @@ export async function getGiveawayAdminData() {
     `select c.id, c.giveaway_id as "giveawayId", c.user_id as "userId", c.reward_amount_usd_cents as "rewardCents",
             c.wallet_address as "walletAddress", c.address_status as "addressStatus",
             c.payment_status as "paymentStatus", c.transaction_hash as "transactionHash",
+            c.is_winner as "isWinner", c.winner_position as "winnerPosition",
             c.claimed_at as "claimedAt", p.username, p.email, g.network
        from giveaway_claims c join profiles p on p.id=c.user_id join giveaways g on g.id=c.giveaway_id
       order by c.claimed_at desc limit 500`,

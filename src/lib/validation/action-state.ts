@@ -5,6 +5,7 @@ export type ActionState = {
   resetUrl?: string;
   redirectTo?: string;
   claimId?: string;
+  claimIsWinner?: boolean;
 };
 
 export const initialActionState: ActionState = {};

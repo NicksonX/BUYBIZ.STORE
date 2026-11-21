@@ -15,6 +15,7 @@ type Giveaway = {
   status: string; startsAt: string | Date | null; endsAt: string | Date | null;
   claimId: string | null; walletAddress: string | null; addressStatus: string | null; paymentStatus: string | null;
   xPostUrl: string | null; tasksEnabled: boolean; completedTasks: string[];
+  claimIsWinner: boolean | null; winnerPosition: number | null;
 };
 
 function money(cents: number) { return `$${(cents / 100).toFixed(2)}`; }
@@ -39,6 +40,8 @@ export function GiveawayExperience({ giveaway }: { giveaway: Giveaway }) {
   const [remaining, setRemaining] = useState(() => timeLeft(giveaway));
   const open = isOpen(giveaway);
   const hasClaim = Boolean(giveaway.claimId) || Boolean(claimState.claimId);
+  const isWinner = giveaway.claimIsWinner === true || claimState.claimIsWinner === true;
+  const winnerPosition = giveaway.winnerPosition ?? null;
 
   useEffect(() => {
     const timer = window.setInterval(() => setRemaining(timeLeft(giveaway)), 1000);
@@ -47,7 +50,7 @@ export function GiveawayExperience({ giveaway }: { giveaway: Giveaway }) {
   useEffect(() => {
     if (claimState.status === "success") {
       setCodeOpen(false);
-      setWalletOpen(true);
+      if (claimState.claimIsWinner) setWalletOpen(true);
       router.refresh();
     }
   }, [claimState.status, router]);
@@ -77,7 +80,7 @@ export function GiveawayExperience({ giveaway }: { giveaway: Giveaway }) {
           </div>
           <div className="rounded-[15px] border border-white/10 bg-white/[0.055] p-4 backdrop-blur-sm">
             <p className="text-[8.5px] font-semibold uppercase tracking-[0.16em] text-white/35">{hasClaim ? "Your entry" : open ? "Your next step" : "Giveaway status"}</p>
-            {hasClaim ? <div className="mt-3">{paid ? <><p className="flex items-center gap-2 text-[13px] font-semibold text-[#B9FF66]"><BadgeCheck className="h-4 w-4" /> Reward paid</p><p className="mt-1 text-[9.5px] leading-4 text-white/45">Your USDT reward has been confirmed. Check your email for the payment reference.</p></> : addressSubmitted ? <><p className="flex items-center gap-2 text-[13px] font-semibold text-[#F3D99A]"><Check className="h-4 w-4" /> Claim submitted</p><p className="mt-1 text-[9.5px] leading-4 text-white/45">Your wallet address is saved and awaiting review. We will email you when the reward is approved or paid.</p></> : <><p className="flex items-center gap-2 text-[13px] font-semibold text-[#F3D99A]"><Wallet className="h-4 w-4" /> Add your payout address</p><p className="mt-1 text-[9.5px] leading-4 text-white/45">Your claim is confirmed. Submit a USDT BEP20 address to complete the entry.</p><button type="button" onClick={() => setWalletOpen(true)} className="mt-3 inline-flex h-9 items-center gap-2 rounded-full bg-[#F3D99A] px-3.5 text-[9.5px] font-semibold text-[#071A12]">Add wallet address <ArrowRight className="h-3.5 w-3.5" /></button></>}</div> : open ? <><p className="mt-3 text-[13px] font-semibold">Enter your official code</p><p className="mt-1 text-[9.5px] leading-4 text-white/45">The claim code is shared through the official BUYBIZ channel. It is never shown in this page or in email.</p><button type="button" onClick={() => setCodeOpen(true)} className="mt-3 inline-flex h-10 items-center gap-2 rounded-full bg-white px-4 text-[10px] font-semibold text-[#071A12]"><Gift className="h-4 w-4" /> Claim reward <ArrowRight className="h-3.5 w-3.5" /></button></> : <><p className="mt-3 text-[13px] font-semibold">{giveaway.status === "scheduled" || (giveaway.startsAt && new Date(giveaway.startsAt) > new Date()) ? "Starts soon" : "This giveaway is closed"}</p><p className="mt-1 text-[9.5px] leading-4 text-white/45">{remaining ? <span className="tabular">{String(h).padStart(2,"0")}:{String(m).padStart(2,"0")}:{String(s).padStart(2,"0")} until {giveaway.startsAt && new Date(giveaway.startsAt) > new Date() ? "launch" : "closing"}</span> : "Check back for the next BUYBIZ giveaway."}</p></>}
+            {hasClaim ? <div className="mt-3">{!isWinner ? <><p className="flex items-center gap-2 text-[13px] font-semibold text-[#F3D99A]"><Check className="h-4 w-4" /> Participation recorded</p><p className="mt-1 text-[9.5px] leading-4 text-white/45">Your entry is saved. The 20 reward slots have already been filled, so this participation is not eligible for a reward.</p></> : paid ? <><p className="flex items-center gap-2 text-[13px] font-semibold text-[#B9FF66]"><BadgeCheck className="h-4 w-4" /> Reward paid</p><p className="mt-1 text-[9.5px] leading-4 text-white/45">Your USDT reward has been confirmed. Check your email for the payment reference.</p></> : addressSubmitted ? <><p className="flex items-center gap-2 text-[13px] font-semibold text-[#F3D99A]"><Check className="h-4 w-4" /> Claim submitted{winnerPosition ? ` · Winner #${winnerPosition}` : ""}</p><p className="mt-1 text-[9.5px] leading-4 text-white/45">Your wallet address is saved and awaiting review. We will email you when the reward is approved or paid.</p></> : <><p className="flex items-center gap-2 text-[13px] font-semibold text-[#F3D99A]"><Wallet className="h-4 w-4" /> Add your payout address</p><p className="mt-1 text-[9.5px] leading-4 text-white/45">Your claim is confirmed{winnerPosition ? ` as Winner #${winnerPosition}` : ""}. Submit a USDT BEP20 address to complete the entry.</p><button type="button" onClick={() => setWalletOpen(true)} className="mt-3 inline-flex h-9 items-center gap-2 rounded-full bg-[#F3D99A] px-3.5 text-[9.5px] font-semibold text-[#071A12]">Add wallet address <ArrowRight className="h-3.5 w-3.5" /></button></>}</div> : open ? <><p className="mt-3 text-[13px] font-semibold">Enter your official code</p><p className="mt-1 text-[9.5px] leading-4 text-white/45">The claim code is shared through the official BUYBIZ channel. It is never shown in this page or in email.</p><button type="button" onClick={() => setCodeOpen(true)} className="mt-3 inline-flex h-10 items-center gap-2 rounded-full bg-white px-4 text-[10px] font-semibold text-[#071A12]"><Gift className="h-4 w-4" /> Claim reward <ArrowRight className="h-3.5 w-3.5" /></button></> : <><p className="mt-3 text-[13px] font-semibold">{giveaway.status === "scheduled" || (giveaway.startsAt && new Date(giveaway.startsAt) > new Date()) ? "Starts soon" : "This giveaway is closed"}</p><p className="mt-1 text-[9.5px] leading-4 text-white/45">{remaining ? <span className="tabular">{String(h).padStart(2,"0")}:{String(m).padStart(2,"0")}:{String(s).padStart(2,"0")} until {giveaway.startsAt && new Date(giveaway.startsAt) > new Date() ? "launch" : "closing"}</span> : "Check back for the next BUYBIZ giveaway."}</p></>}
             <div className="mt-4 border-t border-white/10 pt-3 text-[8.5px] leading-4 text-white/35">One claim per account. Claim slots are limited and not displayed.</div>
           </div>
         </div>
