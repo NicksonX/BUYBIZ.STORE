@@ -41,6 +41,7 @@ export const EMAIL_POLICY: Record<EmailType, EmailPolicyEntry> = {
   giveaway_live: { type: "giveaway_live", category: "in_app_only", email: false, reason: "Promotional announcement; use dashboard notices." },
   giveaway_claim_received: { type: "giveaway_claim_received", category: "in_app_only", email: false, reason: "Giveaway claim is visible in-app." },
   giveaway_approved: { type: "giveaway_approved", category: "in_app_only", email: false, reason: "Giveaway status is visible in-app." },
+  giveaway_winner_announcement: { type: "giveaway_winner_announcement", category: "essential", email: true, reason: "Approved winner announcement requested by an administrator." },
   giveaway_winner_paid: { type: "giveaway_winner_paid", category: "essential", email: true, reason: "Confirmed giveaway payment receipt." },
   marketing: { type: "marketing", category: "marketing", email: false, reason: "Optional marketing is not sent under the conservative policy." },
 };

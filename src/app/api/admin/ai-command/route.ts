@@ -11,7 +11,7 @@ export const runtime = "nodejs";
 
 async function context() {
   const db = await getDb();
-  const [treasury, balance, giveaways, claims, pending, walletPending, walletRejected] = await Promise.all([
+  const [treasury, balance, giveaways, claims, pending, walletPending, walletRejected, latestWinners] = await Promise.all([
     getTreasuryOverview(),
     readTreasuryBalance(),
     db.query<{ title: string; status: string; claimed: number; limit: number }>(`select title,status,claimed_count as claimed,claim_limit as limit from giveaways order by created_at desc limit 20`),
@@ -19,6 +19,12 @@ async function context() {
     db.query<{ n: number }>(`select count(*)::int n from giveaway_claims where payment_status <> 'paid'`),
     db.query<{ id: string; email: string; username: string; address: string; createdAt: Date }>(`select a.id,p.email,p.username,a.address,a.created_at as "createdAt" from ambassador_wallet_addresses a join profiles p on p.id=a.user_id where a.status='pending' order by a.created_at limit 100`),
     db.query<{ id: string; email: string; username: string; address: string; reason: string | null; createdAt: Date }>(`select a.id,p.email,p.username,a.address,a.rejection_reason as reason,a.created_at as "createdAt" from ambassador_wallet_addresses a join profiles p on p.id=a.user_id where a.status='rejected' order by a.created_at desc limit 50`),
+    db.query<{ id: string; username: string; email: string; amount: number; paymentStatus: string; walletAddress: string | null; announcementStatus: string | null }>(
+      `select c.id,p.username,p.email,c.reward_amount_usd_cents as amount,c.payment_status as "paymentStatus",c.wallet_address as "walletAddress",
+              (select d.status from email_deliveries d where d.dedupe_key='giveaway_winner_announcement:'||c.id limit 1) as "announcementStatus"
+         from giveaway_claims c join giveaways g on g.id=c.giveaway_id join profiles p on p.id=c.user_id
+        where c.is_winner=true and g.id=(select id from giveaways order by created_at desc limit 1) order by c.winner_position asc nulls last limit 100`,
+    ),
   ]);
   return {
     treasury: { configured: Boolean(treasury.wallet), balance, batches: treasury.batches.length },
@@ -26,11 +32,28 @@ async function context() {
     claims: claims.rows[0]?.n ?? 0,
     unpaidClaims: pending.rows[0]?.n ?? 0,
     walletVerification: { pendingCount: walletPending.rows.length, pending: walletPending.rows, rejected: walletRejected.rows },
+    winners: latestWinners.rows,
+    winnerSummary: {
+      count: latestWinners.rows.length,
+      totalCents: latestWinners.rows.reduce((sum, row) => sum + Number(row.amount), 0),
+      paid: latestWinners.rows.filter((row) => row.paymentStatus === "paid").length,
+      awaitingPayout: latestWinners.rows.filter((row) => row.paymentStatus !== "paid").length,
+      announcementSent: latestWinners.rows.filter((row) => row.announcementStatus === "sent").length,
+    },
+    treasuryConfigured: Boolean(treasury.wallet),
   };
 }
 
 function deterministic(command: string, data: Awaited<ReturnType<typeof context>>) {
   const text = command.toLowerCase();
+  if (/(winner|participant)/.test(text)) {
+    const summary = data.winnerSummary;
+    const lines = data.winners.slice(0, 20).map((w) => `• ${w.username} (${w.email}) — ${usdForAi(w.amount)} — ${w.paymentStatus} — announcement: ${w.announcementStatus ?? "not sent"} — wallet: ${w.walletAddress ? "saved" : "missing"}`).join("\n");
+    return `Latest giveaway: ${summary.count} verified winners, ${usdForAi(summary.totalCents)} total. ${summary.paid} paid, ${summary.awaitingPayout} awaiting payout, ${summary.announcementSent} winner announcements sent.\n\n${lines}\n\nWinner announcement email must be previewed and approved in Admin → Giveaways. Payout execution is blocked until a treasury signer is configured.`;
+  }
+  if (/(treasury|balance|payout|pay winners|fund)/.test(text)) {
+    return data.treasuryConfigured ? `Treasury is configured. ${data.treasury.balance.available ? `Available ${data.treasury.balance.usdt.toFixed(4)} USDT and ${data.treasury.balance.bnb.toFixed(4)} BNB on BEP20.` : `Treasury balance unavailable: ${data.treasury.balance.error}`} Automated signing is not configured; payouts require the existing treasury signing workflow.` : "No treasury wallet is configured and no server-side signer exists. Winners can be listed and emails prepared, but no giveaway payout can be executed until the owner configures and attests the treasury wallet and authorizes a signing method.";
+  }
   const walletIntent = /wallet|payout address|submitted address/.test(text);
   if (walletIntent && /rejected|failed/.test(text)) {
     const rows = data.walletVerification.rejected;
@@ -75,6 +98,8 @@ export async function GET() {
 }
 
 type ActionPlan = { type: string; title: string; details: string[]; payload: Record<string, unknown> };
+
+function usdForAi(cents: number) { return `$${(Number(cents) / 100).toFixed(2)}`; }
 
 function planAction(command: string, data: Awaited<ReturnType<typeof context>>): ActionPlan | null {
   const text = command.toLowerCase();

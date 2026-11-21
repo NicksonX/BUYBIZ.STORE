@@ -26,6 +26,7 @@ export type EmailType =
   | "giveaway_live"
   | "giveaway_claim_received"
   | "giveaway_approved"
+  | "giveaway_winner_announcement"
   | "giveaway_winner_paid"
   | "marketing";
 
@@ -192,6 +193,11 @@ const DEFAULT_TEMPLATES: Record<
     subject: "Congratulations! Your BUYBIZ Giveaway Reward Has Been Paid",
     preheader: "Your giveaway reward is confirmed on-chain.",
     intro: "Your BUYBIZ giveaway reward has been sent and confirmed on the blockchain.",
+  },
+  giveaway_winner_announcement: {
+    subject: "Congratulations! You're a BUYBIZ Giveaway Winner 🎉",
+    preheader: "You are a verified BUYBIZ giveaway winner.",
+    intro: "You are officially one of the winners of our BUYBIZ giveaway.",
   },
   giveaway_approved: {
     subject: "Your BUYBIZ Giveaway Reward Was Approved",
@@ -459,6 +465,14 @@ export function renderEmail(input: {
         ["Transaction", data.txHash ?? ""],
       ])}
       ${button("Visit BUYBIZ", `${input.websiteUrl}/dashboard/giveaways`)}`;
+      break;
+    case "giveaway_winner_announcement":
+      content = `<p style="margin:16px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.75;color:#4E5157;">Hi ${escapeHtml(data.name ?? "there")},</p>
+      <p style="margin:12px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.75;color:#4E5157;">Congratulations! 🎉 You are officially one of the winners of our BUYBIZ giveaway. We're delighted to have you as part of our community and appreciate your participation and support.</p>
+      <p style="margin:12px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.75;color:#4E5157;">Your reward is now being prepared for payout. We'll send you another notification as soon as your payment has been successfully completed.</p>
+      ${details([["Reward", data.amountLabel ?? "$1.00 USDT"], ["Network", data.network ?? "BEP20"]])}
+      <p style="margin:12px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.7;color:${BRAND.muted};">Thank you for being part of BUYBIZ!</p>
+      <p style="margin:4px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.7;color:${BRAND.muted};">The BUYBIZ Team</p>`;
       break;
     case "giveaway_approved":
       content = `<p style="margin:16px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.75;color:#4E5157;">Your giveaway reward has been approved and is awaiting payment processing.</p>

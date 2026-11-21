@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireAdminPage, requireUserPage } from "@/server/auth/guards";
-import { claimGiveaway, completeGiveawayTask, createGiveaway, getGiveawayCode, setGiveawayStatus, submitGiveawayWallet, announceGiveaway, updateGiveawaySettings } from "@/server/services/giveaways";
+import { claimGiveaway, completeGiveawayTask, createGiveaway, getGiveawayCode, setGiveawayStatus, submitGiveawayWallet, announceGiveaway, updateGiveawaySettings, queueWinnerAnnouncements } from "@/server/services/giveaways";
 import { formError, formSuccess, type ActionState } from "@/lib/validation/action-state";
 import { AppError } from "@/lib/errors";
 
@@ -59,6 +59,18 @@ export async function completeGiveawayTaskAction(_previous: ActionState, formDat
     return formSuccess("Task recorded as self-reported completion.");
   } catch (error) {
     return formError(error instanceof AppError ? error.userMessage : "We could not record that task.");
+  }
+}
+
+export async function sendWinnerAnnouncementAction(_previous: ActionState, formData: FormData): Promise<ActionState> {
+  await requireAdminPage();
+  try {
+    const giveawayId = String(formData.get("giveawayId") ?? "");
+    const result = await queueWinnerAnnouncements(giveawayId);
+    revalidatePath("/admin/giveaways");
+    return formSuccess(`Winner announcement queued for ${result.queued} of ${result.winners} winners.`);
+  } catch (error) {
+    return formError(error instanceof AppError ? error.userMessage : "Could not queue winner emails.");
   }
 }
 

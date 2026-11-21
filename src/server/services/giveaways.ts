@@ -281,3 +281,40 @@ export async function updateGiveawaySettings(input: { id: string; xPostUrl?: str
   );
   return { ok: true };
 }
+
+export type GiveawayWinner = {
+  claimId: string; userId: string; username: string; email: string; winnerPosition: number | null;
+  walletAddress: string | null; addressStatus: string; paymentStatus: string; rewardCents: number;
+  claimedAt: Date; announcementStatus: string | null;
+};
+
+export async function getGiveawayWinners(giveawayId: string) {
+  const db = await getDb();
+  const result = await db.query<GiveawayWinner>(
+    `select c.id as "claimId", c.user_id as "userId", p.username, p.email,
+            c.winner_position as "winnerPosition", c.wallet_address as "walletAddress",
+            c.address_status as "addressStatus", c.payment_status as "paymentStatus",
+            c.reward_amount_usd_cents as "rewardCents", c.claimed_at as "claimedAt",
+            (select d.status from email_deliveries d where d.dedupe_key='giveaway_winner_announcement:'||c.id limit 1) as "announcementStatus"
+       from giveaway_claims c join profiles p on p.id=c.user_id
+      where c.giveaway_id=$1 and c.is_winner=true
+      order by c.winner_position asc nulls last, c.claimed_at asc`,
+    [giveawayId],
+  );
+  return result.rows;
+}
+
+export async function queueWinnerAnnouncements(giveawayId: string) {
+  const db = await getDb();
+  const winners = await getGiveawayWinners(giveawayId);
+  let queued = 0;
+  for (const winner of winners) {
+    const id = await db.transaction((tx) => queueEmail(tx, {
+      type: "giveaway_winner_announcement", userId: winner.userId, recipient: winner.email,
+      data: { name: winner.username, amountLabel: `$${(winner.rewardCents / 100).toFixed(2)} USDT`, network: "BEP20", giveawayTitle: "BUYBIZ Giveaway" },
+      dedupeKey: `giveaway_winner_announcement:${winner.claimId}`,
+    }));
+    if (id) queued += 1;
+  }
+  return { queued, winners: winners.length };
+}
