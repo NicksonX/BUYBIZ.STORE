@@ -5,6 +5,7 @@ import { AppError } from "@/lib/errors";
 import { decryptSecret, encryptSecret } from "@/lib/security/encryption";
 import { queueEmail } from "@/server/services/email";
 import { notifyUser } from "@/server/services/notifications";
+import { writeAuditLog } from "@/server/services/audit";
 
 export type GiveawayStatus = "draft" | "scheduled" | "active" | "paused" | "ended" | "claimed";
 
@@ -29,11 +30,14 @@ export async function listGiveawaysForUser(userId: string) {
     claimLimit: number; claimedCount: number; status: GiveawayStatus;
     startsAt: Date | null; endsAt: Date | null;
     claimId: string | null; walletAddress: string | null; addressStatus: string | null; paymentStatus: string | null;
+    xPostUrl: string | null; tasksEnabled: boolean; completedTasks: string[];
   }>(
     `select g.id, g.slug, g.title, g.description, g.reward_amount_usd_cents as "rewardCents",
             g.reward_asset as asset, g.network, g.claim_limit as "claimLimit",
             g.claimed_count as "claimedCount", g.status, g.starts_at as "startsAt", g.ends_at as "endsAt",
-            c.id as "claimId", c.wallet_address as "walletAddress", c.address_status as "addressStatus", c.payment_status as "paymentStatus"
+            c.id as "claimId", c.wallet_address as "walletAddress", c.address_status as "addressStatus", c.payment_status as "paymentStatus",
+            g.x_post_url as "xPostUrl", g.tasks_enabled as "tasksEnabled",
+            coalesce(array(select tc.task_key from giveaway_task_completions tc where tc.giveaway_id=g.id and tc.user_id=$1), '{}') as "completedTasks"
        from giveaways g
        left join giveaway_claims c on c.giveaway_id = g.id and c.user_id = $1
       where g.status in ('scheduled','active','paused','ended','claimed')
@@ -125,6 +129,7 @@ export async function submitGiveawayWallet(input: { userId: string; claimId: str
 export async function createGiveaway(input: {
   adminId: string; title: string; description?: string; rewardCents: number; claimLimit: number;
   asset?: string; network?: string; startsAt?: Date | null; endsAt?: Date | null;
+  xPostUrl?: string | null; tasksEnabled?: boolean;
 }) {
   if (!Number.isSafeInteger(input.rewardCents) || input.rewardCents <= 0) throw new AppError("VALIDATION", "Enter a valid reward amount.");
   if (!Number.isSafeInteger(input.claimLimit) || input.claimLimit < 1 || input.claimLimit > 10000) throw new AppError("VALIDATION", "Claim limit must be between 1 and 10,000.");
@@ -133,9 +138,9 @@ export async function createGiveaway(input: {
   const encrypted = await encryptSecret(code);
   const slug = `${input.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40)}-${randomBytes(3).toString("hex")}`;
   const inserted = await db.query<{ id: string }>(
-    `insert into giveaways (slug,title,description,reward_amount_usd_cents,reward_asset,network,claim_limit,code_hash,code_encrypted,status,starts_at,ends_at,created_by)
-     values ($1,$2,$3,$4,$5,$6,$7,$8,$9,'draft',$10,$11,$12) returning id`,
-    [slug, input.title.trim(), input.description?.trim() ?? "", input.rewardCents, input.asset ?? "USDT", input.network ?? "BEP20", input.claimLimit, hashCode(code), encrypted, input.startsAt ?? null, input.endsAt ?? null, input.adminId],
+    `insert into giveaways (slug,title,description,reward_amount_usd_cents,reward_asset,network,claim_limit,code_hash,code_encrypted,status,starts_at,ends_at,created_by,x_post_url,tasks_enabled)
+     values ($1,$2,$3,$4,$5,$6,$7,$8,$9,'draft',$10,$11,$12,$13,$14) returning id`,
+    [slug, input.title.trim(), input.description?.trim() ?? "", input.rewardCents, input.asset ?? "USDT", input.network ?? "BEP20", input.claimLimit, hashCode(code), encrypted, input.startsAt ?? null, input.endsAt ?? null, input.adminId, input.xPostUrl?.trim() || null, input.tasksEnabled !== false],
   );
   return { id: inserted.rows[0].id, code, slug };
 }
@@ -145,7 +150,8 @@ export async function getGiveawayAdminData() {
   const giveaways = await db.query<Record<string, unknown>>(
     `select id, slug, title, description, reward_amount_usd_cents as "rewardCents", reward_asset as asset,
             network, claim_limit as "claimLimit", claimed_count as "claimedCount", status,
-            starts_at as "startsAt", ends_at as "endsAt", created_at as "createdAt"
+            starts_at as "startsAt", ends_at as "endsAt", created_at as "createdAt",
+            x_post_url as "xPostUrl", tasks_enabled as "tasksEnabled"
        from giveaways order by created_at desc`,
   );
   const claims = await db.query<Record<string, unknown>>(
@@ -226,4 +232,45 @@ export async function getGiveawayAnnouncementStats(giveawayId: string) {
   const statuses = ["queued", "sending", "sent", "failed", "disabled", "not_configured"] as const;
   const byStatus = Object.fromEntries(statuses.map((status) => [status, map.get(status) ?? 0])) as Record<(typeof statuses)[number], number>;
   return { statuses: byStatus, total: counts.rows.reduce((sum, row) => sum + Number(row.n), 0), eligible: Number(eligible.rows[0]?.n ?? 0) };
+}
+
+
+const GIVEAWAY_TASK_KEYS = ["follow_x", "like_post", "repost_quote", "join_telegram"] as const;
+export type GiveawayTaskKey = (typeof GIVEAWAY_TASK_KEYS)[number];
+
+export async function completeGiveawayTask(input: { userId: string; giveawayId: string; taskKey: string; reposted?: boolean; quoted?: boolean }) {
+  if (!GIVEAWAY_TASK_KEYS.includes(input.taskKey as GiveawayTaskKey)) throw new AppError("VALIDATION", "Unknown giveaway task.");
+  const db = await getDb();
+  return db.transaction(async (tx) => {
+    const g = await tx.query<{ id: string; status: string; startsAt: Date | null; endsAt: Date | null; tasksEnabled: boolean; xPostUrl: string | null }>(
+      `select id,status,starts_at as "startsAt",ends_at as "endsAt",tasks_enabled as "tasksEnabled",x_post_url as "xPostUrl" from giveaways where id=$1 for update`,
+      [input.giveawayId],
+    );
+    const giveaway = g.rows[0];
+    if (!giveaway) throw new AppError("NOT_FOUND", "That giveaway was not found.");
+    const now = Date.now();
+    if (giveaway.status !== "active" || !giveaway.tasksEnabled) throw new AppError("CONFLICT", "This giveaway is not accepting task participation right now.");
+    if (giveaway.startsAt && new Date(giveaway.startsAt).getTime() > now) throw new AppError("CONFLICT", "This giveaway has not started yet.");
+    if (giveaway.endsAt && new Date(giveaway.endsAt).getTime() <= now) throw new AppError("CONFLICT", "This giveaway has ended.");
+    if (["like_post", "repost_quote"].includes(input.taskKey) && !giveaway.xPostUrl) throw new AppError("CONFLICT", "The official giveaway post has not been configured yet.");
+    if (input.taskKey === "repost_quote" && (!input.reposted || !input.quoted)) throw new AppError("VALIDATION", "Confirm both the repost and your quote.");
+    await tx.query(
+      `insert into giveaway_task_completions (giveaway_id,user_id,task_key,verification_method)
+       values ($1,$2,$3,'self_reported') on conflict (giveaway_id,user_id,task_key) do nothing`,
+      [giveaway.id, input.userId, input.taskKey],
+    );
+    await writeAuditLog(tx, { actorUserId: input.userId, actorRole: "customer", action: "giveaway.task_self_reported", entityType: "giveaway", entityId: giveaway.id, metadata: { taskKey: input.taskKey, verificationMethod: "self_reported" } });
+    return { completed: true, verificationMethod: "self_reported" as const };
+  });
+}
+
+export async function updateGiveawaySettings(input: { id: string; xPostUrl?: string | null; tasksEnabled?: boolean; title?: string; description?: string; startsAt?: Date | null; endsAt?: Date | null }) {
+  const db = await getDb();
+  await db.query(
+    `update giveaways set x_post_url=$2, tasks_enabled=$3,
+            title=coalesce(nullif($4,''),title), description=coalesce($5,description),
+            starts_at=$6, ends_at=$7, updated_at=now() where id=$1`,
+    [input.id, input.xPostUrl?.trim() || null, input.tasksEnabled !== false, input.title?.trim() ?? "", input.description?.trim() ?? null, input.startsAt ?? null, input.endsAt ?? null],
+  );
+  return { ok: true };
 }

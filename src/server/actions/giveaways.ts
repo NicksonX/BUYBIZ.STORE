@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireAdminPage, requireUserPage } from "@/server/auth/guards";
-import { claimGiveaway, createGiveaway, getGiveawayCode, setGiveawayStatus, submitGiveawayWallet, announceGiveaway } from "@/server/services/giveaways";
+import { claimGiveaway, completeGiveawayTask, createGiveaway, getGiveawayCode, setGiveawayStatus, submitGiveawayWallet, announceGiveaway, updateGiveawaySettings } from "@/server/services/giveaways";
 import { formError, formSuccess, type ActionState } from "@/lib/validation/action-state";
 import { AppError } from "@/lib/errors";
 
@@ -40,6 +40,43 @@ export async function submitGiveawayWalletAction(_previous: ActionState, formDat
   }
 }
 
+export async function completeGiveawayTaskAction(_previous: ActionState, formData: FormData): Promise<ActionState> {
+  const user = await requireUserPage();
+  try {
+    await completeGiveawayTask({
+      userId: user.id,
+      giveawayId: String(formData.get("giveawayId") ?? ""),
+      taskKey: String(formData.get("taskKey") ?? ""),
+      reposted: formData.get("reposted") === "on",
+      quoted: formData.get("quoted") === "on",
+    });
+    revalidatePath("/dashboard/giveaways");
+    return formSuccess("Task recorded as self-reported completion.");
+  } catch (error) {
+    return formError(error instanceof AppError ? error.userMessage : "We could not record that task.");
+  }
+}
+
+export async function updateGiveawaySettingsAction(_previous: ActionState, formData: FormData): Promise<ActionState> {
+  await requireAdminPage();
+  try {
+    await updateGiveawaySettings({
+      id: String(formData.get("giveawayId") ?? ""),
+      xPostUrl: String(formData.get("xPostUrl") ?? ""),
+      tasksEnabled: formData.get("tasksEnabled") === "on",
+      title: String(formData.get("title") ?? ""),
+      description: String(formData.get("description") ?? ""),
+      startsAt: formData.get("startsAt") ? new Date(String(formData.get("startsAt"))) : null,
+      endsAt: formData.get("endsAt") ? new Date(String(formData.get("endsAt"))) : null,
+    });
+    revalidatePath("/admin/giveaways");
+    revalidatePath("/dashboard/giveaways");
+    return formSuccess("Giveaway task settings saved.");
+  } catch (error) {
+    return formError(error instanceof AppError ? error.userMessage : "Could not update giveaway tasks.");
+  }
+}
+
 export async function createGiveawayAction(_previous: ActionState, formData: FormData): Promise<ActionState> {
   const admin = await requireAdminPage();
   try {
@@ -53,6 +90,8 @@ export async function createGiveawayAction(_previous: ActionState, formData: For
       network: String(formData.get("network") ?? "BEP20").toUpperCase(),
       startsAt: formData.get("startsAt") ? new Date(String(formData.get("startsAt"))) : null,
       endsAt: formData.get("endsAt") ? new Date(String(formData.get("endsAt"))) : null,
+      xPostUrl: String(formData.get("xPostUrl") ?? ""),
+      tasksEnabled: formData.get("tasksEnabled") === "on",
     });
     revalidatePath("/admin/giveaways");
     return formSuccess(`Giveaway created. Claim code: ${result.code}. Keep it private.`);

@@ -8,11 +8,13 @@ import { initialActionState } from "@/lib/validation/action-state";
 import { Badge } from "@/components/ui/badge";
 import { LoadingDots } from "@/components/ui/loading-dots";
 import { cn } from "@/lib/utils";
+import { GiveawayTasks } from "@/components/giveaways/giveaway-tasks";
 
 type Giveaway = {
   id: string; title: string; description: string; rewardCents: number; asset: string; network: string;
   status: string; startsAt: string | Date | null; endsAt: string | Date | null;
   claimId: string | null; walletAddress: string | null; addressStatus: string | null; paymentStatus: string | null;
+  xPostUrl: string | null; tasksEnabled: boolean; completedTasks: string[];
 };
 
 function money(cents: number) { return `$${(cents / 100).toFixed(2)}`; }
@@ -80,6 +82,8 @@ export function GiveawayExperience({ giveaway }: { giveaway: Giveaway }) {
           </div>
         </div>
       </section>
+
+      {open && giveaway.tasksEnabled ? <GiveawayTasks giveawayId={giveaway.id} postUrl={giveaway.xPostUrl} completedTasks={giveaway.completedTasks ?? []} /> : null}
 
       {!hasClaim && giveaway.status === "active" && (!giveaway.startsAt || new Date(giveaway.startsAt).getTime() <= Date.now()) && (!giveaway.endsAt || new Date(giveaway.endsAt).getTime() > Date.now()) ? <div className="mt-3 grid gap-2 sm:grid-cols-3"><div className="surface-card rounded-[12px] p-3"><p className="text-[9px] text-muted-foreground">Step 01</p><p className="mt-1 text-[10.5px] font-medium">Get the official code</p><p className="mt-1 text-[8.5px] text-muted-foreground">Check the official BUYBIZ channel.</p></div><div className="surface-card rounded-[12px] p-3"><p className="text-[9px] text-muted-foreground">Step 02</p><p className="mt-1 text-[10.5px] font-medium">Enter it here</p><p className="mt-1 text-[8.5px] text-muted-foreground">Server-side verification only.</p></div><div className="surface-card rounded-[12px] p-3"><p className="text-[9px] text-muted-foreground">Step 03</p><p className="mt-1 text-[10.5px] font-medium">Add USDT BEP20 address</p><p className="mt-1 text-[8.5px] text-muted-foreground">Review and payment are manual.</p></div></div> : null}
 

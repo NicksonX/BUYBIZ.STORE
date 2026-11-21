@@ -6,6 +6,7 @@ import { DashboardMobileNav } from "@/components/dashboard/mobile-nav";
 import { WalletBalanceAnnouncement } from "@/components/dashboard/balance-announcement";
 import { MaintenanceAnnouncement } from "@/components/dashboard/maintenance-announcement";
 import { InstallPrompt } from "@/components/system/install-prompt";
+import { SocialLaunchModal } from "@/components/social/social-launch-modal";
 import { ProxyMaintenanceBanner } from "@/components/dashboard/proxy-maintenance-banner";
 import type { DashboardAnnouncement } from "@/server/services/announcements";
 import { RouteTransition } from "@/components/ui/route-transition";
@@ -123,6 +124,7 @@ export function DashboardShell({
 
       <WalletBalanceAnnouncement balanceMinor={balanceMinor} />
       <MaintenanceAnnouncement announcement={announcement} />
+      <SocialLaunchModal />
     </div>
   );
 }

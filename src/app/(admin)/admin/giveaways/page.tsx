@@ -5,7 +5,7 @@ import { AdminActionForm } from "@/components/admin/action-form";
 import { AdminField } from "@/components/admin/field";
 import { Input, Textarea } from "@/components/ui/input";
 import { requireAdminPage } from "@/server/auth/guards";
-import { createGiveawayAction, giveawayStatusAction } from "@/server/actions/giveaways";
+import { createGiveawayAction, giveawayStatusAction, updateGiveawaySettingsAction } from "@/server/actions/giveaways";
 import { getGiveawayAdminData, getGiveawayAnnouncementStats, getGiveawayCode } from "@/server/services/giveaways";
 import { formatDateTime } from "@/lib/utils";
 import { getDb } from "@/lib/db";
@@ -48,6 +48,8 @@ export default async function AdminGiveawaysPage() {
               <AdminField label="Network" htmlFor="g-network"><Input id="g-network" name="network" defaultValue="BEP20" /></AdminField>
               <AdminField label="Starts at (optional)" htmlFor="g-start"><Input id="g-start" name="startsAt" type="datetime-local" /></AdminField>
               <AdminField label="Ends at (optional)" htmlFor="g-end"><Input id="g-end" name="endsAt" type="datetime-local" /></AdminField>
+              <AdminField label="Official X giveaway post URL" htmlFor="g-post" className="sm:col-span-2"><Input id="g-post" name="xPostUrl" placeholder="https://x.com/buybiz_company/status/..." /></AdminField>
+              <label className="flex items-center gap-2 text-[9.5px] text-muted-foreground"><input type="checkbox" name="tasksEnabled" defaultChecked className="h-3.5 w-3.5 accent-foreground" /> Enable social tasks when active</label>
               <AdminField label="Description" htmlFor="g-desc" className="sm:col-span-2"><Textarea id="g-desc" name="description" defaultValue="Claim $1 USDT on BNB Smart Chain with the official BUYBIZ giveaway code." /></AdminField>
             </div>
           </AdminActionForm>
@@ -69,6 +71,12 @@ export default async function AdminGiveawaysPage() {
             <div className="flex flex-wrap items-start gap-2">
               {(["active", "paused", "ended"] as const).map((status) => <AdminActionForm key={status} action={giveawayStatusAction} hidden={{ giveawayId: String(g.id), status }} submitLabel={status === "active" ? "Activate & announce" : status === "paused" ? "Pause" : "End"} pendingLabel="Updating…" variant={status === "ended" ? "danger" : "outline"} compact confirmMessage={status === "active" ? "Activate this giveaway and queue the announcement email to all eligible users?" : `Set giveaway to ${status}?`} />)}
             </div>
+            <details className="mt-2 lg:col-span-2">
+              <summary className="cursor-pointer list-none text-[9px] font-medium text-muted-foreground underline underline-offset-2 [&::-webkit-details-marker]:hidden">Configure social tasks &amp; dates</summary>
+              <div className="mt-2"><AdminActionForm action={updateGiveawaySettingsAction} hidden={{ giveawayId: String(g.id) }} submitLabel="Save giveaway settings" pendingLabel="Saving…" compact>
+                <div className="grid gap-2 sm:grid-cols-2"><AdminField label="Title" htmlFor={`edit-title-${g.id}`}><Input id={`edit-title-${g.id}`} name="title" defaultValue={String(g.title)} /></AdminField><AdminField label="Official X giveaway post URL" htmlFor={`edit-post-${g.id}`}><Input id={`edit-post-${g.id}`} name="xPostUrl" defaultValue={g.xPostUrl ? String(g.xPostUrl) : ""} placeholder="https://x.com/..." /></AdminField><AdminField label="Starts at" htmlFor={`edit-start-${g.id}`}><Input id={`edit-start-${g.id}`} name="startsAt" type="datetime-local" defaultValue={g.startsAt ? new Date(String(g.startsAt)).toISOString().slice(0,16) : ""} /></AdminField><AdminField label="Ends at" htmlFor={`edit-end-${g.id}`}><Input id={`edit-end-${g.id}`} name="endsAt" type="datetime-local" defaultValue={g.endsAt ? new Date(String(g.endsAt)).toISOString().slice(0,16) : ""} /></AdminField><AdminField label="Description" htmlFor={`edit-desc-${g.id}`} className="sm:col-span-2"><Textarea id={`edit-desc-${g.id}`} name="description" defaultValue={String(g.description ?? "")} /></AdminField><label className="flex items-center gap-2 text-[9px] text-muted-foreground"><input type="checkbox" name="tasksEnabled" defaultChecked={Boolean(g.tasksEnabled)} className="h-3.5 w-3.5 accent-foreground" /> Enable tasks</label></div>
+              </AdminActionForm></div>
+            </details>
           </div>
         </section>
       ))}
