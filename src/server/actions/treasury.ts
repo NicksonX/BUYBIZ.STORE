@@ -40,6 +40,19 @@ export async function approveBatchAction(_p: ActionState, formData: FormData): P
   catch (e) { return formError(e instanceof AppError ? e.userMessage : "Could not approve batch."); }
 }
 
+export async function recordPaymentByHashAction(itemId: string, txHash: string): Promise<{ ok: boolean; message: string }> {
+  const admin = await requireAdminPage();
+  if (admin.role !== "super_admin") return { ok: false, message: "Only the super-admin can record payments." };
+  try {
+    await recordGiveawayPayment({ itemId, txHash });
+    revalidatePath("/admin/treasury");
+    revalidatePath("/admin/giveaways/payouts");
+    return { ok: true, message: "Payment confirmed on BSC and marked paid." };
+  } catch (error) {
+    return { ok: false, message: error instanceof AppError ? error.userMessage : "Payment verification failed." };
+  }
+}
+
 export async function recordPaymentAction(_p: ActionState, formData: FormData): Promise<ActionState> {
   try {
     await owner();

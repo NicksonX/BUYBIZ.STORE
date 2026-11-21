@@ -143,8 +143,19 @@ export async function approveGiveawayBatch(batchId: string, ownerId: string) {
 
 export async function recordGiveawayPayment(input: { itemId: string; txHash: string }) {
   if (!/^0x[0-9a-fA-F]{64}$/.test(input.txHash)) throw new AppError("VALIDATION", "Enter a valid BSC transaction hash.");
-  const receipt = await rpc<{ status?: string } | null>("eth_getTransactionReceipt", [input.txHash]);
+  const receipt = await rpc<{ status?: string; logs?: Array<{ address: string; topics: string[]; data: string }> } | null>("eth_getTransactionReceipt", [input.txHash]);
   if (!receipt || receipt.status !== "0x1") throw new AppError("VALIDATION", "That transaction is not confirmed successfully on BSC.");
+  const db0 = await getDb();
+  const expected = await db0.query<{ walletAddress: string; amount: number }>(`select wallet_address as "walletAddress", amount_usd_cents as amount from giveaway_payment_items where id=$1 limit 1`, [input.itemId]);
+  const target = expected.rows[0];
+  if (!target) throw new AppError("NOT_FOUND", "Payment item not found.");
+  const transferTopic = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
+  const recipientTopic = `0x${target.walletAddress.replace(/^0x/, "").toLowerCase().padStart(64, "0")}`;
+  const expectedAmount = BigInt(Math.round(Number(target.amount) / 100 * 1e18));
+  const matched = (receipt.logs ?? []).some((log) => log.address.toLowerCase() === USDT_BEP20.toLowerCase() && log.topics?.[0] === transferTopic && log.topics?.[2]?.toLowerCase() === recipientTopic && BigInt(log.data) >= expectedAmount);
+  if (!matched) throw new AppError("VALIDATION", "That transaction does not contain the expected USDT BEP20 transfer to this winner.");
+  const duplicateHash = await db0.query(`select 1 from giveaway_payment_items where transaction_hash=$1 and id<>$2 limit 1`,[input.txHash,input.itemId]);
+  if (duplicateHash.rows[0]) throw new AppError("CONFLICT", "That transaction hash is already assigned to another payment.");
   const db = await getDb();
   return db.transaction(async (tx) => {
     const item = await tx.query<{ id: string; batchId: string; claimId: string; userId: string; amount: number }>(
