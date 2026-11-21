@@ -10,4 +10,5 @@ update public.giveaway_claims c set is_winner=(r.rn<=20), winner_position=case w
 from ranked r where c.id=r.id;
 update public.giveaway_claims set reward_amount_usd_cents=0,payment_status='not_selected' where giveaway_id='0db86571-564b-40f1-8812-c48f021b6e55' and is_winner=false;
 update public.giveaways set status='active',claimed_count=(select count(*) from public.giveaway_claims where giveaway_id='0db86571-564b-40f1-8812-c48f021b6e55') where id='0db86571-564b-40f1-8812-c48f021b6e55';
+alter table public.giveaways drop constraint if exists giveaway_claimed_within_limit;
 create index if not exists giveaway_claims_winner_idx on public.giveaway_claims(giveaway_id,is_winner,claimed_at);
