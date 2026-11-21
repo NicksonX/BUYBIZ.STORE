@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, ExternalLink, Loader2, ShieldCheck, Wallet } from "lucide-react";
 import { recordPaymentByHashAction, saveBroadcastHashAction } from "@/server/actions/treasury";
@@ -9,7 +9,6 @@ type Item = { id: string; username: string; walletAddress: string; amountCents: 
 type Ethereum = { request: (args: { method: string; params?: unknown[] }) => Promise<unknown> };
 const USDT = "0x55d398326f99059fF775485246999027B3197955";
 const RPC = "https://bsc-rpc.publicnode.com";
-const RPC_FALLBACKS = [RPC, "https://bsc-dataseed.bnbchain.org", "https://1rpc.io/bnb"];
 const transferTopic = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
 
 function getProvider(): Ethereum | null {
@@ -21,29 +20,7 @@ function transferData(address: string, amountCents: number) {
   const amount = (BigInt(amountCents) * BigInt(10) ** BigInt(16)).toString(16).padStart(64, "0");
   return `0xa9059cbb${recipient}${amount}`;
 }
-async function rpc(method: string, params: unknown[]) {
-  let last: Error | null = null;
-  for (const endpoint of RPC_FALLBACKS) {
-    try {
-      const r = await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }), signal: AbortSignal.timeout(15000) });
-      const j = await r.json() as { result?: unknown; error?: { message?: string } };
-      if (j.error) throw new Error(j.error.message ?? "BSC RPC error");
-      return j.result;
-    } catch (e) { last = e instanceof Error ? e : new Error("BSC RPC error"); }
-  }
-  throw new Error(`Failed to reach BSC RPC: ${last?.message ?? "unknown error"}`);
-}
-async function waitForReceipt(hash: string) {
-  for (let i = 0; i < 60; i += 1) {
-    await new Promise((resolve) => setTimeout(resolve, 3000));
-    const receipt = await rpc("eth_getTransactionReceipt", [hash]) as { status?: string; logs?: Array<{ address: string; topics: string[]; data: string }> } | null;
-    if (receipt) return receipt;
-  }
-  throw new Error("Transaction is still pending. Do not resend; check BSC before retrying.");
-}
-
 async function confirmAndRecord(itemId: string, hash: string) {
-  await waitForReceipt(hash);
   return recordPaymentByHashAction(itemId, hash);
 }
 
@@ -54,6 +31,22 @@ export function OkxPayoutSigner({ items, batchStatus }: { items: Item[]; batchSt
   const [error, setError] = useState<string | null>(null);
   const [signed, setSigned] = useState<Record<string, string>>({});
   const [status, setStatus] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    const provider = getProvider();
+    if (!provider) return;
+    void provider.request({ method: "eth_accounts" }).then((accounts) => {
+      const list = accounts as string[];
+      if (list[0]) setAccount(list[0]);
+    }).catch(() => {});
+    const onAccounts = (accounts: unknown) => {
+      const list = accounts as string[];
+      setAccount(list[0] ?? null);
+    };
+    const eth = provider as Ethereum & { on?: (event: string, handler: (accounts: unknown) => void) => void; removeListener?: (event: string, handler: (accounts: unknown) => void) => void };
+    eth.on?.("accountsChanged", onAccounts);
+    return () => eth.removeListener?.("accountsChanged", onAccounts);
+  }, []);
 
   async function connect() {
     setError(null);

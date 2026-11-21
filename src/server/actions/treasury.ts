@@ -58,7 +58,21 @@ export async function recordPaymentByHashAction(itemId: string, txHash: string):
   const admin = await requireAdminPage();
   if (admin.role !== "super_admin") return { ok: false, message: "Only the super-admin can record payments." };
   try {
-    await recordGiveawayPayment({ itemId, txHash });
+    // Poll server-side so the browser never calls a public RPC (avoids CORS
+    // "Failed to fetch" after a successful OKX signature).
+    for (let attempt = 0; attempt < 10; attempt += 1) {
+      try {
+        await recordGiveawayPayment({ itemId, txHash });
+        revalidatePath("/admin/treasury");
+        revalidatePath("/admin/giveaways/payouts");
+        return { ok: true, message: "Payment confirmed on BSC and marked paid." };
+      } catch (error) {
+        const message = error instanceof AppError ? error.userMessage : "";
+        if (!/not confirmed|receipt|not found|transaction/i.test(message) || attempt === 9) throw error;
+        await new Promise((resolve) => setTimeout(resolve, 3000));
+      }
+    }
+    revalidatePath("/admin/treasury");
     revalidatePath("/admin/treasury");
     revalidatePath("/admin/giveaways/payouts");
     return { ok: true, message: "Payment confirmed on BSC and marked paid." };
