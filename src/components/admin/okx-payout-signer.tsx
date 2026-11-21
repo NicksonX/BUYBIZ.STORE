@@ -3,12 +3,13 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, ExternalLink, Loader2, ShieldCheck, Wallet } from "lucide-react";
-import { recordPaymentByHashAction } from "@/server/actions/treasury";
+import { recordPaymentByHashAction, saveBroadcastHashAction } from "@/server/actions/treasury";
 
 type Item = { id: string; username: string; walletAddress: string; amountCents: number; status: string; transactionHash: string | null };
 type Ethereum = { request: (args: { method: string; params?: unknown[] }) => Promise<unknown> };
 const USDT = "0x55d398326f99059fF775485246999027B3197955";
-const RPC = "https://bsc-dataseed.bnbchain.org";
+const RPC = "https://bsc-rpc.publicnode.com";
+const RPC_FALLBACKS = [RPC, "https://bsc-dataseed.bnbchain.org", "https://1rpc.io/bnb"];
 const transferTopic = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
 
 function getProvider(): Ethereum | null {
@@ -21,10 +22,16 @@ function transferData(address: string, amountCents: number) {
   return `0xa9059cbb${recipient}${amount}`;
 }
 async function rpc(method: string, params: unknown[]) {
-  const r = await fetch(RPC, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }) });
-  const j = await r.json() as { result?: unknown; error?: { message?: string } };
-  if (j.error) throw new Error(j.error.message ?? "BSC RPC error");
-  return j.result;
+  let last: Error | null = null;
+  for (const endpoint of RPC_FALLBACKS) {
+    try {
+      const r = await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }), signal: AbortSignal.timeout(15000) });
+      const j = await r.json() as { result?: unknown; error?: { message?: string } };
+      if (j.error) throw new Error(j.error.message ?? "BSC RPC error");
+      return j.result;
+    } catch (e) { last = e instanceof Error ? e : new Error("BSC RPC error"); }
+  }
+  throw new Error(`Failed to reach BSC RPC: ${last?.message ?? "unknown error"}`);
 }
 async function waitForReceipt(hash: string) {
   for (let i = 0; i < 60; i += 1) {
@@ -33,6 +40,11 @@ async function waitForReceipt(hash: string) {
     if (receipt) return receipt;
   }
   throw new Error("Transaction is still pending. Do not resend; check BSC before retrying.");
+}
+
+async function confirmAndRecord(itemId: string, hash: string) {
+  await waitForReceipt(hash);
+  return recordPaymentByHashAction(itemId, hash);
 }
 
 export function OkxPayoutSigner({ items, batchStatus }: { items: Item[]; batchStatus: string }) {
@@ -68,13 +80,22 @@ export function OkxPayoutSigner({ items, batchStatus }: { items: Item[]; batchSt
     try {
       const hash = await provider.request({ method: "eth_sendTransaction", params: [{ from: account, to: USDT, value: "0x0", data: transferData(item.walletAddress, item.amountCents) }] }) as string;
       setSigned((s) => ({ ...s, [item.id]: hash }));
-      setStatus((s) => ({ ...s, [item.id]: "confirming on BSC" }));
-      await waitForReceipt(hash);
-      const result = await recordPaymentByHashAction(item.id, hash);
+      setStatus((s) => ({ ...s, [item.id]: "transaction broadcast — saving hash; do not resend" }));
+      const saved = await saveBroadcastHashAction(item.id, hash);
+      if (!saved.ok) setError(`${saved.message} The hash is shown below; use Verify, do not send again.`);
+      const result = await confirmAndRecord(item.id, hash);
       if (!result.ok) throw new Error(result.message);
       setStatus((s) => ({ ...s, [item.id]: "paid — verified on-chain" }));
       router.refresh();
-    } catch (e) { setError(e instanceof Error ? e.message : "Transaction failed."); setStatus((s) => ({ ...s, [item.id]: "not paid" })); }
+    } catch (e) { setError(e instanceof Error ? e.message : "Transaction verification failed."); setStatus((s) => ({ ...s, [item.id]: "broadcast but not recorded — use Verify existing transaction. Do NOT sign again." })); }
+    finally { setBusy(null); }
+  }
+
+  async function verify(item: Item, hash: string) {
+    if (busy) return;
+    setBusy(item.id); setError(null); setStatus((s) => ({ ...s, [item.id]: "checking BSC confirmation" }));
+    try { const result = await confirmAndRecord(item.id, hash); if (!result.ok) throw new Error(result.message); setStatus((s) => ({ ...s, [item.id]: "paid — verified on-chain" })); router.refresh(); }
+    catch (e) { setError(e instanceof Error ? e.message : "Verification failed."); setStatus((s) => ({ ...s, [item.id]: "not recorded — verify again; do not resend" })); }
     finally { setBusy(null); }
   }
 
@@ -83,7 +104,7 @@ export function OkxPayoutSigner({ items, batchStatus }: { items: Item[]; batchSt
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2 rounded-[9px] border border-border bg-surface-subtle p-3"><Wallet className="h-4 w-4 text-muted-foreground" /><div className="min-w-0 flex-1"><p className="text-[9.5px] font-medium">{account ? `OKX Wallet connected` : "Connect OKX Wallet to pay winners"}</p><p className="mt-0.5 break-all font-mono text-[8px] text-muted-foreground">{account ?? "Each transfer requires your approval in OKX."}</p></div>{!account ? <button type="button" onClick={() => void connect()} className="inline-flex min-h-10 items-center rounded-full bg-foreground px-3 text-[9.5px] font-semibold text-background">Connect OKX</button> : <span className="inline-flex items-center gap-1 rounded-full bg-success-soft px-2 py-1 text-[8px] text-success"><ShieldCheck className="h-3 w-3" /> BSC</span>}</div>
       {error ? <p className="rounded-[8px] border border-danger/20 bg-danger-soft px-3 py-2 text-[9px] text-danger">{error}</p> : null}
-      <div className="space-y-2">{items.map((item) => { const hash = signed[item.id] ?? item.transactionHash; const state = status[item.id] ?? (item.status === "confirmed" ? "paid — verified on-chain" : item.status); return <div key={item.id} className="rounded-[8px] border border-border p-2.5"><div className="flex flex-wrap items-center justify-between gap-2"><div><p className="text-[9.5px] font-medium">{item.username} · ${(item.amountCents / 100).toFixed(2)} USDT</p><p className="mt-0.5 break-all font-mono text-[8px] text-muted-foreground">{item.walletAddress}</p></div>{item.status === "confirmed" ? <span className="inline-flex items-center gap-1 text-[8.5px] text-success"><Check className="h-3 w-3" /> paid</span> : <button type="button" onClick={() => void sign(item)} disabled={Boolean(busy)} className="inline-flex min-h-9 items-center gap-1 rounded-full bg-foreground px-3 text-[8.5px] font-semibold text-background disabled:opacity-40">{busy === item.id ? <><Loader2 className="h-3 w-3 animate-spin" /> Signing…</> : "Sign & send"}</button>}</div>{state ? <p className="mt-1 text-[8px] text-muted-foreground">{state}</p> : null}{hash ? <a href={`https://bscscan.com/tx/${hash}`} target="_blank" rel="noopener noreferrer" className="mt-1 inline-flex items-center gap-1 font-mono text-[7.5px] text-success">View transaction <ExternalLink className="h-2.5 w-2.5" /></a> : null}</div>})}</div>
+      <div className="space-y-2">{items.map((item) => { const hash = signed[item.id] ?? item.transactionHash; const state = status[item.id] ?? (item.status === "confirmed" ? "paid — verified on-chain" : item.status); return <div key={item.id} className="rounded-[8px] border border-border p-2.5"><div className="flex flex-wrap items-center justify-between gap-2"><div><p className="text-[9.5px] font-medium">{item.username} · ${(item.amountCents / 100).toFixed(2)} USDT</p><p className="mt-0.5 break-all font-mono text-[8px] text-muted-foreground">{item.walletAddress}</p></div>{item.status === "confirmed" ? <span className="inline-flex items-center gap-1 text-[8.5px] text-success"><Check className="h-3 w-3" /> paid</span> : hash ? <button type="button" onClick={() => void verify(item, hash)} disabled={Boolean(busy)} className="inline-flex min-h-9 items-center gap-1 rounded-full border border-border bg-surface px-3 text-[8.5px] font-semibold disabled:opacity-40">{busy === item.id ? <><Loader2 className="h-3 w-3 animate-spin" /> Verifying…</> : "Verify existing transaction"}</button> : <button type="button" onClick={() => void sign(item)} disabled={Boolean(busy)} className="inline-flex min-h-9 items-center gap-1 rounded-full bg-foreground px-3 text-[8.5px] font-semibold text-background disabled:opacity-40">{busy === item.id ? <><Loader2 className="h-3 w-3 animate-spin" /> Signing…</> : "Sign & send"}</button>}</div>{state ? <p className="mt-1 text-[8px] text-muted-foreground">{state}</p> : null}{hash ? <a href={`https://bscscan.com/tx/${hash}`} target="_blank" rel="noopener noreferrer" className="mt-1 inline-flex items-center gap-1 font-mono text-[7.5px] text-success">View transaction <ExternalLink className="h-2.5 w-2.5" /></a> : null}</div>})}</div>
     </div>
   );
 }

@@ -190,7 +190,7 @@ const DEFAULT_TEMPLATES: Record<
     intro: "You are all set up. When you are ready, add funds to your wallet and choose the proxy plan that fits your work.",
   },
   giveaway_winner_paid: {
-    subject: "Congratulations! Your BUYBIZ Giveaway Reward Has Been Paid",
+    subject: "Your BUYBIZ Giveaway Reward Has Been Sent! 🎉",
     preheader: "Your giveaway reward is confirmed on-chain.",
     intro: "Your BUYBIZ giveaway reward has been sent and confirmed on the blockchain.",
   },
@@ -458,11 +458,13 @@ export function renderEmail(input: {
       <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.7;color:${BRAND.muted};">If you did not create a BUYBIZ account, you can safely ignore this email. Never share this code with anyone.</p>`;
       break;
     case "giveaway_winner_paid":
-      content = `<p style="margin:16px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.75;color:#4E5157;">Your giveaway reward has been sent and confirmed on-chain.</p>
+      content = `<p style="margin:16px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.75;color:#4E5157;">Hi ${escapeHtml(data.name ?? "there")},</p>
+      <p style="margin:12px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.75;color:#4E5157;">Good news! ${escapeHtml(data.amountLabel ?? "$1.00 USDT")} has been successfully sent. Your payment has been completed, and your reward is on its way to your wallet.</p>
       ${details([
-        ["Reward", data.amountLabel ?? ""],
-        ["Network", data.network ?? "BEP20"],
-        ["Transaction", data.txHash ?? ""],
+        ["Amount", data.amountLabel ?? ""],
+        ["Network", data.network ?? "BNB Smart Chain (BEP20)"],
+        ["Status", "Paid"],
+        ["Transaction reference", data.txHash ?? ""],
       ])}
       ${button("Visit BUYBIZ", `${input.websiteUrl}/dashboard/giveaways`)}`;
       break;

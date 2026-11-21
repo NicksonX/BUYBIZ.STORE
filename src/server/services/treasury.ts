@@ -4,21 +4,35 @@ import { AppError } from "@/lib/errors";
 import { queueEmail } from "@/server/services/email";
 import { notifyUser } from "@/server/services/notifications";
 
-const BSC_RPC = process.env.BSC_RPC_URL?.trim() || "https://bsc-dataseed.binance.org/";
+const BSC_RPC_ENDPOINTS = [
+  process.env.BSC_RPC_URL?.trim(),
+  "https://bsc-rpc.publicnode.com",
+  "https://bsc-dataseed.bnbchain.org",
+  "https://bsc-dataseed1.bnbchain.org",
+  "https://1rpc.io/bnb",
+].filter((value): value is string => Boolean(value));
 const USDT_BEP20 = "0x55d398326f99059ff775485246999027b3197955";
 
 async function rpc<T>(method: string, params: unknown[]): Promise<T> {
-  const response = await fetch(BSC_RPC, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
-    cache: "no-store",
-    signal: AbortSignal.timeout(10_000),
-  });
-  if (!response.ok) throw new Error(`BSC RPC returned ${response.status}`);
-  const body = (await response.json()) as { result?: T; error?: { message?: string } };
-  if (body.error) throw new Error(body.error.message || "BSC RPC error");
-  return body.result as T;
+  let lastError: Error | null = null;
+  for (const endpoint of BSC_RPC_ENDPOINTS) {
+    try {
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
+        cache: "no-store",
+        signal: AbortSignal.timeout(12_000),
+      });
+      if (!response.ok) throw new Error(`BSC RPC returned ${response.status}`);
+      const body = (await response.json()) as { result?: T; error?: { message?: string } };
+      if (body.error) throw new Error(body.error.message || "BSC RPC error");
+      return body.result as T;
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error("BSC RPC error");
+    }
+  }
+  throw new Error(`All BSC RPC endpoints failed: ${lastError?.message ?? "unknown error"}`);
 }
 
 function validEvmAddress(value: string) {

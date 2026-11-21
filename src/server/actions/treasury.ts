@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { getDb } from "@/lib/db";
 import { requireAdminPage } from "@/server/auth/guards";
 import { formError, formSuccess, type ActionState } from "@/lib/validation/action-state";
 import { AppError } from "@/lib/errors";
@@ -38,6 +39,19 @@ export async function prepareBatchAction(_p: ActionState, formData: FormData): P
 export async function approveBatchAction(_p: ActionState, formData: FormData): Promise<ActionState> {
   try { const admin = await owner(); await approveGiveawayBatch(String(formData.get("batchId") ?? ""), admin.id); revalidatePath("/admin/treasury"); return formSuccess("Batch approved for manual hardware-wallet signing."); }
   catch (e) { return formError(e instanceof AppError ? e.userMessage : "Could not approve batch."); }
+}
+
+export async function saveBroadcastHashAction(itemId: string, txHash: string): Promise<{ ok: boolean; message: string }> {
+  const admin = await requireAdminPage();
+  if (admin.role !== "super_admin") return { ok: false, message: "Only the super-admin can record payouts." };
+  if (!/^0x[0-9a-fA-F]{64}$/.test(txHash)) return { ok: false, message: "Invalid transaction hash." };
+  const db = await getDb();
+  const existing = await db.query<{ status: string; transactionHash: string | null }>(`select status,transaction_hash as "transactionHash" from giveaway_payment_items where id=$1 limit 1`, [itemId]);
+  if (!existing.rows[0]) return { ok: false, message: "Payout item not found." };
+  if (existing.rows[0].transactionHash && existing.rows[0].transactionHash !== txHash) return { ok: false, message: "A different transaction hash is already attached to this winner. Do not resend." };
+  if (!existing.rows[0].transactionHash) await db.query(`update giveaway_payment_items set transaction_hash=$2,status='broadcast' where id=$1 and transaction_hash is null`, [itemId, txHash]);
+  revalidatePath("/admin/giveaways/payouts");
+  return { ok: true, message: "Transaction hash saved. Verify it; do not resend." };
 }
 
 export async function recordPaymentByHashAction(itemId: string, txHash: string): Promise<{ ok: boolean; message: string }> {
