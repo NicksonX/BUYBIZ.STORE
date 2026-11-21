@@ -40,8 +40,8 @@ export async function listGiveawaysForUser(userId: string) {
             coalesce(array(select tc.task_key from giveaway_task_completions tc where tc.giveaway_id=g.id and tc.user_id=$1), '{}') as "completedTasks"
        from giveaways g
        left join giveaway_claims c on c.giveaway_id = g.id and c.user_id = $1
-      where g.status in ('scheduled','active','paused','ended','claimed')
-      order by case g.status when 'active' then 0 when 'scheduled' then 1 when 'claimed' then 2 when 'ended' then 3 else 4 end, g.created_at desc
+      where g.status in ('scheduled','active')
+      order by case g.status when 'active' then 0 when 'scheduled' then 1 else 2 end, g.created_at desc
       limit 30`,
     [userId],
   );

@@ -91,7 +91,7 @@ async function getDashboardCountsUncached(userId: string) {
        (select count(*)::int from support_tickets
           where user_id = $1 and status in ('open','pending')) as "openTickets",
        (select count(*)::int from notifications
-          where user_id = $1 and read_at is null) as "unreadNotifications"`,
+          where user_id = $1 and read_at is null and created_at <= now()) as "unreadNotifications"`,
     [userId],
   );
   return result.rows[0] ?? {
@@ -346,7 +346,7 @@ export async function getNotifications(userId: string): Promise<Notification[]> 
   const result = await db.query<Notification>(
     `select id, user_id as "userId", type, title, body, href,
             read_at as "readAt", created_at as "createdAt"
-       from notifications where user_id = $1 order by created_at desc limit 60`,
+       from notifications where user_id = $1 and created_at <= now() order by created_at desc limit 60`,
     [userId],
   );
   return result.rows;
@@ -355,7 +355,7 @@ export async function getNotifications(userId: string): Promise<Notification[]> 
 export async function getUnreadNotificationCount(userId: string) {
   const db = await getDb();
   const result = await db.query<{ count: number }>(
-    `select count(*)::int as count from notifications where user_id = $1 and read_at is null`,
+    `select count(*)::int as count from notifications where user_id = $1 and read_at is null and created_at <= now()`,
     [userId],
   );
   return result.rows[0]?.count ?? 0;
