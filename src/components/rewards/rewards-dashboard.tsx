@@ -57,9 +57,10 @@ function payoutDate(value: Date | string | null) {
 }
 
 export function RewardsDashboard({
-  referrals, ambassador, rewards, referralLink,
+  referrals, ambassador, rewards, referralLink, referralRewards = [],
 }: {
   referrals: ReferralStats; ambassador: AmbassadorData; rewards: RewardsData; referralLink: string;
+  referralRewards?: Array<{ id: string; username: string; amountMinor: number | null; createdAt: Date }>;
 }) {
   const [addressState, addressAction, addressPending] = useActionState(submitAmbassadorAddressAction, initialActionState);
   const [campaignState, campaignAction, campaignPending] = useActionState(requestCampaignPayoutAction, initialActionState);
@@ -74,6 +75,7 @@ export function RewardsDashboard({
   const campaignDateReached = Boolean(rewards.campaignPayoutAt && new Date(rewards.campaignPayoutAt).getTime() <= Date.now());
   const campaignCanRequest = campaignDateReached && rewards.campaign.availableCents > 0 && Boolean(verifiedAddress) && !openCampaign;
   const payouts = rewards.payouts.map((p) => ({ ...p, source: "Campaign", key: `campaign-${p.id}` }));
+  const pendingPayoutCents = rewards.payouts.filter((p) => ["pending_review", "approved", "processing"].includes(p.status)).reduce((sum, p) => sum + p.amountCents, 0);
 
   return (
     <div className="space-y-3.5 sm:space-y-4">
@@ -82,14 +84,23 @@ export function RewardsDashboard({
           { label: "Total Referrals", value: referrals.total, icon: Users, note: "People who joined with your link" },
           { label: "Qualifying Referrals", value: qualifyingReferrals, icon: BadgeCheck, note: `${referrals.minProxyDays}-day+ purchase verified` },
           { label: "Pending Referrals", value: pendingReferrals, icon: Clock3, note: "Awaiting purchase or review" },
-          { label: "Available USD Rewards", value: usd(rewards.campaign.availableCents), icon: WalletCards, note: "Campaign rewards available" },
+          { label: "Available USD Rewards", value: usd(rewards.campaign.availableCents), icon: null, note: "Campaign rewards available" },
         ].map((item) => (
           <section key={item.label} className="surface-card flex min-h-[104px] flex-col justify-between rounded-[13px] p-3.5 sm:p-4">
-            <div className="flex items-start justify-between gap-2"><p className="text-[10px] font-medium leading-4 text-muted-foreground">{item.label}</p><span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-surface-subtle"><item.icon className="h-3.5 w-3.5 text-muted-foreground" /></span></div>
+            <div className="flex items-start justify-between gap-2"><p className="text-[10px] font-medium leading-4 text-muted-foreground">{item.label}</p>{item.icon ? <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-surface-subtle"><item.icon className="h-3.5 w-3.5 text-muted-foreground" /></span> : null}</div>
             <div className="mt-2"><p className="tabular text-[22px] font-semibold leading-none tracking-[-0.035em] sm:text-[24px]">{item.value}</p><p className="mt-1.5 text-[8.5px] leading-3.5 text-muted-foreground">{item.note}</p></div>
           </section>
         ))}
       </div>
+
+      <section className="grid grid-cols-1 gap-2.5 min-[360px]:grid-cols-2 lg:grid-cols-4">
+        {[
+          { label: "Total earned", value: usd(rewards.campaign.availableCents + rewards.campaign.paidCents), note: "Credited or paid campaign rewards" },
+          { label: "Expected rewards", value: usd(rewards.campaign.pendingCents), note: "Awaiting campaign payout date" },
+          { label: "Pending rewards", value: usd(pendingPayoutCents), note: "Submitted payout requests" },
+          { label: "Paid rewards", value: usd(rewards.campaign.paidCents), note: "Confirmed payouts only" },
+        ].map((item) => <section key={item.label} className="surface-card rounded-[11px] border-border p-3.5"><p className="text-[9px] font-medium text-muted-foreground">{item.label}</p><p className="tabular mt-2 text-[19px] font-semibold leading-none">{item.value}</p><p className="mt-1.5 text-[8px] leading-3.5 text-muted-foreground">{item.note}</p></section>)}
+      </section>
 
       <section className="surface-card overflow-hidden rounded-[13px]">
         <div className="flex flex-col gap-3 border-b border-border px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between">
@@ -142,6 +153,16 @@ export function RewardsDashboard({
             <div className="mt-3 grid grid-cols-2 gap-2 text-[8px] text-muted-foreground"><p className="rounded-[7px] bg-surface-subtle px-2 py-1.5">Pending {usd(rewards.campaign.pendingCents)}</p><p className="rounded-[7px] bg-surface-subtle px-2 py-1.5">Paid {usd(rewards.campaign.paidCents)}</p></div>
           </div>
         </div>
+      </section>
+
+      <section className="surface-card overflow-hidden rounded-[13px]">
+        <div className="border-b border-border px-4 py-3.5"><h2 className="text-[13px] font-semibold">Normal $3 referral rewards</h2><p className="mt-0.5 text-[9px] text-muted-foreground">Paid separately from the $10 campaign reward.</p></div>
+        {referralRewards.length === 0 ? <p className="px-4 py-6 text-[9px] text-muted-foreground">No $3 referral rewards yet.</p> : <div className="divide-y divide-border">{referralRewards.map((reward) => <div key={reward.id} className="flex items-center justify-between gap-3 px-4 py-2.5"><div><p className="text-[10px] font-medium">$3 referral reward</p><p className="mt-0.5 text-[8px] text-muted-foreground">Referral: @{reward.username} · {formatDate(new Date(reward.createdAt))}</p></div><Badge tone="success">Rewarded</Badge></div>)}</div>}
+      </section>
+
+      <section className="surface-card overflow-hidden rounded-[13px]">
+        <div className="border-b border-border px-4 py-3.5"><h2 className="text-[13px] font-semibold">$10 Campaign activity</h2><p className="mt-0.5 text-[9px] text-muted-foreground">Separate from the normal $3 referral reward. Pending campaign rewards become available on the official payout date.</p></div>
+        {rewards.campaignRewards.length === 0 ? <p className="px-4 py-6 text-[9px] text-muted-foreground">No $10 campaign activity yet.</p> : <div className="divide-y divide-border">{rewards.campaignRewards.slice(0, 8).map((reward) => <div key={reward.id} className="flex items-center justify-between gap-3 px-4 py-2.5"><div><p className="text-[10px] font-medium">{usd(reward.amountCents)} campaign reward</p><p className="mt-0.5 text-[8px] text-muted-foreground">{reward.role === "referrer" ? "Referrer reward" : "Referred customer reward"} · {reward.campaignName} · earned {formatDate(new Date(reward.earnedAt))}</p></div><Badge tone={reward.status === "paid" ? "success" : reward.status === "rejected" || reward.status === "void" ? "danger" : "warning"}>{statusLabel[reward.status] ?? reward.status}</Badge></div>)}</div>}
       </section>
 
       <details className="surface-card rounded-[11px] px-4 py-3">

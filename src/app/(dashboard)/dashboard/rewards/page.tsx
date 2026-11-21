@@ -46,6 +46,7 @@ export default async function RewardsPage() {
             promotedAt: ambassador.promotedAt,
           }}
           rewards={rewards}
+          referralRewards={referrals.referrals.filter((row) => row.status === "rewarded").map((row) => ({ id: row.id, username: row.refereeUsername, amountMinor: row.rewardMinor, createdAt: row.createdAt }))}
         />
       </div>
     </div>
