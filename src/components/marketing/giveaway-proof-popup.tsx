@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { ArrowUpRight, X } from "lucide-react";
 
 const KEY = "buybiz_giveaway_proof_popup_dismissed_v1";
-const BLOCKED = ["/checkout", "/login", "/register", "/signup", "/auth", "/payment", "/reset-password", "/forgot-password"];
+const BLOCKED = ["/checkout", "/login", "/register", "/signup", "/auth", "/payment", "/reset-password", "/forgot-password", "/rewards/proof"];
 
 export function GiveawayProofPopup() {
   const pathname = usePathname();
@@ -28,7 +28,7 @@ export function GiveawayProofPopup() {
           <h2 id="proof-popup-title" className="mt-2 text-[28px] font-semibold leading-[1.02] tracking-[-0.05em] sm:text-[34px]">20 GIVEAWAY REWARDS PAID 🎉</h2>
         </div>
         <div className="px-5 pb-5 pt-4 sm:px-6 sm:pb-6">
-          <p className="text-[11.5px] leading-5 text-[#4E5157]">Yesterday, 20 members of our community received their giveaway rewards! Congratulations to everyone who made it.</p>
+          <p className="text-[11.5px] leading-5 text-[#4E5157]">20 members of our community received their giveaway rewards! Congratulations to everyone who made it.</p>
           <p className="mt-2 text-[10.5px] leading-5 text-[#6E7178]">Want to see who received their rewards? Check out the complete list of winners and verify their payments on the blockchain.</p>
           <div className="mt-4 grid gap-2"><Link href="/rewards/proof/giveaway-20" onClick={() => setOpen(false)} className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full bg-[#08090B] px-4 text-[10px] font-semibold text-white">VIEW WINNERS &amp; PAYMENT PROOF <ArrowUpRight className="h-3.5 w-3.5" /></Link><Link href="/dashboard/giveaways" onClick={() => setOpen(false)} className="inline-flex min-h-10 items-center justify-center rounded-full border border-black/10 bg-white px-4 text-[10px] font-medium">CHECK OUT THE REWARDS</Link><button type="button" onClick={dismiss} className="min-h-9 text-[9px] text-[#6E7178] hover:text-[#0A0B0D]">Maybe later</button></div>
           <p className="mt-2 text-center text-[8px] text-[#8C9097]">Actual verified recipients and on-chain transactions.</p>
