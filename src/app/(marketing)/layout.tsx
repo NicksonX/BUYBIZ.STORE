@@ -4,6 +4,7 @@ import { MobileSessionRedirect } from "@/components/marketing/mobile-session-red
 import { RouteTransition } from "@/components/ui/route-transition";
 import { MarketingReveal } from "@/components/marketing/scroll-reveal";
 import { GiveawayProofPopup } from "@/components/marketing/giveaway-proof-popup";
+import { SocialLaunchModal } from "@/components/social/social-launch-modal";
 
 export default async function MarketingLayout({
   children,
@@ -24,6 +25,7 @@ export default async function MarketingLayout({
         <RouteTransition>{children}</RouteTransition>
       </main>
       <SiteFooter />
+      <SocialLaunchModal />
       <GiveawayProofPopup />
     </div>
   );

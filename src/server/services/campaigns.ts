@@ -1072,3 +1072,22 @@ export async function backfillCampaignRewards(slug = "customer-referrer-10") {
   }
   return { processed, customerRewards, referrerRewards };
 }
+
+export async function getSeasonOfRewardsPopupData() {
+  const db = await getDb();
+  const campaign = await db.query<{ id: string; name: string; customerRewardCents: number; referrerRewardCents: number; endsAt: Date }>(
+    `select id,name,customer_reward_usd_cents as "customerRewardCents",referrer_reward_usd_cents as "referrerRewardCents",ends_at as "endsAt"
+       from campaigns where status='published' order by starts_at desc limit 1`,
+  );
+  const c = campaign.rows[0];
+  if (!c) return null;
+  const totals = await db.query<{ recorded: number; paid: number; pending: number; participants: number }>(
+    `select coalesce(sum(amount_usd_cents) filter (where status not in ('rejected','void')),0)::int recorded,
+            coalesce(sum(amount_usd_cents) filter (where status='paid'),0)::int paid,
+            coalesce(sum(amount_usd_cents) filter (where status in ('pending','reserved')),0)::int pending,
+            count(distinct beneficiary_id)::int participants
+       from campaign_rewards where campaign_id=$1`,
+    [c.id],
+  );
+  return { ...c, ...totals.rows[0] };
+}
