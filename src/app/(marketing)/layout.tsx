@@ -3,6 +3,7 @@ import { SiteHeader } from "@/components/marketing/site-header";
 import { MobileSessionRedirect } from "@/components/marketing/mobile-session-redirect";
 import { RouteTransition } from "@/components/ui/route-transition";
 import { MarketingReveal } from "@/components/marketing/scroll-reveal";
+import { GiveawayProofPopup } from "@/components/marketing/giveaway-proof-popup";
 
 export default async function MarketingLayout({
   children,
@@ -23,6 +24,7 @@ export default async function MarketingLayout({
         <RouteTransition>{children}</RouteTransition>
       </main>
       <SiteFooter />
+      <GiveawayProofPopup />
     </div>
   );
 }
