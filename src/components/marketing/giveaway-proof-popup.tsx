@@ -13,7 +13,12 @@ export function GiveawayProofPopup() {
   const [open, setOpen] = useState(false);
   useEffect(() => {
     if (BLOCKED.some((path) => pathname.startsWith(path))) return;
-    try { if (sessionStorage.getItem(KEY) === "1") return; } catch { /* ignore */ }
+    try {
+      if (sessionStorage.getItem(KEY) === "1") return;
+      // The social launch announcement takes precedence; do not stack a second
+      // promotional popup after it in the same browsing session.
+      if (sessionStorage.getItem("buybiz_social_launch_shown") === "1") return;
+    } catch { /* ignore */ }
     const timer = window.setTimeout(() => setOpen(true), 1400);
     return () => window.clearTimeout(timer);
   }, [pathname]);

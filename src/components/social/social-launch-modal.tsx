@@ -10,7 +10,10 @@ function TelegramIcon() { return <svg viewBox="0 0 24 24" aria-hidden="true" cla
 
 export function SocialLaunchModal() {
   const [open, setOpen] = useState(false);
-  useEffect(() => { setOpen(true); }, []);
+  useEffect(() => {
+    try { sessionStorage.setItem("buybiz_social_launch_shown", "1"); } catch { /* ignore */ }
+    setOpen(true);
+  }, []);
   useEffect(() => {
     if (!open) return;
     const previous = document.body.style.overflow;
