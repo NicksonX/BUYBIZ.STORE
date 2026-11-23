@@ -21,8 +21,7 @@ import {
   getWalletSummary,
 } from "@/server/data/customer";
 import { getPlanAvailability } from "@/server/data/products";
-import { getSeasonOfRewardsPopupData } from "@/server/services/campaigns";
-import { SeasonOfRewardsPopup } from "@/components/dashboard/season-of-rewards-popup";
+
 import { ActivityChart } from "@/components/dashboard/activity-chart";
 import { TransactionRow } from "@/components/dashboard/transaction-row";
 import { PlanStrip } from "@/components/dashboard/plan-strip";
@@ -49,14 +48,13 @@ export default async function DashboardOverviewPage() {
   const user = await getCurrentUser();
   if (!user) return null;
 
-  const [wallet, counts, recent, activity, active, plans, seasonPopup] = await Promise.all([
+  const [wallet, counts, recent, activity, active, plans] = await Promise.all([
     getWalletSummary(user.id),
     getDashboardCounts(user.id),
     getRecentLedger(user.id, 5),
     getActivitySeries(user.id),
     getActiveAllocations(user.id, 3),
     getPlanAvailability(),
-    getSeasonOfRewardsPopupData().catch(() => null),
   ]);
 
   const totalSpend = activity.reduce((sum, point) => sum + point.spendMinor, 0);
@@ -64,7 +62,6 @@ export default async function DashboardOverviewPage() {
 
   return (
     <div className="space-y-5">
-      <SeasonOfRewardsPopup data={seasonPopup} />
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <div>
           <p className="text-[11px] font-medium text-muted-foreground">
