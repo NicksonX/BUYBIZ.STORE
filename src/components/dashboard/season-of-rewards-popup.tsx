@@ -15,6 +15,11 @@ type Data = {
   endsAt: Date | string;
 };
 const usd = (cents: number) => `$${Math.round(Number(cents) / 100).toLocaleString("en-US")}`;
+const approxUsd = (cents: number) => {
+  const dollars = Math.ceil(Number(cents) / 100);
+  if (dollars < 1000) return usd(cents);
+  return `~$${(Math.ceil(dollars / 1000) * 1000).toLocaleString("en-US")}`;
+};
 
 export function SeasonOfRewardsPopup({ data }: { data: Data | null }) {
   const [open, setOpen] = useState(Boolean(data));
@@ -83,8 +88,8 @@ export function SeasonOfRewardsPopup({ data }: { data: Data | null }) {
           </div>
 
           <div className="mt-3 rounded-[9px] border border-white/10 p-3">
-            <div className="flex items-center justify-between gap-3"><p className="text-[8.5px] font-medium text-white/55">Community rewards recorded</p><p className="tabular text-[13px] font-semibold">{usd(data.recorded)}</p></div>
-            <div className="mt-1.5 flex items-center justify-between gap-3 text-[8px] text-white/35"><span>{data.participants} members have rewards recorded</span><span>{usd(data.pending)} awaiting payout</span></div>
+            <div className="flex items-center justify-between gap-3"><p className="text-[8.5px] font-medium text-white/55">Community rewards recorded</p><p className="tabular text-[13px] font-semibold">{approxUsd(data.recorded)}</p></div>
+            <div className="mt-1.5 flex items-center justify-between gap-3 text-[8px] text-white/35"><span>{data.participants} members have rewards recorded</span><span>{approxUsd(data.pending)} awaiting payout</span></div>
           </div>
 
           <p className="mt-3 text-[9px] leading-4 text-white/45">Purchase an eligible 7 day or longer proxy plan. Funding your wallet alone does not qualify. The campaign closes on {end}.</p>
