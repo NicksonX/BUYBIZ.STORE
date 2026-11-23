@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ArrowUpRight, Check, ShieldCheck } from "lucide-react";
 import { getGiveawayProof } from "@/server/data/giveaway-proof";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "20 Giveaway Rewards Paid · BUYBIZ",
   description: "See the verified BUYBIZ giveaway recipients and independently verify each USDT BEP20 payment on BscScan.",
