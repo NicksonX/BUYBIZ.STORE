@@ -146,7 +146,8 @@ export function ProxySwitchDialog({
 
               <div className="flex items-start gap-2 rounded-[9px] border border-border bg-surface-subtle px-3 py-2 text-[9px] leading-4 text-muted-foreground">
                 <ShieldCheck className="mt-0.5 h-3 w-3 shrink-0" />
-                A ₦400 switching fee is deducted from your wallet. Your expiry does
+                A ₦400 switching fee is deducted from your wallet. The fee covers
+                processing and discourages repeated switching. Your expiry does
                 not change, and the server checks capacity again before the switch.
               </div>
 
