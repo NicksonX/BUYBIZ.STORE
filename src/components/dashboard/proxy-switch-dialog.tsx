@@ -141,13 +141,13 @@ export function ProxySwitchDialog({
                   required
                   className="mt-0.5 h-4 w-4 rounded border-border-strong accent-foreground"
                 />
-                Switch my proxy now. I understand my old slot will be released.
+                Switch my proxy now. I understand my old slot will be released and a ₦400 fee will be charged.
               </label>
 
               <div className="flex items-start gap-2 rounded-[9px] border border-border bg-surface-subtle px-3 py-2 text-[9px] leading-4 text-muted-foreground">
                 <ShieldCheck className="mt-0.5 h-3 w-3 shrink-0" />
-                No extra charge, no refund and no change to your expiry. Capacity
-                is checked again on the server before the switch.
+                A ₦400 switching fee is deducted from your wallet. Your expiry does
+                not change, and the server checks capacity again before the switch.
               </div>
 
               <div className="flex flex-col gap-2 sm:flex-row-reverse">

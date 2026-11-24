@@ -89,16 +89,15 @@ describe("Resend-only email delivery policy", () => {
     const rows = await db.query(`select 1 from email_deliveries where dedupe_key='rotation:welcome:' limit 1`);
     expect(rows.rows).toHaveLength(0);
   });
-  it("does not send once the conservative Resend limit is reached", async () => {
-    process.env.RESEND_DAILY_LIMIT = "1";
+  it("keeps sending on Resend Pro after legacy counters are exceeded", async () => {
     const db = await getDb();
-    await db.query(`insert into email_provider_usage (provider,usage_date,accepted_count) values ('resend',current_date,1)`);
+    await db.query(`insert into email_provider_usage (provider,usage_date,accepted_count) values ('resend',current_date,300)`);
     const calls = mockProvider();
     const id = await queue("quota");
     expect(id).toBeTruthy();
     await processEmailQueue({ ids: [id!] });
-    expect(calls).toHaveLength(0);
+    expect(calls).toHaveLength(1);
     const delivery = await db.query<{ status: string; provider: string }>(`select status,provider from email_deliveries where id=$1`, [id]);
-    expect(delivery.rows[0]).toEqual({ status: "queued", provider: null });
+    expect(delivery.rows[0]).toEqual({ status: "sent", provider: "resend" });
   });
 });

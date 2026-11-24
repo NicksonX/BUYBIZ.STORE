@@ -26,6 +26,7 @@ export function ProxyTerminationDialog({
   daysUsed,
   usedMinor,
   refundMinor,
+  terminationFeeMinor,
 }: {
   allocationId: string;
   productName: string;
@@ -34,6 +35,7 @@ export function ProxyTerminationDialog({
   daysUsed: number;
   usedMinor: number;
   refundMinor: number;
+  terminationFeeMinor: number;
 }) {
   const [state, formAction, pending] = useActionState(
     terminateProxyAction,
@@ -85,6 +87,10 @@ export function ProxyTerminationDialog({
                 {formatNaira(usedMinor, { exact: true })}
               </span>
             </div>
+            <div className="mt-2.5 flex items-center justify-between text-[11px]">
+              <span className="text-muted-foreground">Termination fee</span>
+              <span className="tabular font-medium">{formatNaira(terminationFeeMinor, { exact: true })}</span>
+            </div>
             <div className="mt-3 flex items-center justify-between border-t border-border pt-3">
               <span className="flex items-center gap-1.5 text-[11px] font-medium">
                 <Wallet className="h-3.5 w-3.5" /> Refund to wallet
@@ -97,9 +103,9 @@ export function ProxyTerminationDialog({
 
           <div className="flex items-start gap-2 rounded-[10px] border border-warning/20 bg-warning-soft px-3 py-2.5 text-[9.5px] leading-4 text-warning">
             <ShieldAlert className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-            Completed 24-hour periods are charged at the plan's daily rate. The
-            current partial day is not charged. The refund is calculated again on
-            our server when you confirm.
+            Completed 24-hour periods are charged at the plan's daily rate. A
+            ₦800 termination fee is deducted from any refund. The refund is
+            calculated again on our server when you confirm.
           </div>
 
           <form action={formAction} className="space-y-3">

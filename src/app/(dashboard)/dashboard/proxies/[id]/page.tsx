@@ -229,6 +229,11 @@ export default async function ProxyDetailPage({
                   </div>
                 </div>
 
+                <div className="mt-4 rounded-[10px] border border-border bg-surface-subtle p-3">
+                  <p className="text-[10px] font-semibold">A note about proxy maintenance</p>
+                  <p className="mt-1 text-[9.5px] leading-4 text-muted-foreground">Upstream proxies occasionally need maintenance and can go offline temporarily. We run regular proxy health checks. If your proxy is affected, we will notify you in your dashboard and keep working on it. Please hold on while we restore service.</p>
+                </div>
+
                 <div className="mt-4 rounded-[10px] border border-warning/25 bg-warning-soft p-3">
                   <p className="flex items-center gap-1.5 text-[10px] font-semibold text-warning">
                     <ShieldAlert className="h-3.5 w-3.5" /> Shared proxy disclosure
@@ -345,6 +350,7 @@ export default async function ProxyDetailPage({
                   daysUsed={termination.daysUsed}
                   usedMinor={termination.usedMinor}
                   refundMinor={termination.refundMinor}
+                  terminationFeeMinor={termination.terminationFeeMinor}
                 />
               </div>
             </section>

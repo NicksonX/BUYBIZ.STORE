@@ -1,4 +1,5 @@
 import "server-only";
+import { randomUUID } from "node:crypto";
 import { getDb } from "@/lib/db";
 import type { SqlTransaction } from "@/lib/db/driver";
 import { AppError } from "@/lib/errors";
@@ -8,6 +9,7 @@ import { notifyUser } from "@/server/services/notifications";
 import { notifyAdmin } from "@/server/services/admin-notifications";
 
 const DAY_MS = 86_400_000;
+const SWITCH_FEE_MINOR = 40_000;
 
 export type TerminationQuote = {
   allocationId: string;
@@ -424,6 +426,16 @@ export async function switchProxy(input: {
       );
     }
 
+    // Validate the fee and wallet before changing the allocation. The fee is
+    // deliberately non-refundable and is separate from the plan price.
+    await tx.query(`insert into wallet_accounts (user_id) values ($1) on conflict (user_id) do nothing`, [input.userId]);
+    const wallet = await tx.query<{ id:string }>(`select id from wallet_accounts where user_id=$1 for update`, [input.userId]);
+    if (!wallet.rows[0]) throw new AppError("UNKNOWN", "Your wallet could not be loaded.");
+    const walletBalance = await tx.query<{ balance:number }>(`select coalesce(sum(amount_minor),0)::bigint as balance from wallet_ledger where wallet_account_id=$1`, [wallet.rows[0].id]);
+    const balance = Number(walletBalance.rows[0]?.balance ?? 0);
+    if (balance < SWITCH_FEE_MINOR) throw new AppError("INSUFFICIENT_BALANCE", "A ₦400 proxy switching fee is required. Fund your wallet first.");
+    await tx.query(`insert into wallet_ledger (wallet_account_id,user_id,entry_type,amount_minor,balance_after_minor,currency,reference,related_order_id,description,created_by) values ($1,$2,'purchase_debit',$3,$4,'NGN',$5,$6,$7,$2)`, [wallet.rows[0].id,input.userId,-SWITCH_FEE_MINOR,balance-SWITCH_FEE_MINOR,`switch:${allocation.id}:${randomUUID()}`,allocation.orderId,`Proxy switching fee: ${allocation.productName}`]);
+
     // The allocation trigger repeats the capacity and upstream checks while
     // the inventory row is locked. The update never changes activation or
     // expiry timestamps, so switching cannot reset the subscription.
@@ -445,7 +457,7 @@ export async function switchProxy(input: {
       userId: input.userId,
       type: "allocation",
       title: "Proxy switched",
-      body: `Your proxy was switched to ${candidate.label}. Your subscription expiry did not change.`,
+      body: `Your proxy was switched to ${candidate.label}. A ₦400 switching fee was deducted from your wallet. Your subscription expiry did not change.`,
       href: `/dashboard/proxies/${allocation.id}`,
     });
     await writeAuditLog(tx, {
@@ -457,6 +469,7 @@ export async function switchProxy(input: {
       metadata: {
         fromInventoryId: allocation.inventoryId,
         toInventoryId: candidate.id,
+        switchFeeMinor: SWITCH_FEE_MINOR,
       },
       ip: input.ip,
       userAgent: input.userAgent,

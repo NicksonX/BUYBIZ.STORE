@@ -5,6 +5,7 @@ import { verifyProxy } from "@/server/services/proxy-verification";
 import type { ParsedProxy } from "@/lib/ai/proxy-parser";
 import { getAppSettings } from "@/server/data/settings";
 import { queueEmail } from "@/server/services/email";
+import { notifyUser } from "@/server/services/notifications";
 
 function healthFrom(status: string): "healthy"|"degraded"|"offline" { return status === "verified" ? "healthy" : status === "review_required" ? "degraded" : "offline"; }
 function diagnosis(batch: string, status: string, others: number) {
@@ -40,6 +41,14 @@ export async function runProxyHealthChecks() {
       if (!open.rows[0]) {
         const inc = await db.query<{ id:string }>(`insert into proxy_health_incidents (inventory_id,credential_group,incident_type,status,consecutive_failures,latency_ms,diagnostic) values ($1,$2,$3,'open',$4,$5,$6) returning id`,[row.id,row.group,state==="degraded"?"proxy_degraded":"proxy_offline",failures,result.latencyMs,diagnosisText]);
         const incidentId = inc.rows[0]?.id;
+        if (incidentId) {
+          const affected = await db.query<{ userId:string }>(`select distinct a.user_id as "userId" from proxy_allocations a where a.proxy_inventory_id=$1 and a.status='active' and a.expires_at>now()`, [row.id]);
+          await db.transaction(async (tx) => {
+            for (const user of affected.rows) {
+              await notifyUser(tx, { userId:user.userId, type:"allocation", title:"We are checking your proxy", body:"Your proxy may be temporarily unavailable while we run maintenance checks. Please hold on and rest assured we are working on it. Your plan and expiry are unchanged.", href:"/dashboard/proxies" });
+            }
+          });
+        }
         if (incidentId && settings.adminNotificationEmail) {
           const admin = await db.query<{id:string}>(`select id from profiles where role='super_admin' order by created_at limit 1`);
           if (admin.rows[0]) {

@@ -39,7 +39,7 @@ async function buySevenDay(userId: string) {
 describe("proxy termination", () => {
   it("calculates completed-day refunds and credits the wallet only once", async () => {
     const user = await createTestUser("terminate");
-    await fundWallet(user.id, SEVEN_DAY_PRICE + 10_000);
+    await fundWallet(user.id, SEVEN_DAY_PRICE + 10_000 + 40_000);
     const inventory = await createTestInventory({ maxSeats: 10, productSlug: "proxy-7-days" });
     const purchase = await buySevenDay(user.id);
 
@@ -147,7 +147,7 @@ describe("proxy switching", () => {
 
   it("moves the slot without changing the subscription window or charging twice", async () => {
     const user = await createTestUser("switch");
-    await fundWallet(user.id, SEVEN_DAY_PRICE);
+    await fundWallet(user.id, SEVEN_DAY_PRICE + 40_000);
     const source = await createTestInventory({ maxSeats: 10, productSlug: "proxy-7-days" });
     const target = await createTestInventory({ maxSeats: 10, productSlug: "proxy-7-days" });
     const purchase = await buySevenDay(user.id);
@@ -215,7 +215,7 @@ describe("proxy switching", () => {
         where user_id=$1 and entry_type='purchase_debit'`,
       [user.id],
     );
-    expect(debits.rows[0].count).toBe(1);
+    expect(debits.rows[0].count).toBe(2);
     expect(await getSwitchOptions(user.id, purchase.allocationId)).toEqual(
       expect.arrayContaining([expect.objectContaining({ id: source.id })]),
     );
@@ -224,8 +224,8 @@ describe("proxy switching", () => {
   it("prevents two customers from taking the last target slot", async () => {
     const first = await createTestUser("switchracea");
     const second = await createTestUser("switchraceb");
-    await fundWallet(first.id, SEVEN_DAY_PRICE);
-    await fundWallet(second.id, SEVEN_DAY_PRICE);
+    await fundWallet(first.id, SEVEN_DAY_PRICE + 40_000);
+    await fundWallet(second.id, SEVEN_DAY_PRICE + 40_000);
     const source = await createTestInventory({ maxSeats: 10, productSlug: "proxy-7-days" });
     const firstBuy = await buySevenDay(first.id);
     const secondBuy = await buySevenDay(second.id);
