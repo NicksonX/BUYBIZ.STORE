@@ -29,15 +29,13 @@ export function isProviderEnabled(provider: EmailProvider) {
 }
 
 export function getProviderDailyLimit(provider: EmailProvider): number | null {
-  const raw = provider === "brevo"
-    ? process.env.BREVO_DAILY_LIMIT || "5000"
-    : process.env.RESEND_DAILY_LIMIT || "0";
-  if (!raw) return null;
+  // Resend Pro is unlimited. The provider itself enforces its own rate limits.
+  if (provider === "resend") return null;
+  const raw = process.env.BREVO_DAILY_LIMIT || "5000";
   const parsed = Number(raw);
-  // Brevo Pro is confirmed at 5,000/day. Do not let a stale lower app env
-  // suppress Brevo and silently route transactional mail to fallback.
-  if (provider === "brevo") return Math.max(5000, Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : 5000);
-  return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : null;
+  // Brevo Pro is confirmed at 5,000/day. A stale lower app env must not
+  // silently suppress transactional mail.
+  return Math.max(5000, Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : 5000);
 }
 
 export function getEmailRotationEnabled() {
