@@ -36,8 +36,8 @@ export default async function AdminRotationPage() {
     const overall = offline > 0 ? "degraded" : healthy === items.length ? "healthy" : "unknown";
     return { group, items, active, expired, healthy, offline, degraded, due, lastRotation, lastHealth, overall };
   });
-  const primary = batches.filter((batch) => batch.group === "A");
-  const otherGroups = batches.filter((batch) => batch.group !== "A");
+  const primary = batches.filter((batch) => batch.group === "A" || batch.items.length > 1);
+  const otherGroups = batches.filter((batch) => batch.group !== "A" && batch.items.length === 1);
   const otherItems = otherGroups.flatMap((batch) => batch.items);
   const otherActive = otherGroups.flatMap((batch) => batch.active);
   const otherExpired = otherGroups.flatMap((batch) => batch.expired);
