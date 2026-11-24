@@ -26,6 +26,7 @@ export type EmailType =
   | "proxy_credentials_updated"
   | "proxy_rotation_reminder"
   | "proxy_health_alert"
+  | "proxy_expiry_renewal"
   | "giveaway_live"
   | "giveaway_claim_received"
   | "giveaway_approved"
@@ -78,6 +79,7 @@ export type EmailTemplateData = {
   activeCustomerCount?: number;
   adminActionUrl?: string;
   healthStatus?: string;
+  expiresAtLabel?: string;
   batchName?: string;
   firstDetectedLabel?: string;
   lastSuccessfulLabel?: string;
@@ -234,6 +236,11 @@ const DEFAULT_TEMPLATES: Record<
     subject: "A New BUYBIZ Giveaway Is Live!",
     preheader: "Visit BUYBIZ and check the Giveaways page.",
     intro: "A new BUYBIZ giveaway is now live. Open the Giveaways page to see the details and find the claim code on our official social channel.",
+  },
+  proxy_expiry_renewal: {
+    subject: "Your BUYBIZ 7-day proxy has expired",
+    preheader: "Your 7-day proxy access has ended. Purchase a new plan to reconnect.",
+    intro: "Your 7-day proxy has expired and does not renew automatically.",
   },
   proxy_health_alert: {
     subject: "BUYBIZ Proxy Health Alert",
@@ -539,6 +546,14 @@ export function renderEmail(input: {
       <p style="margin:16px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.75;color:#4E5157;">Visit the official giveaway page when the event begins, check the official BUYBIZ channel for the claim code, and follow the on-page instructions. The code is not included in this email.</p>
       <p style="margin:10px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.7;color:${BRAND.muted};">A claim is not a guarantee of payment. Claims are reviewed and rewards are processed manually after verification.</p>
       ${button("Visit the BUYBIZ Giveaway", `${input.websiteUrl}/dashboard/giveaways`)}`;
+      break;
+    case "proxy_expiry_renewal":
+      content = `<p style="margin:16px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.75;color:#4E5157;">Hi ${escapeHtml(data.name ?? "there")},</p>
+      <p style="margin:12px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.75;color:#4E5157;">Your BUYBIZ 7-day proxy plan expired on ${escapeHtml(data.expiresAtLabel ?? "the expiry date shown in your dashboard")}.</p>
+      <p style="margin:12px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.75;color:#4E5157;">Your access to that proxy has now ended. Your plan does not renew automatically, and your expired proxy details will no longer work.</p>
+      <p style="margin:12px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.8;color:#4E5157;">To get connected again, purchase a new proxy plan from your dashboard. The current 7-Day Proxy price is ₦1,800. A new plan activates immediately when inventory is available.</p>
+      ${button("Purchase a new proxy", `${input.websiteUrl}/dashboard/marketplace`)}
+      <p style="margin:12px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:11px;line-height:1.7;color:${BRAND.muted};">If you have already purchased another plan, you can ignore this email.</p>`;
       break;
     case "proxy_health_alert":
       content = `<p style="margin:16px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.75;color:#4E5157;">${data.recovery ? "A BUYBIZ proxy has recovered and is responding normally again." : "A BUYBIZ proxy has a confirmed health issue."}</p>
