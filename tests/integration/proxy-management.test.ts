@@ -54,8 +54,8 @@ describe("proxy termination", () => {
 
     const quote = await getTerminationQuote(user.id, purchase.allocationId);
     expect(quote.daysUsed).toBe(2);
-    expect(quote.usedMinor).toBe(Math.ceil((SEVEN_DAY_PRICE * 2) / 7));
-    expect(quote.refundMinor).toBe(SEVEN_DAY_PRICE - Math.ceil((SEVEN_DAY_PRICE * 2) / 7));
+    expect(quote.refundMinor).toBe(48_571);
+    expect(quote.usedMinor).toBe(131_429);
 
     const result = await terminateProxy({
       userId: user.id,

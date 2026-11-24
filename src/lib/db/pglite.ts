@@ -127,6 +127,8 @@ export async function createDemoDatabase(options?: {
     "20261123000300_proxy_batch_health.sql",
     "20261123000400_proxy_health_columns.sql",
     "20261124000100_batch_rotation.sql",
+    "20261124000200_name_batch_b.sql",
+    "20261124000300_termination_fee.sql",
   ]) {
     const referralSql = await readFile(
       path.join(process.cwd(), "supabase/migrations", migration),

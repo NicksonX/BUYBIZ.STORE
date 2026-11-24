@@ -20,6 +20,7 @@ export type TerminationQuote = {
   daysUsed: number;
   usedMinor: number;
   refundMinor: number;
+  terminationFeeMinor: number;
   eligible: boolean;
   status: string;
 };
@@ -63,13 +64,15 @@ export function calculateTerminationQuote(input: {
           Math.ceil((input.amountPaidMinor * completedDays) / totalDays),
         )
       : input.amountPaidMinor;
-  const refundMinor = Math.max(0, input.amountPaidMinor - usedMinor);
-
+  const grossRefundMinor = Math.max(0, input.amountPaidMinor - usedMinor);
+  const terminationFeeMinor = Math.min(80_000, grossRefundMinor);
+  const refundMinor = grossRefundMinor - terminationFeeMinor;
   return {
     totalDays,
     daysUsed: completedDays,
-    usedMinor,
+    usedMinor: input.amountPaidMinor - refundMinor,
     refundMinor,
+    terminationFeeMinor,
   };
 }
 
@@ -140,6 +143,7 @@ export async function getTerminationQuote(
     daysUsed: quote.daysUsed,
     usedMinor: quote.usedMinor,
     refundMinor: active ? quote.refundMinor : 0,
+    terminationFeeMinor: active ? quote.terminationFeeMinor : 0,
     eligible: active,
     status: allocation.status,
   };
@@ -193,8 +197,8 @@ export async function terminateProxy(input: {
       `insert into proxy_terminations
          (allocation_id, user_id, order_id, product_id, proxy_inventory_id,
           amount_paid_minor, duration_seconds, days_used, used_minor, refund_minor,
-          reason, terminated_at)
-       values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'customer_terminated',$11)`,
+          termination_fee_minor, reason, terminated_at)
+       values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'customer_terminated',$12)`,
       [
         allocation.id,
         input.userId,
@@ -206,6 +210,7 @@ export async function terminateProxy(input: {
         quote.daysUsed,
         quote.usedMinor,
         quote.refundMinor,
+        quote.terminationFeeMinor,
         now,
       ],
     );
@@ -266,7 +271,7 @@ export async function terminateProxy(input: {
       body:
         quote.refundMinor > 0
           ? `Your proxy was terminated. ${formatNaira(quote.refundMinor, { exact: true })} was credited to your wallet.`
-          : "Your proxy was terminated. No refund was due after the completed usage period.",
+          : "Your proxy was terminated. No refund was due after the completed usage period and termination fee.",
       href: "/dashboard/proxies",
     });
     if (quote.refundMinor > 0) {
