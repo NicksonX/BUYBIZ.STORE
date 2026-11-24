@@ -517,6 +517,7 @@ export async function rotateCredentialsAction(
         host: string;
         port: number;
         interval: number | null;
+        region: string | null;
         version: number;
         active: number;
         expired: number;
@@ -532,7 +533,15 @@ export async function rotateCredentialsAction(
       );
       const item = current.rows[0];
       if (!item) throw new AppError("NOT_FOUND", "That inventory item was not found.");
-      active = Number(item.active);
+      // Close expired entitlements before calculating the rotation audience.
+      await tx.query(`update proxy_allocations set status='expired', ended_at=now()
+                       where proxy_inventory_id=$1 and status='active' and expires_at<=now()`, [parsed.data.inventoryId]);
+      const recipients = await tx.query<{ allocationId:string; userId:string; email:string; username:string; expiresAt:Date }>(
+        `select a.id as "allocationId", a.user_id as "userId", p.email, p.username, a.expires_at as "expiresAt"
+           from proxy_allocations a join profiles p on p.id=a.user_id
+          where a.proxy_inventory_id=$1 and a.status='active' and a.expires_at>now()
+          order by a.id`, [parsed.data.inventoryId]);
+      active = recipients.rows.length;
       expired = Number(item.expired);
       if (active > 0) {
         await tx.query(
@@ -565,11 +574,34 @@ export async function rotateCredentialsAction(
           parsed.data.port ?? null,
         ],
       );
+      const batchId = randomUUID();
+      const newHost = parsed.data.host?.trim() || item.host;
+      const newPort = parsed.data.port ?? item.port;
+      let emailsQueued = 0;
+      for (const recipient of recipients.rows) {
+        const queued = await queueEmail(tx, {
+          type: "proxy_credentials_updated",
+          userId: recipient.userId,
+          recipient: recipient.email,
+          data: {
+            name: recipient.username,
+            proxyHost: newHost,
+            proxyPort: String(newPort),
+            proxyUsername: parsed.data.username,
+            proxyPassword: parsed.data.password,
+            proxyCountry: item.region ?? "",
+            expiryLabel: new Intl.DateTimeFormat("en-NG", { dateStyle: "medium", timeStyle: "short", timeZone: "Africa/Lagos" }).format(new Date(recipient.expiresAt)),
+          },
+          dedupeKey: `proxy_credentials:${parsed.data.inventoryId}:v${item.version + 1}:${recipient.allocationId}`,
+        });
+        if (queued) emailsQueued += 1;
+      }
       await tx.query(
         `insert into proxy_rotations
            (inventory_id, rotated_by, rotated_at, previous_version, new_version,
-            affected_active, affected_expired, affected_unexpired, status, notes)
-         values ($1,$2,now(),$3,$4,$5,$6,$5,'completed',$7)`,
+            affected_active, affected_expired, affected_unexpired, status, notes,
+            notification_status, notification_batch_id, emails_queued)
+         values ($1,$2,now(),$3,$4,$5,$6,$5,'completed',$7,$8,$9,$10)`,
         [
           parsed.data.inventoryId,
           actor.admin.id,
@@ -578,6 +610,9 @@ export async function rotateCredentialsAction(
           active,
           expired,
           "Manual rotation confirmed by administrator.",
+          emailsQueued > 0 ? "queued" : "not_required",
+          batchId,
+          emailsQueued,
         ],
       );
       await tx.query(
@@ -600,6 +635,7 @@ export async function rotateCredentialsAction(
           newVersion: item.version + 1,
           affectedActive: active,
           affectedExpired: expired,
+          emailsQueued,
           hostChanged: Boolean(parsed.data.host?.trim()),
           portChanged: Boolean(parsed.data.port),
         },
@@ -612,7 +648,7 @@ export async function rotateCredentialsAction(
     revalidatePath("/admin/rotation");
     return formSuccess(
       active > 0
-        ? `Credentials updated. ${active} active customer${active === 1 ? "" : "s"} will receive the new details immediately. The upstream provider may have invalidated the previous login.`
+        ? `Credentials updated. ${active} active customer${active === 1 ? "" : "s"} are being emailed the new details. Expired allocations were terminated.`
         : "Credentials updated and rotation recorded. No active customers were affected.",
     );
   } catch (error) {

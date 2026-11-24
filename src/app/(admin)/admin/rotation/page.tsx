@@ -12,7 +12,8 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminRotationPage() {
   await requireAdminPage();
-  const { inventory, history } = await getAdminRotationOverview();
+  const { inventory, history, customers } = await getAdminRotationOverview();
+  const customersFor = (id: string) => customers.filter((customer) => customer.inventoryId === id);
   const daily = inventory.filter((item) => item.productSlug === "proxy-24-hours");
   const weekly = inventory.filter((item) => item.productSlug === "proxy-7-days");
 
@@ -90,6 +91,7 @@ export default async function AdminRotationPage() {
                           <span className="text-muted-foreground">Credential version</span>
                           <span className="text-right">v{item.credentialVersion}</span>
                         </div>
+                        {(() => { const list = customersFor(item.id); const activeList = list.filter((c) => c.active); const expiredList = list.filter((c) => !c.active); return <div className="border-b border-border px-4 py-2.5"><details><summary className="cursor-pointer text-[9px] font-medium text-muted-foreground">Review affected customers · {activeList.length} active, {expiredList.length} expired</summary><div className="mt-2 grid gap-2 sm:grid-cols-2"><div><p className="text-[8px] uppercase tracking-[0.08em] text-success">Will receive new credentials</p><div className="mt-1 space-y-0.5">{activeList.length ? activeList.map((c) => <p key={`${c.username}-${c.email}`} className="text-[8.5px]">{c.username} · {c.email}</p>) : <p className="text-[8.5px] text-muted-foreground">None</p>}</div></div><div><p className="text-[8px] uppercase tracking-[0.08em] text-warning">Expired · no credentials</p><div className="mt-1 space-y-0.5">{expiredList.length ? expiredList.map((c) => <p key={`${c.username}-${c.email}`} className="text-[8.5px] text-muted-foreground">{c.username} · {c.status}</p>) : <p className="text-[8.5px] text-muted-foreground">None</p>}</div></div></div></details></div>; })()}
                         <div className="p-3">
                           <CredentialsPanel
                             inventoryId={item.id}
@@ -125,7 +127,7 @@ export default async function AdminRotationPage() {
             <table className="w-full min-w-[720px] text-left">
               <thead className="border-b border-border bg-surface-subtle/60">
                 <tr>
-                  {["Inventory", "Rotated", "Version", "Active affected", "Expired affected", "Admin"].map((label) => (
+                  {["Inventory", "Rotated", "Version", "Active", "Expired", "Emails", "Admin"].map((label) => (
                     <th key={label} className="px-4 py-2 text-[8.5px] uppercase tracking-[0.08em] text-muted-foreground">{label}</th>
                   ))}
                 </tr>
@@ -138,6 +140,7 @@ export default async function AdminRotationPage() {
                     <td className="px-4 py-2.5 text-[9px]">v{row.previousVersion} → v{row.newVersion}</td>
                     <td className="px-4 py-2.5 tabular text-[9px]">{row.affectedActive}</td>
                     <td className="px-4 py-2.5 tabular text-[9px]">{row.affectedExpired}</td>
+                    <td className="px-4 py-2.5 text-[9px]">{row.emailsQueued ?? 0} queued</td>
                     <td className="px-4 py-2.5 text-[9px] text-muted-foreground">{row.adminUsername ?? "Admin"}</td>
                   </tr>
                 ))}

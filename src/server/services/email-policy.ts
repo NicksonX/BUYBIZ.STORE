@@ -37,6 +37,8 @@ export const EMAIL_POLICY: Record<EmailType, EmailPolicyEntry> = {
   campaign_payout_approved: { type: "campaign_payout_approved", category: "essential", email: true, reason: "Financial payout status change." },
   campaign_payout_paid: { type: "campaign_payout_paid", category: "essential", email: true, reason: "Confirmed campaign payout receipt." },
   campaign_payout_rejected: { type: "campaign_payout_rejected", category: "essential", email: true, reason: "Financial payout status change requiring action." },
+  proxy_rotation_reminder: { type: "proxy_rotation_reminder", category: "essential", email: true, reason: "Admin-only proxy rotation reminder." },
+  proxy_credentials_updated: { type: "proxy_credentials_updated", category: "essential", email: true, reason: "Active proxy customer credential rotation notice." },
   proxy_expiry_reminder: { type: "proxy_expiry_reminder", category: "essential", email: true, reason: "Operational notice before paid proxy access expires." },
   giveaway_live: { type: "giveaway_live", category: "in_app_only", email: false, reason: "Promotional announcement; use dashboard notices." },
   giveaway_claim_received: { type: "giveaway_claim_received", category: "in_app_only", email: false, reason: "Giveaway claim is visible in-app." },

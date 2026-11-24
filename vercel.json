@@ -11,6 +11,10 @@
     {
       "path": "/api/cron/emails",
       "schedule": "*/2 * * * *"
+    },
+    {
+      "path": "/api/cron/rotation-reminders",
+      "schedule": "30 7 * * *"
     }
   ]
 }

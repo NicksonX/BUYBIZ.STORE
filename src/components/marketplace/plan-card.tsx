@@ -94,6 +94,13 @@ export function PlanCard({
         </span>
       </div>
 
+      {product.slug === "proxy-7-days" ? (
+        <div className={cn("relative mt-4 rounded-[9px] border px-3 py-2.5", featured ? "border-white/15 bg-white/[0.05]" : "border-black/[0.07] bg-[#F7F7F8]")}>
+          <p className={cn("text-[8px] font-semibold uppercase tracking-[0.12em]", featured ? "text-white/55" : "text-muted-foreground")}>Price updated</p>
+          <p className={cn("mt-1 text-[10px] leading-4", featured ? "text-white/60" : "text-muted-foreground")}>Now ₦1,800 due to increased demand and limited inventory. This helps us manage stock and keep the 7-day plan available.</p>
+        </div>
+      ) : null}
+
       {showFeatures ? (
         <ul className="relative mt-4 space-y-2 border-t border-current/10 pt-4 sm:mt-5 sm:space-y-2.5 sm:pt-5">
           {features.map((feature) => (

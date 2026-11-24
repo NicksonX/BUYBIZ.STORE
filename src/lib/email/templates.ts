@@ -23,6 +23,8 @@ export type EmailType =
   | "campaign_payout_paid"
   | "campaign_payout_rejected"
   | "proxy_expiry_reminder"
+  | "proxy_credentials_updated"
+  | "proxy_rotation_reminder"
   | "giveaway_live"
   | "giveaway_claim_received"
   | "giveaway_approved"
@@ -64,6 +66,16 @@ export type EmailTemplateData = {
   customerReward?: string;
   windowLabel?: string;
   ownerCopy?: boolean;
+  proxyHost?: string;
+  proxyPort?: string;
+  proxyUsername?: string;
+  proxyPassword?: string;
+  proxyCountry?: string;
+  rotationIntervalLabel?: string;
+  lastRotationLabel?: string;
+  rotationDueLabel?: string;
+  activeCustomerCount?: number;
+  adminActionUrl?: string;
 };
 
 export type EmailTemplateOverride = {
@@ -213,6 +225,16 @@ const DEFAULT_TEMPLATES: Record<
     subject: "A New BUYBIZ Giveaway Is Live!",
     preheader: "Visit BUYBIZ and check the Giveaways page.",
     intro: "A new BUYBIZ giveaway is now live. Open the Giveaways page to see the details and find the claim code on our official social channel.",
+  },
+  proxy_rotation_reminder: {
+    subject: "BUYBIZ Proxy Rotation Required",
+    preheader: "An upstream proxy has reached its scheduled rotation date.",
+    intro: "An upstream proxy has reached its scheduled credential rotation date.",
+  },
+  proxy_credentials_updated: {
+    subject: "Your BUYBIZ Proxy Credentials Have Been Updated",
+    preheader: "Use the new connection details for your active proxy.",
+    intro: "Your BUYBIZ proxy connection details have been updated.",
   },
   proxy_expiry_reminder: {
     subject: "Your BUYBIZ Proxy Is Expiring Soon",
@@ -503,6 +525,33 @@ export function renderEmail(input: {
       <p style="margin:16px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.75;color:#4E5157;">Visit the official giveaway page when the event begins, check the official BUYBIZ channel for the claim code, and follow the on-page instructions. The code is not included in this email.</p>
       <p style="margin:10px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.7;color:${BRAND.muted};">A claim is not a guarantee of payment. Claims are reviewed and rewards are processed manually after verification.</p>
       ${button("Visit the BUYBIZ Giveaway", `${input.websiteUrl}/dashboard/giveaways`)}`;
+      break;
+    case "proxy_rotation_reminder":
+      content = `<p style="margin:16px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.75;color:#4E5157;">A BUYBIZ upstream proxy has reached its scheduled credential rotation date.</p>
+      ${details([
+        ["Proxy", data.proxyHost ?? ""],
+        ["Location", data.proxyCountry ?? ""],
+        ["Rotation interval", data.rotationIntervalLabel ?? ""],
+        ["Last rotation", data.lastRotationLabel ?? ""],
+        ["Rotation due", data.rotationDueLabel ?? ""],
+        ["Active BUYBIZ allocations", String(data.activeCustomerCount ?? 0)],
+      ])}
+      <p style="margin:12px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.7;color:${BRAND.muted};">Please review the proxy and update its upstream credentials through the BUYBIZ admin rotation page.</p>
+      ${button("Open rotation page", data.adminActionUrl ?? `${input.websiteUrl}/admin/rotation`)}`;
+      break;
+    case "proxy_credentials_updated":
+      content = `<p style="margin:16px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.75;color:#4E5157;">Hello ${escapeHtml(data.name ?? "there")},</p>
+      <p style="margin:12px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.75;color:#4E5157;">Your BUYBIZ proxy connection details have been updated. If your proxy subscription is still active, use the new details below.</p>
+      ${details([
+        ["Proxy Host/IP", data.proxyHost ?? ""],
+        ["Port", data.proxyPort ?? ""],
+        ["Username", data.proxyUsername ?? ""],
+        ["Password", data.proxyPassword ?? ""],
+        ["Location", data.proxyCountry ?? ""],
+        ["Expires", data.expiryLabel ?? ""],
+      ])}
+      <p style="margin:12px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.7;color:${BRAND.muted};">Your existing expiration date remains unchanged. This update does not renew or extend your subscription. Please replace your previous connection details with the new information above.</p>
+      <p style="margin:8px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.7;color:${BRAND.muted};">If you experience connection issues, contact BUYBIZ support through your dashboard.</p>`;
       break;
     case "proxy_expiry_reminder":
       content = `<p style="margin:16px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.75;color:#4E5157;">Your BUYBIZ proxy subscription is scheduled to expire soon.</p>

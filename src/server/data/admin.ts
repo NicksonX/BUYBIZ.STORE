@@ -1380,6 +1380,8 @@ export type AdminRotationHistoryRow = {
   newVersion: number;
   affectedActive: number;
   affectedExpired: number;
+  emailsQueued: number;
+  notificationStatus: string;
   status: string;
   adminUsername: string | null;
 };
@@ -1409,6 +1411,7 @@ export async function getAdminRotationOverview() {
     `select r.id, i.label as "inventoryLabel", r.rotated_at as "rotatedAt",
             r.previous_version as "previousVersion", r.new_version as "newVersion",
             r.affected_active as "affectedActive", r.affected_expired as "affectedExpired",
+            r.emails_queued as "emailsQueued", r.notification_status as "notificationStatus",
             r.status, p.username as "adminUsername"
        from proxy_rotations r
        join proxy_inventory i on i.id=r.inventory_id
@@ -1416,7 +1419,15 @@ export async function getAdminRotationOverview() {
       order by r.rotated_at desc
       limit 40`,
   );
-  return { inventory: inventory.rows, history: history.rows };
+  const customers = await db.query<{ inventoryId:string; username:string; email:string; status:string; expiresAt:Date; active:boolean }>(
+    `select a.proxy_inventory_id as "inventoryId", p.username, p.email, a.status, a.expires_at as "expiresAt",
+            (a.status='active' and a.expires_at>now()) as active
+       from proxy_allocations a join profiles p on p.id=a.user_id
+      where a.proxy_inventory_id = any($1::uuid[])
+      order by active desc, a.expires_at asc`,
+    [inventory.rows.map((row) => row.id)],
+  );
+  return { inventory: inventory.rows, history: history.rows, customers: customers.rows };
 }
 
 export async function getAdminNotifications(limit = 100) {
