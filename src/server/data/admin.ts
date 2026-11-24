@@ -1365,6 +1365,10 @@ export type AdminRotationInventoryRow = {
   lastRotatedAt: Date | null;
   nextRotationAt: Date | null;
   credentialVersion: number;
+  healthStatus: string;
+  consecutiveFailures: number;
+  lastHealthCheckAt: Date | null;
+  lastHealthError: string | null;
   activeCustomers: number;
   expiredCustomers: number;
   status: string;
@@ -1395,6 +1399,8 @@ export async function getAdminRotationOverview() {
             i.rotation_interval_hours as "rotationIntervalHours",
             i.last_rotated_at as "lastRotatedAt", i.next_rotation_at as "nextRotationAt",
             i.credential_version as "credentialVersion",
+            i.health_status as "healthStatus", i.consecutive_failures as "consecutiveFailures",
+            i.last_health_check_at as "lastHealthCheckAt", i.last_health_error as "lastHealthError",
             (select count(*)::int from proxy_allocations a
               where a.proxy_inventory_id=i.id and a.status='active' and a.expires_at>now()) as "activeCustomers",
             (select count(*)::int from proxy_allocations a

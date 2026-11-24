@@ -37,6 +37,7 @@ export const EMAIL_POLICY: Record<EmailType, EmailPolicyEntry> = {
   campaign_payout_approved: { type: "campaign_payout_approved", category: "essential", email: true, reason: "Financial payout status change." },
   campaign_payout_paid: { type: "campaign_payout_paid", category: "essential", email: true, reason: "Confirmed campaign payout receipt." },
   campaign_payout_rejected: { type: "campaign_payout_rejected", category: "essential", email: true, reason: "Financial payout status change requiring action." },
+  proxy_health_alert: { type: "proxy_health_alert", category: "essential", email: true, reason: "Admin-only proxy health incident alert." },
   proxy_rotation_reminder: { type: "proxy_rotation_reminder", category: "essential", email: true, reason: "Admin-only proxy rotation reminder." },
   proxy_credentials_updated: { type: "proxy_credentials_updated", category: "essential", email: true, reason: "Active proxy customer credential rotation notice." },
   proxy_expiry_reminder: { type: "proxy_expiry_reminder", category: "essential", email: true, reason: "Operational notice before paid proxy access expires." },

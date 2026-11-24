@@ -25,6 +25,7 @@ export type EmailType =
   | "proxy_expiry_reminder"
   | "proxy_credentials_updated"
   | "proxy_rotation_reminder"
+  | "proxy_health_alert"
   | "giveaway_live"
   | "giveaway_claim_received"
   | "giveaway_approved"
@@ -76,6 +77,14 @@ export type EmailTemplateData = {
   rotationDueLabel?: string;
   activeCustomerCount?: number;
   adminActionUrl?: string;
+  healthStatus?: string;
+  batchName?: string;
+  firstDetectedLabel?: string;
+  lastSuccessfulLabel?: string;
+  consecutiveFailures?: number;
+  otherAffected?: number;
+  diagnostic?: string;
+  recovery?: boolean;
 };
 
 export type EmailTemplateOverride = {
@@ -225,6 +234,11 @@ const DEFAULT_TEMPLATES: Record<
     subject: "A New BUYBIZ Giveaway Is Live!",
     preheader: "Visit BUYBIZ and check the Giveaways page.",
     intro: "A new BUYBIZ giveaway is now live. Open the Giveaways page to see the details and find the claim code on our official social channel.",
+  },
+  proxy_health_alert: {
+    subject: "BUYBIZ Proxy Health Alert",
+    preheader: "A monitored proxy needs administrator attention.",
+    intro: "A monitored BUYBIZ proxy has changed health state.",
   },
   proxy_rotation_reminder: {
     subject: "BUYBIZ Proxy Rotation Required",
@@ -525,6 +539,21 @@ export function renderEmail(input: {
       <p style="margin:16px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.75;color:#4E5157;">Visit the official giveaway page when the event begins, check the official BUYBIZ channel for the claim code, and follow the on-page instructions. The code is not included in this email.</p>
       <p style="margin:10px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.7;color:${BRAND.muted};">A claim is not a guarantee of payment. Claims are reviewed and rewards are processed manually after verification.</p>
       ${button("Visit the BUYBIZ Giveaway", `${input.websiteUrl}/dashboard/giveaways`)}`;
+      break;
+    case "proxy_health_alert":
+      content = `<p style="margin:16px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.75;color:#4E5157;">${data.recovery ? "A BUYBIZ proxy has recovered and is responding normally again." : "A BUYBIZ proxy has a confirmed health issue."}</p>
+      ${details([
+        ["Batch", data.batchName ?? ""],
+        ["Proxy", data.proxyHost ?? ""],
+        ["Location", data.proxyCountry ?? ""],
+        ["Status", data.healthStatus ?? ""],
+        ["First detected", data.firstDetectedLabel ?? ""],
+        ["Last successful check", data.lastSuccessfulLabel ?? ""],
+        ["Consecutive failures", String(data.consecutiveFailures ?? 0)],
+        ["Other affected in batch", String(data.otherAffected ?? 0)],
+      ])}
+      <p style="margin:12px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.75;color:#4E5157;"><strong>Diagnostic:</strong> ${escapeHtml(data.diagnostic ?? "No diagnosis available.")}</p>
+      ${button("Open proxy rotation page", data.adminActionUrl ?? `${input.websiteUrl}/admin/rotation`)}`;
       break;
     case "proxy_rotation_reminder":
       content = `<p style="margin:16px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.75;color:#4E5157;">A BUYBIZ upstream proxy has reached its scheduled credential rotation date.</p>

@@ -88,8 +88,8 @@ export async function toggleProxyFlag(input: { allocationId: string; adminId: st
 export async function replaceExpiredProxy(input: { allocationId: string; inventoryId: string; adminId: string; restoreAccess: boolean; reason?: string }) {
   const db = await getDb();
   return db.transaction(async (tx) => {
-    const allocation = await tx.query<{ id:string; userId:string; orderId:string; productId:string; inventoryId:string; status:string; activatedAt:Date; expiresAt:Date; duration:number; username:string }>(
-      `select a.id,a.user_id as "userId",a.order_id as "orderId",a.product_id as "productId",a.proxy_inventory_id as "inventoryId",a.status,a.activated_at as "activatedAt",a.expires_at as "expiresAt",p.duration_seconds as duration,pr.username
+    const allocation = await tx.query<{ id:string; userId:string; orderId:string; productId:string; inventoryId:string; status:string; activatedAt:Date; expiresAt:Date; duration:number; username:string; credentialGroup:string }>(
+      `select a.id,a.user_id as "userId",a.order_id as "orderId",a.product_id as "productId",a.proxy_inventory_id as "inventoryId",a.status,a.activated_at as "activatedAt",a.expires_at as "expiresAt",p.duration_seconds as duration,pr.username,a.credential_group as "credentialGroup"
          from proxy_allocations a join products p on p.id=a.product_id join profiles pr on pr.id=a.user_id
         where a.id=$1 for update of a`, [input.allocationId]);
     const a = allocation.rows[0];
@@ -101,7 +101,8 @@ export async function replaceExpiredProxy(input: { allocationId: string; invento
       `select i.id,i.label,i.host,i.access_type as "accessType",i.max_seats as "maxSeats",i.upstream_expires_at as "upstreamExpiresAt"
          from proxy_inventory i join products p on p.slug=i.product_slug
         where i.id=$1 and i.archived_at is null and i.status in ('available','full') and i.upstream_expires_at>now() and p.duration_seconds=$2
-        for update`, [input.inventoryId, SEVEN_DAYS]);
+          and i.credential_group=$3
+        for update`, [input.inventoryId, SEVEN_DAYS, a.credentialGroup]);
     const t = target.rows[0];
     if (!t) throw new AppError("OUT_OF_STOCK", "That replacement proxy is unavailable or incompatible.");
     const seats = await tx.query<{ n:number }>(`select count(*)::int n from proxy_allocations where proxy_inventory_id=$1 and status='active' and expires_at>now()`, [t.id]);

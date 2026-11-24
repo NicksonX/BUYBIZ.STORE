@@ -267,9 +267,11 @@ export async function purchaseProxy(input: {
         id: string;
         maxSeats: number;
         upstreamExpiresAt: Date;
+        credentialGroup: string;
       }>(
         `select i.id, i.max_seats as "maxSeats",
-                i.upstream_expires_at as "upstreamExpiresAt"
+                i.upstream_expires_at as "upstreamExpiresAt",
+                i.credential_group as "credentialGroup"
            from proxy_inventory i
           where i.archived_at is null
             and i.status in ('available','full')
@@ -294,6 +296,7 @@ export async function purchaseProxy(input: {
       );
 
       let selectedInventoryId: string | null = null;
+      let selectedCredentialGroup: string | null = null;
       for (const candidate of candidateResult.rows) {
         const seatsResult = await tx.query<{ seats: number }>(
           `select count(*)::int as seats
@@ -305,6 +308,7 @@ export async function purchaseProxy(input: {
         );
         if ((seatsResult.rows[0]?.seats ?? 0) < candidate.maxSeats) {
           selectedInventoryId = candidate.id;
+          selectedCredentialGroup = candidate.credentialGroup;
           break;
         }
       }
@@ -470,8 +474,8 @@ export async function purchaseProxy(input: {
       }>(
         `insert into proxy_allocations
            (user_id, proxy_inventory_id, order_id, product_id, status,
-            activated_at, expires_at)
-         values ($1,$2,$3,$4,'active',now(),now() + ($5::int * interval '1 second'))
+            activated_at, expires_at, credential_group)
+         values ($1,$2,$3,$4,'active',now(),now() + ($5::int * interval '1 second'),$6)
          returning id, expires_at as "expiresAt"`,
         [
           input.userId,
@@ -479,6 +483,7 @@ export async function purchaseProxy(input: {
           orderId,
           product.id,
           product.durationSeconds,
+          selectedCredentialGroup,
         ],
       );
       const allocation = allocationResult.rows[0];

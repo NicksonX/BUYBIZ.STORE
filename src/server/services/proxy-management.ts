@@ -84,6 +84,7 @@ type AllocationFinancials = {
   expiresAt: Date;
   productName: string;
   durationSeconds: number;
+  credentialGroup: string;
   amountPaidMinor: number;
 };
 
@@ -98,7 +99,7 @@ async function loadAllocationFinancials(
             a.product_id as "productId", a.proxy_inventory_id as "inventoryId",
             a.status, a.activated_at as "activatedAt", a.expires_at as "expiresAt",
             p.name as "productName", p.duration_seconds as "durationSeconds",
-            o.amount_minor as "amountPaidMinor"
+            a.credential_group as "credentialGroup", o.amount_minor as "amountPaidMinor"
        from proxy_allocations a
        join products p on p.id = a.product_id
        join orders o on o.id = a.order_id
@@ -328,6 +329,7 @@ export async function getSwitchOptions(
           )
         )
         and i.upstream_expires_at > $3
+        and i.credential_group = $4
         and (
           select count(*) from proxy_allocations a
            where a.proxy_inventory_id = i.id
@@ -336,7 +338,7 @@ export async function getSwitchOptions(
         ) < i.max_seats
       order by i.label asc
       limit 30`,
-    [allocation.inventoryId, allocation.productId, allocation.expiresAt],
+    [allocation.inventoryId, allocation.productId, allocation.expiresAt, allocation.credentialGroup],
   );
   return result.rows.map((row) => ({ ...row, availability: "available" as const }));
 }
@@ -382,12 +384,13 @@ export async function switchProxy(input: {
           and i.archived_at is null
           and i.status in ('available','full')
           and i.access_type = (select p.access_type from products p where p.id = $2)
+          and i.credential_group = $3
           and i.product_slug in (
             select p.slug from products p
              where p.duration_seconds = (select p2.duration_seconds from products p2 where p2.id = $2)
           )
         for update`,
-      [input.inventoryId, allocation.productId],
+      [input.inventoryId, allocation.productId, allocation.credentialGroup],
     );
     const candidate = target.rows[0];
     if (!candidate) {
