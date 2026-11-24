@@ -31,7 +31,7 @@ export function isProviderEnabled(provider: EmailProvider) {
 export function getProviderDailyLimit(provider: EmailProvider): number | null {
   const raw = provider === "brevo"
     ? process.env.BREVO_DAILY_LIMIT || "5000"
-    : process.env.RESEND_DAILY_LIMIT || "300";
+    : process.env.RESEND_DAILY_LIMIT || "0";
   if (!raw) return null;
   const parsed = Number(raw);
   // Brevo Pro is confirmed at 5,000/day. Do not let a stale lower app env
