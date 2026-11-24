@@ -1976,3 +1976,60 @@ export async function deleteInventoryAction(_previous: ActionState, formData: Fo
   revalidatePath("/admin/inventory");
   redirect("/admin/inventory");
 }
+
+export async function rotateBatchCredentialsAction(
+  _previous: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const actor = await adminActor();
+  if (!actor.ok) return actor.state;
+  const group = String(formData.get("credentialGroup") ?? "").trim();
+  const username = String(formData.get("username") ?? "").trim();
+  const password = String(formData.get("password") ?? "");
+  if (!group) return formError("Missing credential batch.");
+  if (!username || !password) return formError("Enter the new username and password.");
+  if (formData.get("confirm") !== "on") return formError("Confirm that active customers will be affected.");
+  const db = await getDb();
+  const meta = await getRequestMeta();
+  try {
+    const encryptedUsername = await encryptOptional(username);
+    const encryptedPassword = await encryptOptional(password);
+    let active = 0; let expired = 0; let queued = 0; let inventoryCount = 0;
+    await db.transaction(async (tx) => {
+      const items = await tx.query<{ id:string; label:string; host:string; port:number; region:string|null; version:number }>(
+        `select id,label,host,port,region,credential_version as version from proxy_inventory
+          where credential_group=$1 and archived_at is null order by id for update`, [group]);
+      if (!items.rows.length) throw new AppError("NOT_FOUND", "No inventory belongs to this batch.");
+      const ids = items.rows.map((item)=>item.id);
+      await tx.query(`update proxy_allocations set status='expired', ended_at=now()
+                       where proxy_inventory_id = any($1::uuid[]) and status='active' and expires_at<=now()`, [ids]);
+      const recipients = await tx.query<{ allocationId:string; userId:string; email:string; username:string; expiresAt:Date; host:string; port:number; region:string|null }>(
+        `select a.id as "allocationId", a.user_id as "userId", p.email, p.username, a.expires_at as "expiresAt", i.host, i.port, i.region
+           from proxy_allocations a join profiles p on p.id=a.user_id join proxy_inventory i on i.id=a.proxy_inventory_id
+          where a.proxy_inventory_id = any($1::uuid[]) and a.status='active' and a.expires_at>now() order by a.id`, [ids]);
+      await tx.query(`update proxy_inventory set encrypted_username=$2, encrypted_password=$3,
+                       credential_version=credential_version+1,last_rotated_at=now(),
+                       next_rotation_at=case when rotation_interval_hours is null then null else now()+make_interval(hours=>rotation_interval_hours) end,
+                       updated_at=now() where credential_group=$1 and archived_at is null`, [group, encryptedUsername, encryptedPassword]);
+      active = recipients.rows.length; expired = Number((await tx.query<{n:number}>(`select count(*)::int n from proxy_allocations where proxy_inventory_id=any($1::uuid[]) and status='expired'`,[ids])).rows[0]?.n ?? 0);
+      inventoryCount = items.rows.length;
+      const batchId = randomUUID();
+      for (const r of recipients.rows) {
+        const q = await queueEmail(tx, { type:"proxy_credentials_updated", userId:r.userId, recipient:r.email,
+          data:{name:r.username,proxyHost:r.host,proxyPort:String(r.port),proxyUsername:username,proxyPassword:password,proxyCountry:r.region??"",expiryLabel:new Intl.DateTimeFormat("en-NG",{dateStyle:"medium",timeStyle:"short",timeZone:"Africa/Lagos"}).format(new Date(r.expiresAt))},
+          dedupeKey:`proxy_credentials:${group}:v${items.rows[0].version+1}:${r.allocationId}` });
+        if (q) queued += 1;
+      }
+      await tx.query(`insert into proxy_rotations (inventory_id,rotated_by,rotated_at,previous_version,new_version,affected_active,affected_expired,affected_unexpired,status,notes,notification_status,notification_batch_id,emails_queued,credential_group,scope)
+        values ($1,$2,now(),$3,$4,$5,$6,$5,'completed',$7,$8,$9,$10,$11,'batch')`,
+        [items.rows[0].id,actor.admin.id,items.rows[0].version,items.rows[0].version+1,active,expired,`Batch rotation across ${inventoryCount} inventory records.`,queued>0?"queued":"not_required",batchId,queued,group]);
+      await writeAuditLog(tx,{actorUserId:actor.admin.id,actorRole:actor.admin.role,action:"inventory.batch_credentials_rotated",entityType:"proxy_credential_batch",entityId:group,metadata:{group,inventoryIds:ids,affectedActive:active,affectedExpired:expired,emailsQueued:queued},ip:meta.ip,userAgent:meta.userAgent});
+    });
+    revalidatePath("/admin/rotation");
+    return formSuccess(`Batch credentials updated across ${inventoryCount} inventory records. ${active} active customer${active===1?"":"s"} queued for email; ${expired} expired allocations excluded.`);
+  } catch (error) {
+    if (error instanceof AppError) return formError(error.userMessage);
+    console.error("[buybiz/admin] batch rotation failed", error);
+    return formError("The batch credentials could not be updated.");
+  }
+}
