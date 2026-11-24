@@ -1404,7 +1404,7 @@ export async function getAdminRotationOverview() {
             (i.encrypted_username is not null) as "hasCredentials"
        from proxy_inventory i
       where i.archived_at is null
-        and i.product_slug in ('proxy-24-hours','proxy-7-days')
+        and i.product_slug in ('proxy-24-hours','proxy-7-days','proxy-30-days')
       order by i.product_slug, i.credential_group, i.label`,
   );
   const history = await db.query<AdminRotationHistoryRow>(
@@ -1419,10 +1419,10 @@ export async function getAdminRotationOverview() {
       order by r.rotated_at desc
       limit 40`,
   );
-  const customers = await db.query<{ inventoryId:string; username:string; email:string; status:string; expiresAt:Date; active:boolean }>(
-    `select a.proxy_inventory_id as "inventoryId", p.username, p.email, a.status, a.expires_at as "expiresAt",
-            (a.status='active' and a.expires_at>now()) as active
-       from proxy_allocations a join profiles p on p.id=a.user_id
+  const customers = await db.query<{ inventoryId:string; allocationId:string; username:string; email:string; status:string; expiresAt:Date; active:boolean; orderNumber:string }>(
+    `select a.proxy_inventory_id as "inventoryId", a.id as "allocationId", p.username, p.email, a.status, a.expires_at as "expiresAt",
+            (a.status='active' and a.expires_at>now()) as active, o.order_number as "orderNumber"
+       from proxy_allocations a join profiles p on p.id=a.user_id join orders o on o.id=a.order_id
       where a.proxy_inventory_id = any($1::uuid[])
       order by active desc, a.expires_at asc`,
     [inventory.rows.map((row) => row.id)],

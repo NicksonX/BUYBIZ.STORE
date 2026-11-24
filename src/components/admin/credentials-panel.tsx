@@ -115,7 +115,7 @@ export function CredentialsPanel({
                 <Input name="port" placeholder="New port (optional)" type="number" min={1} max={65535} className="h-9 text-[11px]" />
               </div>
               <p className="text-[8.5px] leading-4 text-warning">
-                Rotating shared credentials may disconnect every active customer on this proxy. Only do this when the upstream provider has changed the login. BUYBIZ will show the new credentials to every active customer without changing their individual expiry. If active customers would be affected, the rotation centre shows the exact count and requires an explicit confirmation.
+                Change the upstream login first, then save it here. BUYBIZ emails the new credentials only to customers whose allocation is still active. Expired allocations are terminated first and receive nothing. Every customer keeps their original expiry. The exact active recipient count is shown above before you confirm.
               </p>
               {typeof activeCustomers === "number" ? (
                 <div className="grid grid-cols-2 gap-2 rounded-[8px] border border-border bg-surface-subtle p-2.5 text-[9px]">
@@ -127,7 +127,7 @@ export function CredentialsPanel({
               ) : null}
               <label className="flex items-start gap-2 text-[9px] leading-4 text-muted-foreground">
                 <input type="checkbox" name="confirm" required className="mt-0.5 h-3.5 w-3.5 accent-foreground" />
-                I understand the shared-customer impact.
+                I have changed the upstream provider credentials and reviewed the active recipient count.
               </label>
               <button
                 type="submit"
