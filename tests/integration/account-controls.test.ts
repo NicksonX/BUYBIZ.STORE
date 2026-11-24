@@ -125,7 +125,7 @@ describe("inactivity freeze", () => {
 describe("inventory package isolation", () => {
   it("does not sell 24-hour inventory as a 7-day plan", async () => {
     const user = await createTestUser("category");
-    await fundWallet(user.id, 100_000);
+    await fundWallet(user.id, 180_000);
     await createTestInventory({ maxSeats: 10, productSlug: "proxy-24-hours" });
 
     const result = await purchaseProxy({
@@ -146,7 +146,7 @@ describe("inventory package isolation", () => {
 describe("administrator reminders", () => {
   it("creates one daily and one weekly rotation reminder without duplicates", async () => {
     const user = await createTestUser("rotationreminder");
-    await fundWallet(user.id, 100_000);
+    await fundWallet(user.id, 180_000);
     const daily = await createTestInventory({
       maxSeats: 10,
       productSlug: "proxy-24-hours",

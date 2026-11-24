@@ -16,7 +16,7 @@ import {
 } from "../helpers";
 
 const key = () => randomUUID();
-const SEVEN_DAY_PRICE = 100_000;
+const SEVEN_DAY_PRICE = 180_000;
 
 beforeAll(async () => {
   await getDb();
