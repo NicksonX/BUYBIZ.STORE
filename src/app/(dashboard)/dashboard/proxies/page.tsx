@@ -112,6 +112,11 @@ export default async function ProxiesPage({
         }
       />
 
+      <div className="mt-4 flex items-start gap-2 rounded-[10px] border border-border bg-surface-subtle px-3.5 py-3 text-[10px] leading-5 text-muted-foreground">
+        <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+        <p><span className="font-semibold text-foreground">A quick note about maintenance 🛠️</span> We occasionally carry out maintenance on our proxy infrastructure to improve stability, reliability, and your overall experience. During these periods, some proxies may experience temporary interruptions. We appreciate your patience and understanding as we work to keep our services running smoothly.</p>
+      </div>
+
       <div className="mt-5 flex flex-wrap items-center gap-1.5">
         {filters.map((filter) => (
           <Link

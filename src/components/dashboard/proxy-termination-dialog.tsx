@@ -103,10 +103,7 @@ export function ProxyTerminationDialog({
 
           <div className="flex items-start gap-2 rounded-[10px] border border-warning/20 bg-warning-soft px-3 py-2.5 text-[9.5px] leading-4 text-warning">
             <ShieldAlert className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-            Completed 24-hour periods are charged at the plan's daily rate. A
-            ₦800 termination fee is deducted from any refund. The fee covers
-            processing and discourages repeated early termination. The refund is
-            calculated again on our server when you confirm.
+            💳 A ₦800 termination fee applies. To maintain fair usage and protect the stability of our proxy services, this fee helps discourage repeated terminations, system abuse, and attempts to exploit our services or violate our Terms of Service. Completed 24-hour periods are charged at the plan's daily rate, and the refund is recalculated on our server when you confirm.
           </div>
 
           <form action={formAction} className="space-y-3">

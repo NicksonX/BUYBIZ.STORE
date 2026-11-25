@@ -45,7 +45,8 @@ export async function runProxyHealthChecks() {
           const affected = await db.query<{ userId:string }>(`select distinct a.user_id as "userId" from proxy_allocations a where a.proxy_inventory_id=$1 and a.status='active' and a.expires_at>now()`, [row.id]);
           await db.transaction(async (tx) => {
             for (const user of affected.rows) {
-              await notifyUser(tx, { userId:user.userId, type:"allocation", title:"We are checking your proxy", body:"Your proxy may be temporarily unavailable while we run maintenance checks. Please hold on and rest assured we are working on it. Your plan and expiry are unchanged.", href:"/dashboard/proxies" });
+              await tx.query(`insert into proxy_health_incident_users (incident_id,user_id) values ($1,$2) on conflict do nothing`, [incidentId,user.userId]);
+              await notifyUser(tx, { userId:user.userId, type:"allocation", title:"Your Proxy Is Temporarily Affected ⚠️", body:"Your assigned proxy is currently experiencing an interruption due to ongoing maintenance or a connectivity issue. Our team is working to restore it as quickly as possible. Please bear with us for a few hours while we resolve the issue. We'll notify you as soon as your proxy is back online. Thank you for your patience and understanding.", href:"/dashboard/proxies" });
             }
           });
         }
@@ -63,6 +64,13 @@ export async function runProxyHealthChecks() {
       const open = await db.query<{id:string}>(`select id from proxy_health_incidents where inventory_id=$1 and status='open' limit 1`,[row.id]);
       if (open.rows[0]) {
         await db.query(`update proxy_health_incidents set status='recovered',recovered_at=now(),resolved_at=now(),updated_at=now() where id=$1`,[open.rows[0].id]);
+        const affected = await db.query<{ userId:string }>(`select user_id as "userId" from proxy_health_incident_users where incident_id=$1 and recovered_notified_at is null`, [open.rows[0].id]);
+        await db.transaction(async (tx) => {
+          for (const user of affected.rows) {
+            await notifyUser(tx, { userId:user.userId, type:"allocation", title:"Your Proxy Is Back Online ✅", body:"Good news! Your proxy is back online and working again. You can resume using your service as normal. Thank you for your patience while we resolved the interruption.", href:"/dashboard/proxies" });
+            await tx.query(`update proxy_health_incident_users set recovered_notified_at=now() where incident_id=$1 and user_id=$2`,[open.rows[0].id,user.userId]);
+          }
+        });
         if (settings.adminNotificationEmail) {
           const admin = await db.query<{id:string}>(`select id from profiles where role='super_admin' order by created_at limit 1`);
           if (admin.rows[0]) { const q=await db.transaction((tx)=>queueEmail(tx,{type:"proxy_health_alert",userId:admin.rows[0].id,recipient:settings.adminNotificationEmail,data:{proxyHost:row.host,proxyCountry:row.countryCode??"",batchName:row.group,healthStatus:"healthy",recovery:true,consecutiveFailures:0,otherAffected:0,diagnostic:`The proxy is healthy again on ${row.group}.`,adminActionUrl:`${process.env.NEXT_PUBLIC_APP_URL??"https://www.buybiz.store"}/admin/rotation`},dedupeKey:`proxy_health:${open.rows[0].id}:recovery`})); if(q) recovered += 1; }
