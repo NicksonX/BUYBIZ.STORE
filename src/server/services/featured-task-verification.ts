@@ -4,7 +4,7 @@ import { notifyUser } from "@/server/services/notifications";
 import { writeAuditLog } from "@/server/services/audit";
 import { getGeminiKey, getGeminiModel } from "@/server/services/gemini";
 
-const X_API="https://api.twitter.com/2";
+const X_API="https://api.x.com/2";
 type Check={status:"verified"|"failed"|"unavailable"|"pending";detail:string};
 async function xGet(path:string,token:string){const r=await fetch(`${X_API}${path}`,{headers:{Authorization:`Bearer ${token}`},signal:AbortSignal.timeout(8000)});if(!r.ok)throw new Error(`X API ${r.status}`);return r.json() as Promise<any>;}
 export async function verifyFeaturedSubmission(submissionId:string){
