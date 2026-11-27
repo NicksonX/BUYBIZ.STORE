@@ -430,7 +430,7 @@ export async function submitAmbassadorAddress(userId: string, rawAddress: string
     if (current?.status === "pending") {
       throw new AppError(
         "CONFLICT",
-        "Your wallet address is already pending verification. You cannot submit another address until an administrator reviews it.",
+        "Your wallet address is already pending verification.",
       );
     }
     if (current?.status === "verified") {
@@ -440,8 +440,8 @@ export async function submitAmbassadorAddress(userId: string, rawAddress: string
       );
     }
     const inserted = await tx.query<{ id: string }>(
-      `insert into ambassador_wallet_addresses (user_id, address, network, status)
-       values ($1,$2,'BEP20','pending') returning id`,
+      `insert into ambassador_wallet_addresses (user_id, address, network, status, verified_at)
+       values ($1,$2,'BEP20','verified',now()) returning id`,
       [userId, address],
     );
     await writeAuditLog(tx, {
