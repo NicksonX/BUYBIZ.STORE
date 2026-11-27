@@ -3,7 +3,6 @@ import { ArrowUpRight, CalendarDays, Gift, Megaphone } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
 import { requireUserPage } from "@/server/auth/guards";
 import { campaignPhase, formatCampaignDate, getPublishedCampaigns } from "@/server/services/campaigns";
-import { getDb } from "@/lib/db";
 import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -23,15 +22,6 @@ function usd(cents: number) {
 export default async function CampaignsPage() {
   await requireUserPage();
   const campaigns = await getPublishedCampaigns();
-  const db = await getDb();
-  const referralSettings = await db.query<{ enabled:boolean; reward:number; deposit:number; duration:number }>(
-    `select coalesce((select value from app_settings where key='referral_enabled'),'false'::jsonb)::boolean as enabled,
-            coalesce((select value from app_settings where key='referral_reward_minor'),'100000'::jsonb)::int as reward,
-            coalesce((select value from app_settings where key='referral_qualifying_deposit_minor'),'200000'::jsonb)::int as deposit,
-            coalesce((select value from app_settings where key='referral_qualifying_proxy_duration_seconds'),'604800'::jsonb)::int as duration`,
-  );
-  const referral = referralSettings.rows[0];
-
   return (
     <div>
       <PageHeader
@@ -82,7 +72,6 @@ export default async function CampaignsPage() {
         </div>
       )}
 
-      {referral?.enabled ? <section className="surface-card mt-4 rounded-[16px] p-4"><p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">BUYBIZ referral programme</p><h2 className="mt-1 text-[16px] font-semibold">Invite a friend. Earn ₦{(Number(referral.reward)/100).toLocaleString("en-NG")}.</h2><p className="mt-1 max-w-[620px] text-[10px] leading-5 text-muted-foreground">Share your BUYBIZ referral link. Your friend must make a qualifying deposit of at least ₦{(Number(referral.deposit)/100).toLocaleString("en-NG")} and complete a proxy purchase of {Math.ceil(Number(referral.duration)/86400)} days or more. This is separate from the $0.50 social task and the $10 Season of Rewards campaign.</p><Link href="/dashboard/referrals" className="mt-3 inline-flex h-9 items-center rounded-full bg-foreground px-4 text-[10px] font-semibold text-background">Open referral programme <ArrowUpRight className="ml-1 h-3 w-3" /></Link></section> : null}
 
       <p className="mt-4 rounded-[10px] border border-border bg-surface-subtle px-3.5 py-3 text-[9.5px] leading-5 text-muted-foreground">
         Campaign eligibility and dates come from the existing campaign configuration. The normal <strong className="text-foreground">$3 referral programme</strong> remains separate and is always managed from the Referral page.
