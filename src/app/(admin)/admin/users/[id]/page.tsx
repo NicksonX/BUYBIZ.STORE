@@ -58,6 +58,7 @@ export default async function AdminUserDetailPage({
         description={`@${profile.username} · ${profile.email} · joined ${formatDate(profile.createdAt)}`}
         actions={
           <div className="flex flex-wrap items-center gap-2">
+            <a href={`/admin/users/${profile.id}/report`} className="inline-flex h-8 items-center gap-1.5 rounded-full bg-foreground px-3 text-[10px] font-semibold text-background"><ArrowUpRight className="h-3 w-3" /> Generate Full User Report</a>
             <Badge
               tone={
                 profile.status === "active"

@@ -59,6 +59,7 @@ const nextConfig: NextConfig = {
     "geoip-lite",
     "https-proxy-agent",
     "socks-proxy-agent",
+    "pdfkit",
   ],
   outputFileTracingIncludes: {
     "/*": ["./node_modules/geoip-lite/data/**/*"],

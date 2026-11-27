@@ -60,6 +60,7 @@ export const adminNav: AdminNavItem[] = [
   { href: "/admin/treasury", label: "Treasury Wallet", icon: Landmark, group: "Finance" },
   { href: "/admin/reconciliation", label: "Deposit reconciliation", icon: Scale, group: "Finance" },
   { href: "/admin/ai-command", label: "AI Command Centre", icon: Bot, group: "Operations" },
+  { href: "/admin/tasks", label: "Featured tasks", icon: ClipboardList, group: "Operations" },
   { href: "/admin/support", label: "Support", icon: LifeBuoy, group: "Support" },
   { href: "/admin/notifications", label: "Notifications", icon: Bell, group: "System" },
   { href: "/admin/emails", label: "Email management", icon: Mail, group: "System" },

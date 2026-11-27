@@ -92,6 +92,13 @@ export function SeasonOfRewardsPopup({ data }: { data: Data | null }) {
             <div className="mt-1.5 flex items-center justify-between gap-3 text-[8px] text-white/35"><span>{data.participants} members have rewards recorded</span><span>{approxUsd(data.pending)} awaiting payout</span></div>
           </div>
 
+          <div className="mt-3 rounded-[9px] border border-white/10 bg-white/[0.03] p-3">
+            <p className="text-[8px] font-semibold uppercase tracking-[0.12em] text-white/40">Separate task reward</p>
+            <p className="mt-1 text-[10px] font-medium">Complete our 24-hour social task and earn $0.50 USDT.</p>
+            <p className="mt-1 text-[8.5px] leading-4 text-white/40">Approved participants only. This is separate from the $10 Season of Rewards campaign.</p>
+            <Link href="/dashboard/tasks/season-of-rewards-social-task" onClick={close} className="mt-2 inline-flex items-center gap-1 text-[8.5px] font-semibold text-white/80 underline underline-offset-2">View the $0.50 task <ArrowRight className="h-3 w-3" /></Link>
+          </div>
+
           <p className="mt-3 text-[9px] leading-4 text-white/45">Purchase an eligible 7 day or longer proxy plan. Funding your wallet alone does not qualify. The campaign closes on {end}.</p>
 
           <div className="mt-4 grid gap-2 sm:grid-cols-[1.35fr_1fr]">
