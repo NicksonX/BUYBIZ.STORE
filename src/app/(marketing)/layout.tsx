@@ -5,6 +5,7 @@ import { RouteTransition } from "@/components/ui/route-transition";
 import { MarketingReveal } from "@/components/marketing/scroll-reveal";
 import { GiveawayProofPopup } from "@/components/marketing/giveaway-proof-popup";
 import { SocialLaunchModal } from "@/components/social/social-launch-modal";
+import { FeaturedTaskPopup } from "@/components/dashboard/featured-task-popup";
 
 export default async function MarketingLayout({
   children,
@@ -25,6 +26,7 @@ export default async function MarketingLayout({
         <RouteTransition>{children}</RouteTransition>
       </main>
       <SiteFooter />
+      <FeaturedTaskPopup />
       <SocialLaunchModal />
       <GiveawayProofPopup />
     </div>

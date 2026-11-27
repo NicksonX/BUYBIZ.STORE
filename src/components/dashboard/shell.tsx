@@ -6,7 +6,7 @@ import { DashboardMobileNav } from "@/components/dashboard/mobile-nav";
 import { WalletBalanceAnnouncement } from "@/components/dashboard/balance-announcement";
 import { MaintenanceAnnouncement } from "@/components/dashboard/maintenance-announcement";
 import { InstallPrompt } from "@/components/system/install-prompt";
-import { SeasonOfRewardsGate } from "@/components/dashboard/season-of-rewards-gate";
+import { FeaturedTaskPopup } from "@/components/dashboard/featured-task-popup";
 
 import { ProxyMaintenanceBanner } from "@/components/dashboard/proxy-maintenance-banner";
 import type { DashboardAnnouncement } from "@/server/services/announcements";
@@ -23,7 +23,6 @@ export function DashboardShell({
   ambassador,
   announcement,
   proxyPurchasePaused,
-  seasonPopup,
   children,
 }: {
   user: Profile;
@@ -32,7 +31,6 @@ export function DashboardShell({
   ambassador: Awaited<ReturnType<typeof import("@/server/services/ambassador").getAmbassadorCampaign>> | null;
   announcement: DashboardAnnouncement | null;
   proxyPurchasePaused: boolean;
-  seasonPopup: Parameters<typeof SeasonOfRewardsGate>[0]["data"];
   children: React.ReactNode;
 }) {
   const demo = isDemoMode();
@@ -114,7 +112,7 @@ export function DashboardShell({
         </main>
       </div>
       <DashboardMobileNav unread={unread} />
-      <SeasonOfRewardsGate data={seasonPopup} />
+      <FeaturedTaskPopup />
 
       {ambassador?.config.enabled ? (
         <AmbassadorFloat
