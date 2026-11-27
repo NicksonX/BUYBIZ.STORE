@@ -19,8 +19,15 @@ export function GiveawayProofPopup() {
       // promotional popup after it in the same browsing session.
       if (sessionStorage.getItem("buybiz_social_launch_shown") === "1") return;
     } catch { /* ignore */ }
-    const timer = window.setTimeout(() => { try { sessionStorage.setItem("buybiz_proof_popup_shown", "1"); } catch {} setOpen(true); }, 1400);
-    return () => window.clearTimeout(timer);
+    let timer: number | undefined;
+    let cancelled = false;
+    fetch("/api/featured-tasks/popup", { cache: "no-store" }).then((r) => r.json()).then((data: { task?: unknown }) => {
+      if (cancelled || data.task) return;
+      timer = window.setTimeout(() => { try { sessionStorage.setItem("buybiz_proof_popup_shown", "1"); } catch {} setOpen(true); }, 1400);
+    }).catch(() => {
+      if (!cancelled) timer = window.setTimeout(() => setOpen(true), 1400);
+    });
+    return () => { cancelled = true; if (timer) window.clearTimeout(timer); };
   }, [pathname]);
   function dismiss() { try { sessionStorage.setItem(KEY, "1"); } catch { /* ignore */ } setOpen(false); }
   if (!open) return null;

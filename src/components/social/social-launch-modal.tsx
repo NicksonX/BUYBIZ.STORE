@@ -17,13 +17,21 @@ export function SocialLaunchModal() {
   const [open, setOpen] = useState(false);
   useEffect(() => {
     if (pathname.startsWith("/dashboard") || pathname.startsWith("/rewards/proof")) return;
+    let cancelled = false;
+    fetch("/api/featured-tasks/popup", { cache: "no-store" }).then((response) => response.json()).then((data: { task?: unknown }) => {
+      if (!cancelled && data.task) return;
+      if (!cancelled) run();
+    }).catch(() => { if (!cancelled) run(); });
+    function run() {
     try {
       const last = Number(localStorage.getItem(SOCIAL_DISMISS_KEY) ?? 0);
       if (last && Date.now() - last < SOCIAL_48H) return;
       sessionStorage.setItem("buybiz_social_launch_shown", "1");
     } catch { /* ignore */ }
-    const timer = window.setTimeout(() => setOpen(true), 1400);
-    return () => window.clearTimeout(timer);
+      const timer = window.setTimeout(() => setOpen(true), 1400);
+      return () => window.clearTimeout(timer);
+    }
+    return () => { cancelled = true; };
   }, [pathname]);
   function dismiss() {
     try { localStorage.setItem(SOCIAL_DISMISS_KEY, String(Date.now())); sessionStorage.setItem("buybiz_social_launch_shown", "1"); } catch { /* ignore */ }
