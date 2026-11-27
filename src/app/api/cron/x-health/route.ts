@@ -1,0 +1,5 @@
+import { NextResponse } from "next/server";
+import { isDemoMode } from "@/lib/config";
+export const dynamic="force-dynamic";
+function authorized(r:Request){const s=process.env.CRON_SECRET;if(s)return r.headers.get("authorization")===`Bearer ${s}`||r.headers.get("x-cron-secret")===s;return isDemoMode()&&process.env.NODE_ENV!=="production";}
+export async function GET(request:Request){if(!authorized(request))return NextResponse.json({ok:false},{status:401});const token=process.env.X_BEARER_TOKEN?.trim();if(!token)return NextResponse.json({ok:false,configured:false,message:"X_BEARER_TOKEN is not present."},{status:503});try{const r=await fetch("https://api.x.com/2/users/by/username/buybiz_company?user.fields=public_metrics,created_at,verified",{headers:{Authorization:`Bearer ${token}`},signal:AbortSignal.timeout(12000)});const body=await r.json() as any;return NextResponse.json({ok:r.ok,configured:true,http:r.status,user:body.data??null,error:body.errors?.[0]?.message??body.title??null},{headers:{"Cache-Control":"no-store"}});}catch(e){return NextResponse.json({ok:false,configured:true,error:e instanceof Error?e.message:"X request failed"},{status:502});}}
