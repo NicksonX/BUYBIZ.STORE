@@ -3,6 +3,7 @@ import { ArrowUpRight, CalendarDays, Gift, Megaphone } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
 import { requireUserPage } from "@/server/auth/guards";
 import { campaignPhase, formatCampaignDate, getPublishedCampaigns } from "@/server/services/campaigns";
+import { getAppSettings } from "@/server/data/settings";
 import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -22,6 +23,8 @@ function usd(cents: number) {
 export default async function CampaignsPage() {
   await requireUserPage();
   const campaigns = await getPublishedCampaigns();
+  const settings = await getAppSettings().catch(() => null);
+  const bybitUrl = process.env.BYBIT_REFERRAL_URL?.trim() || (settings as unknown as Record<string, unknown> | null)?.["bybitReferralUrl"] as string | undefined;
 
   return (
     <div>
@@ -72,6 +75,8 @@ export default async function CampaignsPage() {
           })}
         </div>
       )}
+
+      {process.env.BYBIT_REFERRAL_URL ? <section className="surface-card mt-4 rounded-[16px] p-4"><p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Partner promotion</p><h2 className="mt-1 text-[16px] font-semibold">Bybit referral campaign</h2><p className="mt-1 text-[10px] leading-5 text-muted-foreground">A separate exchange referral promotion. It is not the $0.50 social task and does not qualify users for the $10 Season of Rewards campaign.</p><a href={process.env.BYBIT_REFERRAL_URL} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex h-9 items-center rounded-full bg-foreground px-4 text-[10px] font-semibold text-background">View Bybit referral <ArrowUpRight className="ml-1 h-3 w-3" /></a></section> : null}
 
       <p className="mt-4 rounded-[10px] border border-border bg-surface-subtle px-3.5 py-3 text-[9.5px] leading-5 text-muted-foreground">
         Campaign eligibility and dates come from the existing campaign configuration. The normal <strong className="text-foreground">$3 referral programme</strong> remains separate and is always managed from the Referral page.

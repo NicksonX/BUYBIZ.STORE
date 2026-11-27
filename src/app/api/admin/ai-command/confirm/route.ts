@@ -3,10 +3,11 @@ import { getCurrentUser } from "@/server/auth/session";
 import { getDb } from "@/lib/db";
 import { createGiveaway, announceGiveaway, setGiveawayStatus } from "@/server/services/giveaways";
 import { prepareGiveawayBatch } from "@/server/services/treasury";
+import { prepareTaskPayouts } from "@/server/services/featured-tasks";
 
 export const dynamic = "force-dynamic";
 
-type Payload = { reward?: number; limit?: number; giveawayId?: string | null };
+type Payload = { reward?: number; limit?: number; giveawayId?: string | null; taskId?: string };
 
 export async function POST(request: Request) {
   const user = await getCurrentUser();
@@ -37,6 +38,10 @@ export async function POST(request: Request) {
       await setGiveawayStatus(action.payload.giveawayId, "paused"); result = { status: "paused" };
     } else if (action.actionType === "end_giveaway" && action.payload.giveawayId) {
       await setGiveawayStatus(action.payload.giveawayId, "ended"); result = { status: "ended" };
+    } else if (action.actionType === "prepare_task_payouts" && action.payload.taskId) {
+      const taskBatch = await prepareTaskPayouts({ taskId: action.payload.taskId, adminId: user.id });
+      await prepareGiveawayBatch(taskBatch.giveawayId, user.id);
+      result = taskBatch;
     } else if (action.actionType === "prepare_batch" && action.payload.giveawayId) {
       const batch = await prepareGiveawayBatch(action.payload.giveawayId, user.id); result = batch;
     } else throw new Error("Unsupported action.");
