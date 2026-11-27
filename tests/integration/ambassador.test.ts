@@ -174,18 +174,11 @@ describe("ambassador USDT payouts", () => {
     ).rejects.toMatchObject({ code: "VALIDATION" });
     const address = "0x1234567890abcdef1234567890abcdef12345678";
     await submitAmbassadorAddress(referrer.id, address);
-    const pending = await db.query<{ id: string }>(
-      `select id from ambassador_wallet_addresses where user_id=$1 and status='pending' order by created_at desc limit 1`,
+    const verified = await db.query<{ id: string }>(
+      `select id from ambassador_wallet_addresses where user_id=$1 and status='verified' order by created_at desc limit 1`,
       [referrer.id],
     );
-    await db.transaction((tx) =>
-      verifyAmbassadorAddress(tx, {
-        addressId: pending.rows[0].id,
-        adminId: admin.id,
-        adminRole: "admin",
-        approve: true,
-      }),
-    );
+    expect(verified.rows[0]?.id).toBeTruthy();
 
     const payout = await requestAmbassadorWithdrawal(referrer.id, 1000);
     expect(payout.amountCents).toBe(1000);
